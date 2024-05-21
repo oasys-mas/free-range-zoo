@@ -5,7 +5,7 @@ This package introduces three new components which extend the MARL environment p
 This package includes three pieces
 - Example Open Environments: Dynamic-Wildfire, and Dynamic-Rideshare
 - Observation Wrappers: wrappers which convert a pettingzoo style observation to `incidence-graphs` of various forms as seen in [paper]()
-- Modified AECEnv (TODO): a modified version of AECEnv which introduces tracking agent types, the use of a generator for `possible_agents` instead of a bounded agent set, and a modified AECEnv interaction loop which can include the agent's type
+- Modified AECEnv (TODO): a modified version of AECEnv which introduces tracking agent types, the use of a generator for `possible_agents` instead of a bounded agent set, and a modified AECEnv interaction loop which can include the agent's type along with the agent whose turn it is
 
 ## Environments
 
