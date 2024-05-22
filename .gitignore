@@ -160,3 +160,4 @@ cython_debug/
 #.idea/
 archive/templates/__init__.py
 archive/templates/wildfire.py
+.vscode/settings.json
