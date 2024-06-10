@@ -12,7 +12,7 @@ This package introduces three new components which extend the MARL environment p
 
 - [x] Implement the Incidence Graph Wrapper (working on action reshaping)
 
-- [x] Confirm compatibility with `aec_to_parallel_wrapper`
+- [x] Confirm compatibility with `oaec_to_parallel_wrapper` (a slightly modified `aec_to_parallel_wrapper` from pettingzoo)
 
 - [ ] Make pettingzoo style web-docs
 
@@ -110,7 +110,9 @@ Warning: This wrapper only supports u-nary actions atm, what do I mean: only one
 
 
 
-[IncidenceGraph]() is a wrapper made for OT environments. This wrapper converts our generic OT observation shape into a `torch_geometric` observation graph, and a "critic" graph which contains all agent observed information. This graph is comprised of `agent`, `task`, `action`, and `hyperedges`. The `hyperedges` represent a unique **possible** pairing of `task<-->action<-->agent`.
+## [IncidenceGraph]()
+
+is a wrapper made for OT environments. This wrapper converts our generic OT observation shape into a `torch_geometric` observation graph, and a "critic" graph which contains all agent observed information. This graph is comprised of `agent`, `task`, `action`, and `hyperedges`. The `hyperedges` represent a unique **possible** pairing of `task<-->action<-->agent`.
 
 To use this wrapper you need to create or use a prexisting wrapper instance for a environment. This instance specifies:
 
@@ -154,5 +156,6 @@ def wildfire_IncidenceGraph_v1_wrapper(env, incidence_graph_style="undirected", 
     )
 ```
 
+## oaec-to-parallel-wrapper
 
-## DynamicAECEnv
+Just the `oaec-to-parallel-wrapper` from pettingzoo, but with a modified reward structure to account for batching. 
