@@ -6,7 +6,9 @@ __pycache__/
 # C extensions
 *.so
 
+
 .neptune
+
 
 my_secrets.py
 **/plotting/*-paper*
@@ -165,3 +167,4 @@ cython_debug/
 archive/templates/__init__.py
 archive/templates/wildfire.py
 .vscode/settings.json
+free_range_zoo/notebooks/.neptune/async/run__9c4f513d-c74d-478c-aa66-ae15c2d16a3e__2528429__hurg6i3a/last_ack_version
