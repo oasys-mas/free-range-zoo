@@ -6,14 +6,12 @@ __pycache__/
 # C extensions
 *.so
 
-last_ack_version*
-metadata*
-last_put*
-launch.json
 
-*.csv
+.neptune
+
 
 my_secrets.py
+**/plotting/*-paper*
 
 # Distribution / packaging
 .Python
