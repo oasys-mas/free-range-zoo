@@ -6,8 +6,10 @@ __pycache__/
 # C extensions
 *.so
 
+.neptune
 
 my_secrets.py
+**/plotting/*-paper*
 
 # Distribution / packaging
 .Python
