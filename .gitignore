@@ -9,6 +9,7 @@ __pycache__/
 
 .neptune
 
+*.csv
 
 my_secrets.py
 **/plotting/*-paper*
@@ -168,3 +169,4 @@ archive/templates/__init__.py
 archive/templates/wildfire.py
 .vscode/settings.json
 free_range_zoo/notebooks/.neptune/async/run__9c4f513d-c74d-478c-aa66-ae15c2d16a3e__2528429__hurg6i3a/last_ack_version
+free_range_zoo/notebooks/free-range-zoo-outputs/364_1718898773.4503853/validation_log_0.csv
