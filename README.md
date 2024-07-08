@@ -16,10 +16,12 @@ This package introduces three new components which extend the MARL environment p
 
 - [ ] Make pettingzoo style web-docs
 
+- [ ] Implement a git unitest method to ensure consistent performance between commits. (would be useful for experimentation)
+
 > Environments
 - [x] Implement the Dynamic-Wildfire Environment
 - [x] Update Wildfire Documentation
-- [ ] Migrate Wildfire render() script
+- [ ] Migrate Wildfire render() script *currenty in wildfire_evaluator OASYS*
 
 =======
 
