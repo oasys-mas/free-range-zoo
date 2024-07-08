@@ -171,3 +171,4 @@ archive/templates/wildfire.py
 .vscode**
 
 *.pkl
+*.pdf
