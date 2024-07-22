@@ -1,5 +1,6 @@
 from typing import Tuple
 import torch
+import numpy as np
 
 from free_range_zoo.free_range_zoo.envs.wildfire.env.structures.configuration import GridConf, StochasticConf
 
@@ -36,6 +37,7 @@ def non_stochastic() -> Tuple[GridConf, StochasticConf]:
         base_spread=3.0,
         max_spread_rate=67.0,
         cell_size=200.0,
+        wind_direction=0.0*np.pi,
 
         agents=torch.tensor([
             [1, 3, 2],
@@ -57,7 +59,7 @@ def non_stochastic() -> Tuple[GridConf, StochasticConf]:
         use_random_fire_ignition=False,
         use_almost_burned_out=False,
         use_fire_fuel=False,
-        realistic_fire_spread=True,
+        realistic_fire_spread=False,
         FIRE_INTENSITY_INCREASE_PROBABILITY=1.0
     )
 
