@@ -37,7 +37,7 @@ def non_stochastic() -> Tuple[GridConf, StochasticConf]:
         base_spread=3.0,
         max_spread_rate=67.0,
         cell_size=200.0,
-        wind_direction=0.0*np.pi,
+        wind_direction=0.0 * np.pi,
 
         agents=torch.tensor([
             [1, 3, 2],
