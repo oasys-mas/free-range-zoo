@@ -54,7 +54,20 @@ def non_stochastic() -> WildfireConfiguration:
         suppressant_states=3,
         initial_suppressant=2,
         suppressant_decrease_probability=1.0,
-        suppressant_refill_probability=1.0
+        suppressant_refill_probability=1.0,
+
+        equipment_states=torch.tensor([
+            [1.0, 1.0, 1.0],
+            [0.0, 0.0, 0.0],
+            [-1.0, -0.5, -0.5],
+        ], dtype=torch.int32),
+        repair_probability=1.0,
+        degrade_probability=1.0,
+        critical_error_probability=0.0,
+
+        tank_switch_probability=1.0,
+        possible_suppressant_maximums=torch.tensor([1, 2, 3], dtype=torch.int32),
+        suppressant_maximum_probabilities=torch.tensor([0.1, 0.8, 0.1], dtype=torch.float32),
     )
 
     stochastic_configuration = StochasticConfiguration(
@@ -62,6 +75,11 @@ def non_stochastic() -> WildfireConfiguration:
 
         suppressant_refill=False,
         suppressant_decrease=False,
+
+        tank_switch=False,
+        critical_error=False,
+        degrade=False,
+        repair=False,
 
         fire_spread=False,
         realistic_fire_spread=False,
