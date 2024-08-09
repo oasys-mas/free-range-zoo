@@ -12,6 +12,14 @@ class TestConfiguration(unittest.TestCase):
         self.assertTrue(callable(self.configuration.to),
                         f'{self.configuration.__name__} to method is not callable')
 
+    def test_configuration_includes_validate(self) -> None:
+        self.assertTrue(hasattr(self.configuration, 'validate'),
+                        f'{self.configuration.__name__} does not include validate method')
+        self.assertTrue(callable(self.configuration.validate),
+                        f'{self.configuration.__name__} validate method is not callable')
+        self.assertFalse(self.configuration.validate.__isabstractmethod__,
+                         f'{self.configuration.__name__} validate method is abstract')
+
 
 if __name__ == '__main__':
     unittest.main()
