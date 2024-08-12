@@ -60,7 +60,7 @@ def non_stochastic() -> WildfireConfiguration:
             [-1.0, -0.5, -0.5],
             [0.0, 0.0, 0.0],
             [1.0, 1.0, 1.0],
-        ], dtype=torch.int32),
+        ], dtype=torch.float32),
         initial_equipment_state=2,
         repair_probability=1.0,
         degrade_probability=1.0,
