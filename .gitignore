@@ -1,7 +1,9 @@
+.envrc
+
 my_secrets.py
-*.csv
 .neptune
 **/plotting/*-paper*
+*.csv
 *.pkl
 *.prof
 
