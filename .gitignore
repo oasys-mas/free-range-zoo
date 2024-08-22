@@ -8,6 +8,8 @@ __pycache__/
 
 .offline
 
+launch.json
+
 .neptune
 
 *.csv
@@ -173,3 +175,4 @@ archive/templates/wildfire.py
 
 *.pkl
 *.pdf
+.vscode/launch.json
