@@ -2,6 +2,11 @@
 
 This package introduces three new components which extend the MARL environment package [pettingzoo](https://github.com/Farama-Foundation/PettingZoo)  to open environments. Pettingzoo already supports agent open environments through its distinction between `possible_agents` and `agents`, but this does not account for [Task Open Environments]() and [Agent Type Openness](). Thus this work includes a extension of the pettingzoo `AECEnv` which supports all the existing gymnasium/supersuit/pettingzoo wrappers, but also introduces new components helpful for these kinds of openness. 
 
+
+----
+Experiments from our AAAI2025 paper can be reproduced through training with [training scripts in notebooks](https://github.com/oasys-mas/free-range-zoo/blob/main/free_range_zoo/notebooks/OL3_mohito_wildfire_training.py) Note the parameters listed and parameters describe in our technical appendix. Plotting instructions can be found [here](https://github.com/oasys-mas/free-range-zoo/blob/main/free_range_zoo/notebooks/plotting/plotting_readme.md).
+
+
 ----
 **TODOS**
 
