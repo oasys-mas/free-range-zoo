@@ -176,3 +176,6 @@ archive/templates/wildfire.py
 *.pkl
 *.pdf
 .vscode/launch.json
+free_range_zoo/notebooks/A_mohito_wildfire_testing.py.save
+free_range_zoo/notebooks/AAAI_results.tar.gz
+.vscode/launch.json
