@@ -19,6 +19,14 @@ __pycache__/
 # C extensions
 *.so
 
+*.pdf 
+*.aux
+*.fdb_latexmk
+*.fls
+*.tar.gz
+*.synctex.gz
+
+
 # Distribution / packaging
 .Python
 build/
@@ -210,3 +218,4 @@ pip-selfcheck.json
 
 # End of https://www.toptal.com/developers/gitignore/api/virtualenv,python,visualstudiocode
 
+.vscode/*
