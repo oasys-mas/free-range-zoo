@@ -2,13 +2,40 @@
 name = "free-range-zoo"
 version = "0.1.0"
 description = ""
-authors = ["C4 Patino <c4patino@gmail.com>"]
+authors = ["C4 Patino <cpatino2@huskers.unl.edu>", "Daniel Redder <daniel.redder@uga.edu>"]
 license = "MIT"
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = "3.12"
+python = "^3.12"
+gymnasium = "1.0.0a2"
+pettingzoo = "^1.24.3"
+torch-geometric = "^2.5.3"
+supersuit = "^3.9.3"
+tensordict = "^0.5.0"
+torchaudio = "^2.4.0"
+torchvision = "^0.19.0"
+numpy = "^2.1.0"
+xxhash = "^3.5.0"
+cachetools = "^5.5.0"
 
+[tool.poetry.group.scripts.dependencies]
+jupyter = "^1.0.0"
+neptune = "^1.11.1"
+termcolor = "^2.4.0"
+pygame = "^2.6.0"
+
+[tool.poetry.group.testing]
+optional = true
+
+[tool.poetry.group.testing.dependencies]
+pipdeptree = "^2.23.1"
+
+[tool.poetry.group.dev]
+optional = true
+
+[tool.poetry.group.dev.dependencies]
+rich = "^13.7.1"
 
 [build-system]
 requires = ["poetry-core"]
