@@ -1,3 +1,16 @@
+.envrc
+
+my_secrets.py
+.neptune
+**/plotting/*-paper*
+*.csv
+*.pkl
+*.prof
+
+# Created by https://www.toptal.com/developers/gitignore/api/virtualenv,python,visualstudiocode
+# Edit at https://www.toptal.com/developers/gitignore?templates=virtualenv,python,visualstudiocode
+
+### Python ###
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
@@ -5,17 +18,6 @@ __pycache__/
 
 # C extensions
 *.so
-
-.offline
-
-launch.json
-
-.neptune
-
-*.csv
-
-my_secrets.py
-**/plotting/*-paper*
 
 # Distribution / packaging
 .Python
@@ -131,12 +133,8 @@ celerybeat.pid
 *.sage.py
 
 # Environments
-.venv
-
+.venv/
 venv/
-ENV/
-env.bak/
-venv.bak/
 
 # Spyder project settings
 .spyderproject
@@ -168,14 +166,47 @@ cython_debug/
 #  and can be added to the global gitignore or merged into this file.  For a more nuclear
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 #.idea/
-archive/templates/__init__.py
-archive/templates/wildfire.py
 
-.vscode**
+### Python Patch ###
+# Poetry local configuration file - https://python-poetry.org/docs/configuration/#local-configuration
+poetry.toml
 
-*.pkl
-*.pdf
-.vscode/launch.json
-free_range_zoo/notebooks/A_mohito_wildfire_testing.py.save
-free_range_zoo/notebooks/AAAI_results.tar.gz
-.vscode/launch.json
+# ruff
+.ruff_cache/
+
+# LSP config files
+pyrightconfig.json
+
+### VirtualEnv ###
+# Virtualenv
+# http://iamzed.com/2009/05/07/a-primer-on-virtualenv/
+[Bb]in
+[Ii]nclude
+[Ll]ib
+[Ll]ib64
+[Ll]ocal
+[Ss]cripts
+pyvenv.cfg
+pip-selfcheck.json
+
+### VisualStudioCode ###
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+!.vscode/*.code-snippets
+
+# Local History for Visual Studio Code
+.history/
+
+# Built Visual Studio Code Extensions
+*.vsix
+
+### VisualStudioCode Patch ###
+# Ignore all local history of files
+.history
+.ionide
+
+# End of https://www.toptal.com/developers/gitignore/api/virtualenv,python,visualstudiocode
+
