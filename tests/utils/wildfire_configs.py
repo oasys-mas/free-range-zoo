@@ -31,6 +31,7 @@ def non_stochastic() -> WildfireConfiguration:
         ], dtype=torch.bool),
         intensity_increase_probability=1.0,
         intensity_decrease_probability=1.0,
+        extra_power_decrease_bonus=0.0,
         burnout_probability=1.0,
 
         base_spread_rate=3.0,
@@ -48,7 +49,6 @@ def non_stochastic() -> WildfireConfiguration:
     agent_configuration = AgentConfiguration(
         agents=torch.tensor([[0, 0], [0, 1], [0, 2]], dtype=torch.int32),
         fire_reduction_power=torch.tensor([1, 1, 1], dtype=torch.int32),
-        fire_reduction_power_per_extra_agent=0.0,
         attack_range=torch.tensor([1, 1, 1], dtype=torch.int32),
 
         suppressant_states=3,
@@ -70,7 +70,7 @@ def non_stochastic() -> WildfireConfiguration:
 
         initial_capacity=2,
         tank_switch_probability=1.0,
-        possible_capacities=torch.tensor([1, 2, 3], dtype=torch.int32),
+        possible_capacities=torch.tensor([1, 2, 3], dtype=torch.float32),
         capacity_probabilities=torch.tensor([0.0, 1.0, 0.0], dtype=torch.float32),
     )
 
@@ -85,6 +85,8 @@ def non_stochastic() -> WildfireConfiguration:
         degrade=False,
         repair=False,
 
+        fire_decrease=False,
+        fire_increase=False,
         fire_spread=False,
         realistic_fire_spread=False,
         random_fire_ignition=False,
