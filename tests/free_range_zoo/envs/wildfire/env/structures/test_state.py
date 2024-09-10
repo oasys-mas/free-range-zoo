@@ -35,10 +35,10 @@ class TestWildfireState(unittest.TestCase):
                         'WildfireState restore_from_checkpoint method is not callable')
 
     def test_state_includes_clone(self) -> None:
-        self.assertTrue(hasattr(WildfireState, '_clone'),
-                        'WildfireState does not include _clone method')
-        self.assertTrue(callable(WildfireState._clone),
-                        'WildfireState _clone method is not callable')
+        self.assertTrue(hasattr(WildfireState, 'clone'),
+                        'WildfireState does not include clone method')
+        self.assertTrue(callable(WildfireState.clone),
+                        'WildfireState clone method is not callable')
 
 
 if __name__ == '__main__':
