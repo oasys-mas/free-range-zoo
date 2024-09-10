@@ -33,7 +33,7 @@ class TestHashableConversion(ABC):
 
 
 class TestConvertUsingTuple(TestHashableConversion, unittest.TestCase):
-    def func(data):
+    def func(self, data):
         return convert_using_tuple(data)
 
 
