@@ -7,7 +7,7 @@ from free_range_zoo.free_range_zoo.envs.wildfire.env.structures.state import Wil
 from free_range_zoo.free_range_zoo.envs.wildfire.env.transitions.equipment import EquipmentTransition
 
 
-class TestEquipmentTransition(unittest.TestCase):
+class TestTransitionForward(unittest.TestCase):
     def setUp(self) -> None:
         self.parallel_envs = 2
         self.max_x = 4

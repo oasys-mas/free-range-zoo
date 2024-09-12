@@ -7,7 +7,7 @@ from free_range_zoo.free_range_zoo.envs.wildfire.env.structures.state import Wil
 from free_range_zoo.free_range_zoo.envs.wildfire.env.transitions.suppressant_decrease import SuppressantDecreaseTransition
 
 
-class TestFireSpreads(unittest.TestCase):
+class TestTransitionForward(unittest.TestCase):
     def setUp(self) -> None:
         self.parallel_envs = 2
         self.max_x = 4
