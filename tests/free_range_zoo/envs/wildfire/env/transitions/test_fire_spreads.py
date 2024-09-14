@@ -39,7 +39,7 @@ class TestTransitionForward(unittest.TestCase):
             [0.1, 0.6, 0.3, 0.8],
             [0.3, 0.8, 0.2, 0.7],
             [0.3, 0.8, 0.2, 0.7]
-        ], dtype=torch.float32, device=self.device).repeat((self.parallel_envs, 1, 1))
+        ], dtype=torch.float32, device=self.device).expand(self.parallel_envs, -1, -1)
 
     def test_fire_spreads_weight_application(self):
         result = self.fire_spread_transition(self.state, self.randomness_source)
