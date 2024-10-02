@@ -63,7 +63,7 @@ class TestConvertUsingXxhash(TestHashableConversion, unittest.TestCase):
         return convert_using_xxhash(data)
 
 
-@unittest.skipIf(not hasattr(torch, 'cuda'), 'CUDA not available')
+@unittest.skipIf(not torch.cuda.is_available(), 'CUDA not available')
 class TestConvertUsingGPUPositionalEncoding(TestHashableConversion, unittest.TestCase):
     data_type = float
 
