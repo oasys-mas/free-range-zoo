@@ -7,6 +7,7 @@ from free_range_zoo.free_range_zoo.utils.env import BatchedAECEnv
 
 
 class MockedBatchedAECEnv(BatchedAECEnv):
+
     def step_environment(self) -> None:
         pass
 
@@ -24,14 +25,13 @@ class MockedBatchedAECEnv(BatchedAECEnv):
 
 
 class TestInitialization(unittest.TestCase):
+
     def setUp(self) -> None:
         self.mock_config = MagicMock()
         self.mock_config.to.return_value = self.mock_config
         self.mock_config.value = 123
 
-        self.env = MockedBatchedAECEnv(
-            configuration=self.mock_config
-        )
+        self.env = MockedBatchedAECEnv(configuration=self.mock_config)
 
     def test_initialization_with_no_config(self) -> None:
         env = MockedBatchedAECEnv()
@@ -50,6 +50,7 @@ class TestInitialization(unittest.TestCase):
 
 
 class TestSeeding(unittest.TestCase):
+
     def setUp(self) -> None:
         self.device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
 
@@ -68,7 +69,8 @@ class TestSeeding(unittest.TestCase):
                 state_size = 0
 
         self.env.generator_states = torch.empty((self.env.parallel_envs, state_size),
-                                                dtype=torch.uint8, device=torch.device('cpu'))
+                                                dtype=torch.uint8,
+                                                device=torch.device('cpu'))
 
     def test_seeding_with_provided_seed(self) -> None:
         seed = torch.tensor([12345, 67890, 54321], dtype=torch.int64, device=self.device)
@@ -88,7 +90,8 @@ class TestSeeding(unittest.TestCase):
         expected_seeds = torch.tensor([12345, 0, 67890], dtype=torch.int64, device=self.device)
         expected_seeds[1] = self.env.seeds[1]
 
-        self.assertTrue(torch.equal(self.env.seeds, expected_seeds), f"""
+        self.assertTrue(
+            torch.equal(self.env.seeds, expected_seeds), f"""
             \rSeeds should be set to the provided values
                 \rExpected:\n{expected_seeds}
                 \rActual:\n{self.env.seeds}""")
@@ -102,13 +105,11 @@ class TestSeeding(unittest.TestCase):
 
 
 class TestReset(unittest.TestCase):
+
     def setUp(self) -> None:
         self.device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
         self.parallel_envs = 2
-        self.env = MockedBatchedAECEnv(
-            parallel_envs=self.parallel_envs,
-            device=self.device,
-            render_mode=None)
+        self.env = MockedBatchedAECEnv(parallel_envs=self.parallel_envs, device=self.device, render_mode=None)
 
         self.env.possible_agents = ['agent_1', 'agent_2']
 
@@ -121,27 +122,30 @@ class TestReset(unittest.TestCase):
     def test_initializes_aec_attributes(self) -> None:
         self.env.reset()
 
-        expected_rewards = {'agent_1': torch.zeros(2, device=self.device),
-                            'agent_2': torch.zeros(2, device=self.device)}
+        expected_rewards = {'agent_1': torch.zeros(2, device=self.device), 'agent_2': torch.zeros(2, device=self.device)}
 
         self.assertEqual(self.env.agents, self.env.possible_agents, 'Agents should be set to possible_agents')
         for agent in self.env.agents:
-            self.assertTrue(torch.equal(expected_rewards[agent], self.env.rewards[agent]), f"""
+            self.assertTrue(
+                torch.equal(expected_rewards[agent], self.env.rewards[agent]), f"""
                 \rRewards for {agent} should be initialized to zeros
                     \rExpected:\n{expected_rewards[agent]}
                     \rActual:\n{self.env.rewards[agent]}""")
 
-            self.assertTrue(torch.equal(expected_rewards[agent], self.env._cumulative_rewards[agent]), f"""
+            self.assertTrue(
+                torch.equal(expected_rewards[agent], self.env._cumulative_rewards[agent]), f"""
                 \rCumulative rewards for {agent} should be initialized to zeros
                     \rExpected:\n{expected_rewards[agent]}
                     \rActual:\n{self.env._cumulative_rewards[agent]}""")
 
-            self.assertTrue(torch.equal(torch.zeros(self.parallel_envs, device=self.device), self.env.terminations[agent]), f"""
+            self.assertTrue(
+                torch.equal(torch.zeros(self.parallel_envs, device=self.device), self.env.terminations[agent]), f"""
                 \rTerminations for {agent} should be initialized to False
                     \rExpected:\n{expected_rewards[agent]}
                     \rActual:\n{self.env.terminations[agent]}""")
 
-            self.assertTrue(torch.equal(torch.zeros(self.parallel_envs, device=self.device), self.env.truncations[agent]), f"""
+            self.assertTrue(
+                torch.equal(torch.zeros(self.parallel_envs, device=self.device), self.env.truncations[agent]), f"""
                 \rTruncations for {agent} should be initialized to False
                     \rExpected:\n{expected_rewards[agent]}
                     \rActual:\n{self.env.truncations[agent]}""")
@@ -150,19 +154,22 @@ class TestReset(unittest.TestCase):
                 \rInfos for {agent} should be initialized to an empty dictionary
                     \rActual:\n{self.env.infos[agent]}""")
 
-        self.assertTrue(torch.equal(torch.zeros(self.parallel_envs, device=self.device), self.env.num_moves), f"""
+        self.assertTrue(
+            torch.equal(torch.zeros(self.parallel_envs, device=self.device), self.env.num_moves), f"""
             \rNum moves should be initialized to zeros
                 \rActual:\n{self.env.num_moves}""")
 
     def test_initializes_agent_selector(self) -> None:
         self.env.reset()
 
-        self.assertEqual(self.env.agent_selector.agent_order, self.env.agents, f"""
+        self.assertEqual(
+            self.env.agent_selector.agent_order, self.env.agents, f"""
             \rAgent selector should be initialized with the agents
                 \rExpected:\n{self.env.agents}
                 \rActual:\n{self.env.agent_selector.agent_order}""")
 
-        self.assertEqual(self.env.agent_selection, self.env.agent_selector.reset(), f"""
+        self.assertEqual(
+            self.env.agent_selection, self.env.agent_selector.reset(), f"""
             \rAgent selection should be reset to the initial
                 \rExpected:\n{self.env.agent_selector.reset()}
                 \rActual:\n{self.env.agent_selection}""")
@@ -170,16 +177,19 @@ class TestReset(unittest.TestCase):
     def test_task_counters(self) -> None:
         self.env.reset()
 
-        self.assertEqual(self.env.environment_task_count.shape, (self.parallel_envs,), f"""
+        self.assertEqual(
+            self.env.environment_task_count.shape, (self.parallel_envs, ), f"""
             \rEnvironment task count should be initialized to empty of shape (parallel_envs)
                 \rActual:\n{self.env.environment_task_count.shape}""")
 
-        self.assertEqual(self.env.agent_task_count.shape, (len(self.env.agents), self.parallel_envs), f"""
+        self.assertEqual(
+            self.env.agent_task_count.shape, (len(self.env.agents), self.parallel_envs), f"""
             \rAgent task count should be initialized to empty of shape (agents, self.parallel_envs)
                 \rActual:\n{self.env.agent_task_count.shape}""")
 
 
 class TestResetBatches(unittest.TestCase):
+
     def setUp(self) -> None:
         self.device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
 
@@ -211,31 +221,34 @@ class TestResetBatches(unittest.TestCase):
         }
 
         for agent in self.env.possible_agents:
-            self.assertTrue(torch.equal(expected['rewards'], self.env.rewards[agent]), f"""
+            self.assertTrue(
+                torch.equal(expected['rewards'], self.env.rewards[agent]), f"""
                 \rRewards for {agent} should be reset to zeros
                     \rActual:\n{self.env.rewards[agent]}""")
-            self.assertTrue(torch.equal(expected['cumulative_rewards'], self.env._cumulative_rewards[agent]), f"""
+            self.assertTrue(
+                torch.equal(expected['cumulative_rewards'], self.env._cumulative_rewards[agent]), f"""
                 \rCumulative rewards for {agent} should be reset to zeros
                     \rActual:\n{self.env._cumulative_rewards[agent]}""")
-            self.assertTrue(torch.equal(expected['terminations'], self.env.terminations[agent]), f"""
+            self.assertTrue(
+                torch.equal(expected['terminations'], self.env.terminations[agent]), f"""
                 \rTerminations for {agent} should be reset to False
                     \rActual:\n{self.env.terminations[agent]}""")
-            self.assertTrue(torch.equal(expected['truncations'], self.env.truncations[agent]), f"""
+            self.assertTrue(
+                torch.equal(expected['truncations'], self.env.truncations[agent]), f"""
                 \rTruncations for {agent} should be reset to False
                     \rActual:\n{self.env.truncations[agent]}""")
-            self.assertTrue(torch.equal(expected['num_moves'], self.env.num_moves), f"""
+            self.assertTrue(
+                torch.equal(expected['num_moves'], self.env.num_moves), f"""
                 \rNum moves should be reset to zeros
                     \rActual:\n{self.env.num_moves}""")
 
 
 class TestStep(unittest.TestCase):
+
     def setUp(self) -> None:
         self.device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
 
-        self.env = MockedBatchedAECEnv(
-            parallel_envs=3,
-            device=self.device,
-            render_mode=None)
+        self.env = MockedBatchedAECEnv(parallel_envs=3, device=self.device, render_mode=None)
         self.env.possible_agents = ['agent_1', 'agent_2']
 
         self.env.reset()
@@ -249,26 +262,39 @@ class TestStep(unittest.TestCase):
             self.env.agent_selection = self.env.agent_selector.next()
 
         self.env.step_environment = Mock(
-            return_value=[
-                {agent: torch.tensor([1, 2, 3], dtype=torch.int32, device=self.device) for agent in self.env.possible_agents},
-                {agent: torch.ones(self.env.parallel_envs, dtype=torch.bool, device=self.device)
-                 for agent in self.env.possible_agents},
-                {agent: torch.ones(self.env.parallel_envs, dtype=torch.bool, device=self.device)}
-            ]
-        )
+            return_value=[{
+                agent: torch.tensor([1, 2, 3], dtype=torch.int32, device=self.device)
+                for agent in self.env.possible_agents
+            }, {
+                agent: torch.ones(self.env.parallel_envs, dtype=torch.bool, device=self.device)
+                for agent in self.env.possible_agents
+            }, {
+                agent: torch.ones(self.env.parallel_envs, dtype=torch.bool, device=self.device)
+            }])
 
     def test_step(self) -> None:
         expected = {
             'num_moves': torch.tensor([2, 2, 2], dtype=torch.int32, device=self.device),
             'rewards': torch.tensor([2, 2, 2], dtype=torch.int32, device=self.device),
             'terminations': torch.ones(self.env.parallel_envs, dtype=torch.bool, device=self.device),
-            'infos': {'thing': True},
+            'infos': {
+                'thing': True
+            },
         }
 
         self.env.step_environment = Mock(return_value=[
-            {agent: expected['rewards'] for agent in self.env.possible_agents},
-            {agent: expected['terminations'] for agent in self.env.possible_agents},
-            {agent: expected['infos'] for agent in self.env.possible_agents},
+            {
+                agent: expected['rewards']
+                for agent in self.env.possible_agents
+            },
+            {
+                agent: expected['terminations']
+                for agent in self.env.possible_agents
+            },
+            {
+                agent: expected['infos']
+                for agent in self.env.possible_agents
+            },
         ])
 
         actions = {agent: torch.tensor([[0, 1], [2, 3], [4, 5]], device=self.device) for agent in self.env.agents}
@@ -276,35 +302,42 @@ class TestStep(unittest.TestCase):
 
         self.env.step_environment.assert_called_once()
 
-        self.assertTrue(torch.equal(self.env.num_moves, expected['num_moves']), f"""
+        self.assertTrue(
+            torch.equal(self.env.num_moves, expected['num_moves']), f"""
             \rNum moves should be updated
                 \rExpected:\n{expected['num_moves']}
                 \rActual:\n{self.env.num_moves}""")
 
         for agent in self.env.agents:
-            self.assertTrue(torch.equal(self.env._cumulative_rewards[agent], expected['rewards']), f"""
+            self.assertTrue(
+                torch.equal(self.env._cumulative_rewards[agent], expected['rewards']), f"""
                 \rRewards for {agent} should be updated
                     \rExpected:\n{expected['rewards']}
                     \rActual:\n{self.env.rewards[agent]}""")
-            self.assertTrue(torch.equal(self.env.terminations[agent], expected['terminations']), f"""
+            self.assertTrue(
+                torch.equal(self.env.terminations[agent], expected['terminations']), f"""
                 \rTerminations for {agent} should be updated
                     \rExpected:\n{expected['terminations']}
                     \rActual:\n{self.env.terminations[agent]}""")
-            self.assertEqual(self.env.infos[agent], expected['infos'], f"""
+            self.assertEqual(
+                self.env.infos[agent], expected['infos'], f"""
                 \rInfos for {agent} should be updated
                     \rExpected:\n{expected['infos']}
                     \rActual:\n{self.env.infos[agent]}""")
-            self.assertTrue(torch.equal(torch.zeros_like(expected['rewards']), self.env.rewards[agent]), f"""
-                \rRewards should be cleared after updating
+            self.assertTrue(
+                torch.equal(expected['rewards'], self.env.rewards[agent]), f"""
+                \rRewards should not be cleared after updating
                     \rActual:\n{self.env.rewards}""")
 
-        self.assertEqual(self.env.agent_selection, self.env.agent_selector.reset(), f"""
+        self.assertEqual(
+            self.env.agent_selection, self.env.agent_selector.reset(), f"""
             \rAgent selection should be reset to the initial
                 \rExpected:\n{self.env.agent_selector.reset()}
                 \rActual:\n{self.env.agent_selection}""")
 
 
 class TestRewardAccumulation(unittest.TestCase):
+
     def setUp(self) -> None:
         self.device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
 
@@ -330,13 +363,15 @@ class TestRewardAccumulation(unittest.TestCase):
         self.env._accumulate_rewards()
         for agent in self.env.agents:
             actual = self.env._cumulative_rewards[agent]
-            self.assertTrue(torch.equal(actual, expected[agent]), f"""
+            self.assertTrue(
+                torch.equal(actual, expected[agent]), f"""
             \rRewards for {agent} are not as expected
                 \rExpected:\n{expected}
                 \rActual:\n{actual}""")
 
 
 class TestRewardClearing(unittest.TestCase):
+
     def setUp(self) -> None:
         self.device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
 
@@ -354,13 +389,15 @@ class TestRewardClearing(unittest.TestCase):
         for agent in self.env.agents:
             actual = self.env.rewards[agent]
             expected = torch.zeros_like(actual)
-            self.assertTrue(torch.equal(actual, expected), f"""
+            self.assertTrue(
+                torch.equal(actual, expected), f"""
             \rRewards for {agent} are not as expected
                 \rExpected:\n{expected}
                 \rActual:\n{actual}""")
 
 
 class TestObserve(unittest.TestCase):
+
     def setUp(self) -> None:
         self.env = MockedBatchedAECEnv()
         self.env.agents = ['agent_1', 'agent_2']
@@ -377,7 +414,8 @@ class TestObserve(unittest.TestCase):
 
         for agent in self.env.agents:
             actual = self.env.observe(agent)
-            self.assertTrue(torch.equal(actual, expected[agent]), f"""
+            self.assertTrue(
+                torch.equal(actual, expected[agent]), f"""
                 \rObservation for {agent} is not as expected
                     \rExpected:\n{expected}
                     \rActual:\n{actual}""")
@@ -388,6 +426,7 @@ class TestObserve(unittest.TestCase):
 
 
 class TestState(unittest.TestCase):
+
     def setUp(self) -> None:
         self.env = MockedBatchedAECEnv()
         self.env._state = torch.tensor([1, 2, 3])  # Placeholder value for actual state
@@ -396,23 +435,23 @@ class TestState(unittest.TestCase):
         expected = torch.tensor([1, 2, 3])
         actual = self.env.state()
 
-        self.assertTrue(torch.equal(actual, expected), f"""
+        self.assertTrue(
+            torch.equal(actual, expected), f"""
             \rState is not as expected
                 \rExpected:\n{expected}
                 \rActual:\n{actual}""")
 
 
 class TestAbstractMethods(unittest.TestCase):
+
     def setUp(self) -> None:
         self.env = BatchedAECEnv
 
     def _test_abstract_method(self, func_name: str) -> None:
-        self.assertTrue(hasattr(self.env, func_name),
-                        f'{self.env.__name__} does not include {func_name} method')
-        self.assertTrue(callable(getattr(self.env, func_name)),
-                        f'{self.env.__name__} {func_name} method is not callable')
-        self.assertTrue(getattr(self.env, func_name).__isabstractmethod__,
-                        f'{self.env.__name__} {func_name} method should be abstract')
+        self.assertTrue(hasattr(self.env, func_name), f'{self.env.__name__} does not include {func_name} method')
+        self.assertTrue(callable(getattr(self.env, func_name)), f'{self.env.__name__} {func_name} method is not callable')
+        self.assertTrue(
+            getattr(self.env, func_name).__isabstractmethod__, f'{self.env.__name__} {func_name} method should be abstract')
 
     def test_step_environment(self) -> None:
         self._test_abstract_method('step_environment')
@@ -431,6 +470,7 @@ class TestAbstractMethods(unittest.TestCase):
 
 
 class TestCalculatedProperties(unittest.TestCase):
+
     def setUp(self) -> None:
         self.env = MockedBatchedAECEnv()
         self.env.agents = ['agent_1', 'agent_2']
@@ -444,14 +484,14 @@ class TestCalculatedProperties(unittest.TestCase):
         }
 
     def _test_calculated_property(self, prop_name: str) -> None:
-        self.assertTrue(hasattr(self.env, prop_name),
-                        f'{self.env.__class__.__name__} does not include {prop_name} property')
+        self.assertTrue(hasattr(self.env, prop_name), f'{self.env.__class__.__name__} does not include {prop_name} property')
 
     def test_finished(self) -> None:
         self._test_calculated_property('finished')
 
         expected = torch.tensor([False, True, False], dtype=torch.bool)
-        self.assertTrue(torch.equal(self.env.finished, expected), f"""
+        self.assertTrue(
+            torch.equal(self.env.finished, expected), f"""
             \rFinished property is not as expected
                 \rExpected:\n{expected}
                 \rActual:\n{self.env.finished}""")
@@ -460,7 +500,8 @@ class TestCalculatedProperties(unittest.TestCase):
         self._test_calculated_property('terminated')
 
         expected = torch.tensor([False, True, False], dtype=torch.bool)
-        self.assertTrue(torch.equal(self.env.terminated, expected), f"""
+        self.assertTrue(
+            torch.equal(self.env.terminated, expected), f"""
             \rTerminated property is not as expected
                 \rExpected:\n{expected}
                 \rActual:\n{self.env.terminated}""")
@@ -469,7 +510,8 @@ class TestCalculatedProperties(unittest.TestCase):
         self._test_calculated_property('truncated')
 
         expected = torch.tensor([False, True, False], dtype=torch.bool)
-        self.assertTrue(torch.equal(self.env.truncated, expected), f"""
+        self.assertTrue(
+            torch.equal(self.env.truncated, expected), f"""
             \rTruncated property is not as expected
                 \rExpected:\n{expected}
                 \rActual:\n{self.env.truncated}""")
