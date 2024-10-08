@@ -27,17 +27,11 @@ termcolor = "^2.4.0"
 pygame = "^2.6.0"
 rich = "^13.9.1"
 
-[tool.poetry.group.testing]
+[tool.poetry.group.models]
 optional = true
 
-[tool.poetry.group.testing.dependencies]
-pipdeptree = "^2.23.1"
-
-[tool.poetry.group.planning]
-optional = true
-
-[tool.poetry.group.planning.dependencies]
-bigtree = "^0.21.1"
+[tool.poetry.group.models.dependencies]
+planning = { path = "models/planning", develop = true }
 
 [build-system]
 requires = ["poetry-core"]
