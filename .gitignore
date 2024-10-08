@@ -26,6 +26,7 @@ __pycache__/
 *.tar.gz
 *.synctex.gz
 
+docs/environments/*
 
 # Distribution / packaging
 .Python
