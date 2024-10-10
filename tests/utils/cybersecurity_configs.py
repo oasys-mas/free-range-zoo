@@ -28,6 +28,7 @@ def non_stochastic():
                                           exploited_states=3,
                                           network_state_rewards=torch.tensor([4.0, 0.0, -2.0, -4.0, -8.0], dtype=torch.float32),
                                           patch_reward=0.0,
+                                          temperature=1.0,
                                           danger_chi=1.0,
                                           initial_state=torch.tensor([0, 0, 0], dtype=torch.int32),
                                           latency=torch.tensor([0.1, 0.1, 0.1], dtype=torch.float32),
