@@ -6,7 +6,9 @@ from free_range_zoo.free_range_zoo.envs.wildfire.env.structures.configuration im
     AgentConfiguration,
     FireConfiguration,
     StochasticConfiguration,
-    WildfireConfiguration)
+    WildfireConfiguration,
+    RewardConfiguration,
+)
 
 
 class TestConfiguration(ABC):
@@ -15,14 +17,11 @@ class TestConfiguration(ABC):
     def test_configuration_includes_validate(self) -> None:
         self.assertTrue(hasattr(self.configuration, 'validate'),
                         f'{self.configuration.__name__} does not include validate method')
-        self.assertTrue(callable(self.configuration.validate),
-                        f'{self.configuration.__name__} validate method is not callable')
+        self.assertTrue(callable(self.configuration.validate), f'{self.configuration.__name__} validate method is not callable')
 
     def test_configuration_includes_to(self) -> None:
-        self.assertTrue(hasattr(self.configuration, 'to'),
-                        f'{self.configuration.__name__} does not include to method')
-        self.assertTrue(callable(self.configuration.to),
-                        f'{self.configuration.__name__} to method is not callable')
+        self.assertTrue(hasattr(self.configuration, 'to'), f'{self.configuration.__name__} does not include to method')
+        self.assertTrue(callable(self.configuration.to), f'{self.configuration.__name__} to method is not callable')
 
 
 class TestFireConfiguration(TestConfiguration, unittest.TestCase):
@@ -31,6 +30,10 @@ class TestFireConfiguration(TestConfiguration, unittest.TestCase):
 
 class TestAgentConfiguration(TestConfiguration, unittest.TestCase):
     configuration = AgentConfiguration
+
+
+class TestRewardConfiguration(TestConfiguration, unittest.TestCase):
+    configuration = RewardConfiguration
 
 
 class TestStochasticConfiguration(TestConfiguration, unittest.TestCase):
