@@ -61,7 +61,7 @@ class TestSeeding(unittest.TestCase):
         self.env.seeds = torch.empty(3, dtype=torch.int64, device=self.device)
 
         match str(self.device):
-            case 'cuda':
+            case device if device.startswith('cuda'):
                 state_size = 16
             case 'cpu':
                 state_size = 5056
