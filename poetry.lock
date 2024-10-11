@@ -1221,7 +1221,7 @@ name = "hyperparameter-tuner"
 version = "0.1.0"
 description = ""
 optional = false
-python-versions = "^3.12"
+python-versions = "^3.9"
 files = []
 develop = false
 
@@ -1236,7 +1236,7 @@ pandas = "^2.2.3"
 type = "git"
 url = "https://github.com/C4theBomb/hyperparameter-tuner"
 reference = "HEAD"
-resolved_reference = "2bb95ce6baecf9087eaa8caed84a3cbd8c5c3851"
+resolved_reference = "4c4d44546c35d814484b66af481405b8ef4a26ba"
 
 [[package]]
 name = "idna"
