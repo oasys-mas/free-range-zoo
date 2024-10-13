@@ -47,6 +47,7 @@ def non_stochastic():
     )
 
     reward_config = RewardConfiguration(
+        bad_action_penalty=-100.0,
         patch_reward=0.0,
         network_state_rewards=torch.tensor([4.0, 0.0, -2.0, -4.0, -8.0], dtype=torch.float32),
     )
