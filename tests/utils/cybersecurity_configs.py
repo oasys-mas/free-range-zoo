@@ -8,6 +8,7 @@ from free_range_zoo.free_range_zoo.envs.cybersecurity.env.structures.configurati
     DefenderConfiguration,
     NetworkConfiguration,
     RewardConfiguration,
+    StochasticConfiguration,
 )
 
 
@@ -52,11 +53,14 @@ def non_stochastic():
         network_state_rewards=torch.tensor([4.0, 0.0, -2.0, -4.0, -8.0], dtype=torch.float32),
     )
 
+    stochastic_config = StochasticConfiguration(state=False)
+
     configuration = CybersecurityConfiguration(
         attacker_config=attacker_config,
         defender_config=defender_config,
         network_config=network_config,
         reward_config=reward_config,
+        stochastic_config=stochastic_config,
     )
 
     return configuration
