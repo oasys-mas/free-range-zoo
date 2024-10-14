@@ -26,7 +26,7 @@ optuna = "^4.0.0"
 termcolor = "^2.4.0"
 pygame = "^2.6.0"
 rich = "^13.9.1"
-hyperparameter_tuner = { git = "https://github.com/C4theBomb/hyperparameter-tuner" }
+slurm_tuner = { git = "https://github.com/C4theBomb/slurm-tuner" }
 
 [tool.poetry.group.models]
 optional = true

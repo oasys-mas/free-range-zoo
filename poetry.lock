@@ -1217,28 +1217,6 @@ socks = ["socksio (==1.*)"]
 zstd = ["zstandard (>=0.18.0)"]
 
 [[package]]
-name = "hyperparameter-tuner"
-version = "0.1.0"
-description = ""
-optional = false
-python-versions = "^3.9"
-files = []
-develop = false
-
-[package.dependencies]
-neptune = "^1.12.0"
-neptune-optuna = "^1.3.0"
-numpy = "^1.26.4"
-optuna = "^4.0.0"
-pandas = "^2.2.3"
-
-[package.source]
-type = "git"
-url = "https://github.com/C4theBomb/hyperparameter-tuner"
-reference = "HEAD"
-resolved_reference = "4c4d44546c35d814484b66af481405b8ef4a26ba"
-
-[[package]]
 name = "idna"
 version = "3.10"
 description = "Internationalized Domain Names in Applications (IDNA)"
@@ -4019,6 +3997,28 @@ files = [
 ]
 
 [[package]]
+name = "slurm-tuner"
+version = "0.1.0"
+description = ""
+optional = false
+python-versions = "^3.9"
+files = []
+develop = false
+
+[package.dependencies]
+neptune = "^1.12.0"
+neptune-optuna = "^1.3.0"
+numpy = "^1.26.4"
+optuna = "^4.0.0"
+pandas = "^2.2.3"
+
+[package.source]
+type = "git"
+url = "https://github.com/C4theBomb/slurm-tuner"
+reference = "HEAD"
+resolved_reference = "fa004278aad6b48fc91d6d1938bfe42b3c8a94e6"
+
+[[package]]
 name = "smmap"
 version = "5.0.1"
 description = "A pure Python implementation of a sliding window memory map manager"
@@ -4951,4 +4951,4 @@ propcache = ">=0.2.0"
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.12"
-content-hash = "992c7dda3e955b9ddc021dfdfb884cdc45f98ad264d2e036fdbec3212a8351aa"
+content-hash = "35409c6cf0d30305bd05edbcb9c9dcd98e5acf3b267fca2b7e3a693cfeefc631"
