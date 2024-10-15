@@ -12,6 +12,7 @@ from free_range_zoo.free_range_zoo.envs.wildfire.env.spaces.observations import 
 
 
 class TestCaching(ABC):
+
     def func(self, *args, **kwargs):
         raise NotImplementedError('Subclasses must implement this method')
 
@@ -44,6 +45,7 @@ class TestCaching(ABC):
 
 
 class TestBuildObservationSpace(TestCaching, unittest.TestCase):
+
     def func(self, *args, **kwargs):
         return build_observation_space(*args, **kwargs)
 
@@ -64,13 +66,16 @@ class TestBuildObservationSpace(TestCaching, unittest.TestCase):
     def test_observation_space_structure(self) -> None:
         result = self.func(*self.initial_args)
 
-        expected = [build_single_observation_space(
-            *self.initial_args[2:4], i, self.initial_args[1], *self.initial_args[4:6]) for i in range(11)]
+        expected = [
+            build_single_observation_space(*self.initial_args[2:4], i, self.initial_args[1], *self.initial_args[4:6])
+            for i in range(11)
+        ]
 
         self.assertEqual(result, expected, 'Observation spaces should match expected')
 
 
 class TestBuildSingleObservationSpace(TestCaching, unittest.TestCase):
+
     def func(self, *args, **kwargs):
         return build_single_observation_space(*args, **kwargs)
 
@@ -113,9 +118,14 @@ class TestBuildSingleObservationSpace(TestCaching, unittest.TestCase):
     def test_no_power(self) -> None:
         result = self.func(*self.initial_args[:4], False, True)
         expected = Dict({
-            'self': build_single_agent_observation_space(self.initial_args[0]),
-            'others': Tuple([*[build_single_agent_observation_space((*self.initial_args[0][:2], *self.initial_args[0][3:])) for _ in range(2)]]),
-            'tasks': build_single_fire_observation_space(self.initial_args[1], self.initial_args[2])
+            'self':
+            build_single_agent_observation_space(self.initial_args[0]),
+            'others':
+            Tuple([
+                *[build_single_agent_observation_space((*self.initial_args[0][:2], *self.initial_args[0][3:])) for _ in range(2)]
+            ]),
+            'tasks':
+            build_single_fire_observation_space(self.initial_args[1], self.initial_args[2])
         })
         self.assertEqual(result, expected, 'Observation space should match expected')
 
@@ -137,31 +147,35 @@ class TestBuildSingleObservationSpace(TestCaching, unittest.TestCase):
             result = self.func(*self.initial_args[:3], num_agents, *self.initial_args[4:])
 
             expected = Dict({
-                'self': build_single_agent_observation_space(self.initial_args[0]),
-                'others': Tuple([*[build_single_agent_observation_space(self.initial_args[0]) for _ in range(num_agents - 1)]]),
-                'tasks': build_single_fire_observation_space(self.initial_args[1], self.initial_args[2])
+                'self':
+                build_single_agent_observation_space(self.initial_args[0]),
+                'others':
+                Tuple([*[build_single_agent_observation_space(self.initial_args[0]) for _ in range(num_agents - 1)]]),
+                'tasks':
+                build_single_fire_observation_space(self.initial_args[1], self.initial_args[2])
             })
 
             self.assertEqual(result, expected, 'Observation space should match expected')
 
 
 class TestBuildSingleAgentObservationSpace(TestCaching, unittest.TestCase):
+
     def func(self, *args, **kwargs):
         return build_single_agent_observation_space(*args, **kwargs)
 
-    @ property
+    @property
     def cache_info(self):
         return build_single_agent_observation_space.cache_info
 
-    @ property
+    @property
     def cache_clear(self):
         return build_single_agent_observation_space.cache_clear
 
     def setUp(self) -> None:
         self.cache_clear()
 
-        self.initial_args = ((10, 10, 5, 5),)
-        self.different_args = ((10, 10, 5, 4),)
+        self.initial_args = ((10, 10, 5, 5), )
+        self.different_args = ((10, 10, 5, 4), )
 
     def test_observation_space_structure(self) -> None:
         result = self.func(*self.initial_args)
@@ -172,14 +186,15 @@ class TestBuildSingleAgentObservationSpace(TestCaching, unittest.TestCase):
 
 
 class TestBuildSingleFireObservationSpace(TestCaching, unittest.TestCase):
+
     def func(self, *args, **kwargs):
         return build_single_fire_observation_space(*args, **kwargs)
 
-    @ property
+    @property
     def cache_info(self):
         return build_single_fire_observation_space.cache_info
 
-    @ property
+    @property
     def cache_clear(self):
         return build_single_fire_observation_space.cache_clear
 
@@ -195,8 +210,8 @@ class TestBuildSingleFireObservationSpace(TestCaching, unittest.TestCase):
         for num_tasks in task_spaces:
             result = self.func(self.high, num_tasks)
 
-            expected = Tuple([Box(low=np.array([0] * len(self.high)), high=np.array(self.high), dtype=np.float32)
-                              for _ in range(num_tasks)])
+            expected = Tuple(
+                [Box(low=np.array([0] * len(self.high)), high=np.array(self.high), dtype=np.float32) for _ in range(num_tasks)])
 
             self.assertEqual(result, expected, 'Observation space should match expected')
 
