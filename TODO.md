@@ -10,22 +10,22 @@
 - [ ] incidence graph wrapper tests
 
 ### planning
-- [/] level-0 implementation for I-POMCPPF [@C4 Patino](https://github.com/C4theBomb)
+- [x] level-0 implementation for I-POMCPPF [@C4 Patino](https://github.com/C4theBomb)
 - [ ] level-1 implementation for I-POMCPPF [@C4 Patino](https://github.com/C4theBomb)
 - [ ] I-POMCPPF tests
 
 ## Environment Roadmaps
 ### wildfire
 - [ ] general documentation [@daniel-redder](https://github.com/daniel-redder)
-- [/] main environment testing [@C4 Patino](https://github.com/C4theBomb)
+- [x] main environment testing [@C4 Patino](https://github.com/C4theBomb)
 
 ### rideshare
-- [ ] environment migration [@daniel-redder](https://github.com/daniel-redder)
+- [/] environment migration [@daniel-redder](https://github.com/daniel-redder)
 - [ ] environment optimization
 - [ ] environment testing
 
 ### cybersecurity
-- [/] tensor-based implementation for full environment [@C4 Patino](https://github.com/C4theBomb)
-- [ ] environment testing [@C4 Patino](https://github.com/C4theBomb)
+- [x] tensor-based implementation for full environment [@C4 Patino](https://github.com/C4theBomb)
+- [x] environment testing [@C4 Patino](https://github.com/C4theBomb)
 
 
