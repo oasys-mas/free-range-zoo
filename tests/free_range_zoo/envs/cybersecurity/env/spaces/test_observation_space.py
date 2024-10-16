@@ -70,8 +70,14 @@ class TestBuildObservationSpace(TestCaching, unittest.TestCase):
         result = self.func(*self.initial_args)
 
         expected = [
-            build_single_attacker_observation_space(self.initial_args[5], self.initial_args[7], self.initial_args[1],
-                                                    self.initial_args[3], self.initial_args[8], self.initial_args[9])
+            build_single_attacker_observation_space(
+                self.initial_args[5],
+                self.initial_args[7],
+                self.initial_args[1],
+                self.initial_args[3],
+                self.initial_args[8],
+                self.initial_args[9],
+            )
         ] * 10
 
         self.assertEqual(result, expected, 'Observation space should match expected')
@@ -79,9 +85,15 @@ class TestBuildObservationSpace(TestCaching, unittest.TestCase):
     def test_defender_observation_space_structure(self) -> None:
         result = self.func(*self.different_args)
         expected = [
-            build_single_defender_observation_space(self.different_args[6], self.different_args[7], self.different_args[1],
-                                                    self.different_args[4], self.different_args[8], self.different_args[9],
-                                                    self.different_args[10])
+            build_single_defender_observation_space(
+                self.different_args[6],
+                self.different_args[7],
+                self.different_args[1],
+                self.different_args[4],
+                self.different_args[8],
+                self.different_args[9],
+                self.different_args[10],
+            )
         ] * 10
 
         self.assertEqual(result, expected, 'Observation space should match expected')
