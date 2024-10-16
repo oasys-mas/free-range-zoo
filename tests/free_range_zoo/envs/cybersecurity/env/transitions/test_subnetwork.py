@@ -10,7 +10,7 @@ class TestTransitionForward(unittest.TestCase):
 
     def setUp(self) -> None:
         self.state = CybersecurityState(
-            state=torch.arange(0, 3, dtype=torch.int32).unsqueeze(0).repeat(4, 1),
+            network_state=torch.arange(0, 3, dtype=torch.int32).unsqueeze(0).repeat(4, 1),
             location=torch.arange(0, 4, dtype=torch.int32).unsqueeze(0).repeat(4, 1),
             presence=torch.zeros((4, 8), dtype=torch.bool),
         )
@@ -38,10 +38,10 @@ class TestTransitionForward(unittest.TestCase):
         expected = torch.tensor([[1, 0, 3]]).repeat(4, 1)
 
         self.assertTrue(
-            torch.equal(result.state, expected), f"""
+            torch.equal(result.network_state, expected), f"""
                 \rState should change to expected.
                     \rExpected:\n{expected}
-                    \rActual:\n{result.state}""")
+                    \rActual:\n{result.network_state}""")
 
         self.assertTrue(
             torch.equal(result.location, self.state.location), f"""
@@ -69,10 +69,10 @@ class TestTransitionForward(unittest.TestCase):
         expected = torch.tensor([[0, 1, 2]]).repeat(4, 1)
 
         self.assertTrue(
-            torch.equal(result.state, expected), f"""
+            torch.equal(result.network_state, expected), f"""
                 \rState should change to expected.
                     \rExpected:\n{expected}
-                    \rActual:\n{result.state}""")
+                    \rActual:\n{result.network_state}""")
 
         self.assertTrue(
             torch.equal(result.location, self.state.location), f"""
@@ -87,7 +87,7 @@ class TestTransitionForward(unittest.TestCase):
                     \rActual:\n{result.presence}""")
 
     def test_clamping(self) -> None:
-        self.state.state.fill_(0)
+        self.state.network_state.fill_(0)
 
         result = self.transition.forward(
             self.state.clone(),
@@ -97,12 +97,12 @@ class TestTransitionForward(unittest.TestCase):
         )
 
         self.assertTrue(
-            torch.equal(result.state, self.state.state), f"""
+            torch.equal(result.network_state, self.state.network_state), f"""
                 \rState should be clamped to zero.
-                    \rExpected:\n{self.state.state}
-                    \rActual:\nn{result.state}""")
+                    \rExpected:\n{self.state.network_state}
+                    \rActual:\nn{result.network_state}""")
 
-        self.state.state.fill_(4)
+        self.state.network_state.fill_(4)
 
         result = self.transition.forward(
             self.state.clone(),
@@ -112,7 +112,7 @@ class TestTransitionForward(unittest.TestCase):
         )
 
         self.assertTrue(
-            torch.equal(result.state, self.state.state), f"""
+            torch.equal(result.network_state, self.state.network_state), f"""
                 \rState should be clamped to maximum.
-                    \rExpected:\n{self.state.state}
-                    \rActual:\n{result.state}""")
+                    \rExpected:\n{self.state.network_state}
+                    \rActual:\n{result.network_state}""")

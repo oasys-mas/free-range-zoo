@@ -10,7 +10,7 @@ class TestPresenceTransitionForward(unittest.TestCase):
 
     def setUp(self):
         self.state = CybersecurityState(
-            state=torch.arange(0, 12, dtype=torch.int32).reshape((4, 3)),
+            network_state=torch.arange(0, 12, dtype=torch.int32).reshape((4, 3)),
             location=torch.arange(0, 4, dtype=torch.int32).unsqueeze(0).repeat(4, 1),
             presence=torch.zeros((4, 8), dtype=torch.bool),
         )
@@ -51,10 +51,10 @@ class TestPresenceTransitionForward(unittest.TestCase):
                     \rActual: {result.location}""")
 
         self.assertTrue(
-            torch.equal(result.state, self.state.state), f"""
+            torch.equal(result.network_state, self.state.network_state), f"""
                 \rState should not change with presence transition.
-                    \rExpected: {self.state.state}
-                    \rActual: {result.state}""")
+                    \rExpected: {self.state.network_state}
+                    \rActual: {result.network_state}""")
 
     def test_persist_probabilty_zero(self) -> None:
         self.state.presence.fill_(True)
@@ -74,10 +74,10 @@ class TestPresenceTransitionForward(unittest.TestCase):
                 \rActual: {result.location}""")
 
         self.assertTrue(
-            torch.equal(result.state, self.state.state), f"""
+            torch.equal(result.network_state, self.state.network_state), f"""
                 \rState should not change with presence transition
-                    \rExpected: {self.state.state}
-                    \rActual: {result.state}""")
+                    \rExpected: {self.state.network_state}
+                    \rActual: {result.network_state}""")
 
     def test_return_probability_zero(self) -> None:
         result = self.transition.forward(self.state.clone(), self.randomness_source)
@@ -95,7 +95,7 @@ class TestPresenceTransitionForward(unittest.TestCase):
                 \rActual: {result.location}""")
 
         self.assertTrue(
-            torch.equal(result.state, self.state.state), f"""
-            \rState should not change with presence transition
-                \rExpected: {self.state.state}
-                \rActual: {result.state}""")
+            torch.equal(result.network_state, self.state.network_state), f"""
+            \rNetwork should not change with presence transition
+                \rExpected: {self.state.network_state}
+                \rActual: {result.network_state}""")
