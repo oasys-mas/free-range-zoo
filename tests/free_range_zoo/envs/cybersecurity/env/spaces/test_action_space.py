@@ -49,10 +49,6 @@ class TestBuildActionSpace(unittest.TestCase):
     def func(self, *args, **kwargs):
         return build_action_space(*args, **kwargs)
 
-    def setUp(self) -> None:
-        self.initial_args = ('attacker', True, torch.arange(1, 11), torch.arange(1, 11))
-        self.different_args = ('defender', True, torch.arange(1, 11), torch.arange(1, 11))
-
     def test_build_attacker_action_spaces(self) -> None:
         num_tasks_list = torch.arange(1, 11)
 
