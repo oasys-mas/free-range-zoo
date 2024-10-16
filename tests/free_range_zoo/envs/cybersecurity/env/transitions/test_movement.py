@@ -10,7 +10,7 @@ class TestMovementTransitionForward(unittest.TestCase):
 
     def setUp(self):
         self.state = CybersecurityState(
-            state=torch.arange(0, 12, dtype=torch.int32).reshape((4, 3)),
+            network_state=torch.arange(0, 12, dtype=torch.int32).reshape((4, 3)),
             location=torch.arange(0, 4, dtype=torch.int32).unsqueeze(0).repeat(4, 1),
             presence=torch.zeros((4, 8), dtype=torch.bool),
         )
@@ -23,7 +23,7 @@ class TestMovementTransitionForward(unittest.TestCase):
 
         state = self.transition.forward(self.state, movement_targets, movement_mask)
 
-        self.assertTrue(torch.equal(state.state, self.state.state))
+        self.assertTrue(torch.equal(state.network_state, self.state.network_state))
         self.assertTrue(torch.equal(state.location, self.state.location))
         self.assertTrue(torch.equal(state.presence, self.state.presence))
 
@@ -34,10 +34,10 @@ class TestMovementTransitionForward(unittest.TestCase):
         state = self.transition.forward(self.state.clone(), movement_targets, movement_mask)
 
         self.assertTrue(
-            torch.equal(state.state, self.state.state), f"""
+            torch.equal(state.network_state, self.state.network_state), f"""
             \rState should not change after movement.
-                \rExpected: {self.state.state}
-                \rActual: {state.state}""")
+                \rExpected: {self.state.network_state}
+                \rActual: {state.network_state}""")
 
         self.assertTrue(
             torch.equal(state.presence, self.state.presence), f"""
