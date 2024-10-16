@@ -138,7 +138,7 @@ class TestBuildSingleDefenderActionSpace(TestCaching, unittest.TestCase):
     def test_action_space_where_agent_is_not_present_only_has_noop(self) -> None:
         result = build_single_defender_action_space(0, -1, True)
 
-        expected = OneOf([Discrete(1, start=-3)])
+        expected = OneOf([Discrete(1, start=-1)])
 
         self.assertEqual(result, expected, 'Action space should match expected')
 
@@ -147,8 +147,8 @@ class TestBuildSingleDefenderActionSpace(TestCaching, unittest.TestCase):
 
         expected = OneOf([
             Discrete(1),  # move to connected node
-            Discrete(1, start=-2),  # monitor
-            Discrete(1, start=-3),  # noop
+            Discrete(1, start=-1),  # noop
+            Discrete(1, start=-3),  # monitor
         ])
 
         self.assertEqual(result, expected, 'Action space should match expected')
@@ -158,10 +158,12 @@ class TestBuildSingleDefenderActionSpace(TestCaching, unittest.TestCase):
 
         expected = OneOf([
             Discrete(1),  # move to connected node
-            Discrete(1, start=-1),  # patch
-            Discrete(1, start=-2),  # monitor
-            Discrete(1, start=-3),  # noop
+            Discrete(1, start=-1),  # noop
+            Discrete(1, start=-2),  # patch
+            Discrete(1, start=-3),  # monitor
         ])
+
+        print(result)
 
         self.assertEqual(result, expected, 'Action space should match expected')
 
@@ -170,9 +172,9 @@ class TestBuildSingleDefenderActionSpace(TestCaching, unittest.TestCase):
 
         expected = OneOf([
             Discrete(1),  # move to connected node
-            Discrete(1, start=-1),  # patch
-            Discrete(1, start=-2),  # monitor
-            Discrete(1, start=-3),  # noop
+            Discrete(1, start=-1),  # noop
+            Discrete(1, start=-2),  # patch
+            Discrete(1, start=-3),  # monitor
         ])
 
         self.assertEqual(result, expected, 'Action space should match expected')
