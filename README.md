@@ -16,6 +16,8 @@ the from the environment. Allowing for testing with each form in complete isolat
 - **agent openness**: Environments where agents can dynamically enter and leave, enabling ad-hoc teamwork and multi-agent scenarios with evolving participants.
     - Environments:
         - `wildfire`: Agents can run out of suppressant and leave the environment, removing their contributions to existing fires. Agents must reason about their collaborators leaving, or new collaborators entering.
+        - `cybersecurity`: Agents can lose access to the network, disallowing them from taking actions within the environment for a period of time. Agents must reason about how many collaborators are within the environment
+                           with them, and whether they are able to sufficiently fight opposing agents.
 - **task openness**: Tasks can be introduced or removed from the environment, allowing for flexbile goal setting and adaptable planning models
     - Environments:
         - `wildfire`: Fires can spread beyond their original starting point, requiring agents to reason about new tasks possibly entering the environment as well as a changing action space: Fires can spread beyond 
