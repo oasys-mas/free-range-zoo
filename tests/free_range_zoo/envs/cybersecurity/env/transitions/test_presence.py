@@ -56,7 +56,7 @@ class TestPresenceTransitionForward(unittest.TestCase):
                     \rExpected: {self.state.state}
                     \rActual: {result.state}""")
 
-    def test_presist_probabilty_zero(self) -> None:
+    def test_persist_probabilty_zero(self) -> None:
         self.state.presence.fill_(True)
 
         result = self.transition.forward(self.state.clone(), self.randomness_source)
