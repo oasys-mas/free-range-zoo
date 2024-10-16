@@ -35,7 +35,7 @@ class TestMovementTransitionForward(unittest.TestCase):
 
         self.assertTrue(
             torch.equal(state.network_state, self.state.network_state), f"""
-            \rState should not change after movement.
+            \rNetwork state should not change after movement.
                 \rExpected: {self.state.network_state}
                 \rActual: {state.network_state}""")
 

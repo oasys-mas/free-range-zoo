@@ -39,7 +39,7 @@ class TestTransitionForward(unittest.TestCase):
 
         self.assertTrue(
             torch.equal(result.network_state, expected), f"""
-                \rState should change to expected.
+                \rNetwork state should change to expected.
                     \rExpected:\n{expected}
                     \rActual:\n{result.network_state}""")
 
@@ -70,7 +70,7 @@ class TestTransitionForward(unittest.TestCase):
 
         self.assertTrue(
             torch.equal(result.network_state, expected), f"""
-                \rState should change to expected.
+                \rNetwork state should change to expected.
                     \rExpected:\n{expected}
                     \rActual:\n{result.network_state}""")
 
@@ -98,7 +98,7 @@ class TestTransitionForward(unittest.TestCase):
 
         self.assertTrue(
             torch.equal(result.network_state, self.state.network_state), f"""
-                \rState should be clamped to zero.
+                \rNetwork state should be clamped to zero.
                     \rExpected:\n{self.state.network_state}
                     \rActual:\nn{result.network_state}""")
 
@@ -113,6 +113,6 @@ class TestTransitionForward(unittest.TestCase):
 
         self.assertTrue(
             torch.equal(result.network_state, self.state.network_state), f"""
-                \rState should be clamped to maximum.
+                \rNetwork state should be clamped to maximum.
                     \rExpected:\n{self.state.network_state}
                     \rActual:\n{result.network_state}""")
