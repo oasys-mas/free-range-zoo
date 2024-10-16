@@ -5,7 +5,6 @@ sys.path.append('.')
 import unittest
 
 import torch
-import cProfile
 
 from free_range_zoo.free_range_zoo.envs import cybersecurity_v0
 from tests.utils.cybersecurity_configs import non_stochastic
@@ -14,7 +13,7 @@ from tests.utils.cybersecurity_configs import non_stochastic
 class TestCybersecurityEnvironmentRuntime(unittest.TestCase):
 
     def setUp(self) -> None:
-        self.device = torch.device('cuda')
+        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         self.configuration = non_stochastic()
         self.env = cybersecurity_v0.parallel_env(
             parallel_envs=100,

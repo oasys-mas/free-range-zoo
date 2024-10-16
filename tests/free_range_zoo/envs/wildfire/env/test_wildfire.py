@@ -13,7 +13,7 @@ from tests.utils.wildfire_configs import non_stochastic
 class TestWildfireEnvironmentRuntime(unittest.TestCase):
 
     def setUp(self) -> None:
-        self.device = torch.device('cuda')
+        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         self.configuration = non_stochastic()
         self.env = wildfire_v0.parallel_env(
             parallel_envs=100,
