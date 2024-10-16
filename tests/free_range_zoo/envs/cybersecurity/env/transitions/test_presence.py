@@ -52,7 +52,7 @@ class TestPresenceTransitionForward(unittest.TestCase):
 
         self.assertTrue(
             torch.equal(result.network_state, self.state.network_state), f"""
-                \rState should not change with presence transition.
+                \rNetwork state should not change with presence transition.
                     \rExpected: {self.state.network_state}
                     \rActual: {result.network_state}""")
 
@@ -75,7 +75,7 @@ class TestPresenceTransitionForward(unittest.TestCase):
 
         self.assertTrue(
             torch.equal(result.network_state, self.state.network_state), f"""
-                \rState should not change with presence transition
+                \rNetwork state should not change with presence transition
                     \rExpected: {self.state.network_state}
                     \rActual: {result.network_state}""")
 
@@ -96,6 +96,6 @@ class TestPresenceTransitionForward(unittest.TestCase):
 
         self.assertTrue(
             torch.equal(result.network_state, self.state.network_state), f"""
-            \rNetwork should not change with presence transition
+            \rNetwork state should not change with presence transition
                 \rExpected: {self.state.network_state}
                 \rActual: {result.network_state}""")
