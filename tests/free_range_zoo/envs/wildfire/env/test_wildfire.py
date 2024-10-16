@@ -34,7 +34,7 @@ class TestWildfireEnvironmentRuntime(unittest.TestCase):
                 actions = []
                 for action_space in self.env.action_space(agent):
                     actions.append(action_space.sample())
-                actions = torch.tensor(actions, device=self.device)
+                actions = torch.tensor(actions, device=self.device, dtype=torch.int32)
                 action[agent] = actions
 
             observation, reward, term, trunc, info = self.env.step(action)
