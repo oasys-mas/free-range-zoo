@@ -47,7 +47,7 @@ class TestCaching(ABC):
         self.assertEqual(self.cache_info().misses, 2, 'Cache should not have been missed')
 
 
-class TestBuildObservationSpace(TestCaching, unittest.TestCase):
+class TestBuildObservationSpace(unittest.TestCase):
 
     def func(self, *args, **kwargs):
         return build_observation_space(*args, **kwargs)

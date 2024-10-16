@@ -44,21 +44,12 @@ class TestCaching(ABC):
         self.assertEqual(self.cache_info().misses, 2, 'Cache should not have been missed')
 
 
-class TestBuildActionSpace(TestCaching, unittest.TestCase):
+class TestBuildActionSpace(unittest.TestCase):
 
     def func(self, *args, **kwargs):
         return build_action_space(*args, **kwargs)
 
-    @property
-    def cache_info(self):
-        return build_action_space.cache_info
-
-    @property
-    def cache_clear(self):
-        return build_action_space.cache_clear
-
     def setUp(self) -> None:
-        build_action_space.cache_clear()
         self.initial_args = ('attacker', True, torch.arange(1, 11), torch.arange(1, 11))
         self.different_args = ('defender', True, torch.arange(1, 11), torch.arange(1, 11))
 

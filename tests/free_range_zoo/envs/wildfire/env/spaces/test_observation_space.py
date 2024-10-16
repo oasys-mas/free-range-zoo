@@ -44,24 +44,13 @@ class TestCaching(ABC):
         self.assertEqual(self.cache_info().misses, 2, 'Cache should not have been missed')
 
 
-class TestBuildObservationSpace(TestCaching, unittest.TestCase):
+class TestBuildObservationSpace(unittest.TestCase):
 
     def func(self, *args, **kwargs):
         return build_observation_space(*args, **kwargs)
 
-    @property
-    def cache_info(self):
-        return build_observation_space.cache_info
-
-    @property
-    def cache_clear(self):
-        return build_observation_space.cache_clear
-
     def setUp(self) -> None:
-        self.cache_clear()
-
         self.initial_args = (torch.tensor([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]), 3, (10, 10, 5, 5), (10, 10, 3, 4), True, True)
-        self.different_args = (torch.tensor([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]), 3, (10, 10, 5, 5), (10, 10, 3, 4), True, True)
 
     def test_observation_space_structure(self) -> None:
         result = self.func(*self.initial_args)

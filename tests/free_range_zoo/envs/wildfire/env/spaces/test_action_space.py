@@ -8,6 +8,7 @@ from free_range_zoo.free_range_zoo.envs.wildfire.env.spaces.actions import build
 
 
 class TestCaching(ABC):
+
     def func(self, *args, **kwargs):
         raise NotImplementedError('Subclasses must implement this method')
 
@@ -39,22 +40,10 @@ class TestCaching(ABC):
         self.assertEqual(self.cache_info().misses, 2, 'Cache should not have been missed')
 
 
-class TestBuildActionSpace(TestCaching, unittest.TestCase):
+class TestBuildActionSpace(unittest.TestCase):
+
     def func(self, *args, **kwargs):
         return build_action_space(*args, **kwargs)
-
-    @property
-    def cache_info(self):
-        return build_action_space.cache_info
-
-    @property
-    def cache_clear(self):
-        return build_action_space.cache_clear
-
-    def setUp(self) -> None:
-        build_action_space.cache_clear()
-        self.initial_args = (torch.tensor([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]),)
-        self.different_args = (torch.tensor([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 11]),)
 
     def test_build_environment_action_spaces(self) -> None:
         num_tasks_list = torch.tensor([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
@@ -67,6 +56,7 @@ class TestBuildActionSpace(TestCaching, unittest.TestCase):
 
 
 class TestBuildSingleActionSpace(TestCaching, unittest.TestCase):
+
     def func(self, *args, **kwargs):
         return build_single_action_space(*args, **kwargs)
 
@@ -80,8 +70,8 @@ class TestBuildSingleActionSpace(TestCaching, unittest.TestCase):
 
     def setUp(self) -> None:
         build_single_action_space.cache_clear()
-        self.initial_args = (0,)
-        self.different_args = (1,)
+        self.initial_args = (0, )
+        self.different_args = (1, )
 
     def test_noop_element_included(self) -> None:
         result = build_single_action_space(0)
