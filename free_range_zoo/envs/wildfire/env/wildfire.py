@@ -242,6 +242,7 @@ class raw_env(BatchedAECEnv):
 
         # Initialize the rewards for all environments
         self.fire_rewards = self.reward_config.fire_rewards.unsqueeze(0).expand(self.parallel_envs, -1, -1)
+        self.num_burnouts = torch.zeros(self.parallel_envs, dtype=torch.int32, device=self.device)
 
         # Intialize the mapping of the tasks "in" the environment, used to map actions
         self.environment_task_indices = torch.nested.nested_tensor([torch.tensor([]) for _ in range(self.parallel_envs)],
@@ -274,6 +275,8 @@ class raw_env(BatchedAECEnv):
 
         # Reset the state
         self._state.restore_initial(batch_indices)
+
+        self.num_burnouts[batch_indices] = 0
 
         # Reset the observation updates
         self.update_observations()
@@ -413,6 +416,8 @@ class raw_env(BatchedAECEnv):
         fire_rewards[just_burned_out] = self.reward_config.burnout_penalty
         fire_rewards_per_batch = fire_rewards.sum(dim=(1, 2))
 
+        self.num_burnouts += just_burned_out.int().sum(dim=(1, 2))
+
         # Assign rewards
         for agent in self.agents:
             rewards[agent] += fire_rewards_per_batch
@@ -428,8 +433,10 @@ class raw_env(BatchedAECEnv):
             batch_is_dead = fires_are_out
 
         newly_terminated = torch.logical_xor(self.terminated, batch_is_dead)
+        termination_reward = self.reward_config.termination_reward / (self.num_burnouts + 1)
         for agent in self.agents:
-            rewards[agent][newly_terminated] += self.reward_config.termination_reward
+            rewards[agent][newly_terminated] += termination_reward[newly_terminated]
+
             terminations[agent] = batch_is_dead
 
         return rewards, terminations, infos
