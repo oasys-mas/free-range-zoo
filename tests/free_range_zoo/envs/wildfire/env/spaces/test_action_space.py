@@ -4,7 +4,7 @@ from abc import ABC
 from gymnasium.spaces import Discrete, OneOf
 import torch
 
-from free_range_zoo.free_range_zoo.envs.wildfire.env.spaces.actions import build_single_action_space, build_action_space
+from free_range_zoo.envs.wildfire.env.spaces.actions import build_single_action_space, build_action_space
 
 
 class TestCaching(ABC):

@@ -4,7 +4,7 @@ from abc import ABC
 from gymnasium.spaces import Discrete, OneOf
 import torch
 
-from free_range_zoo.free_range_zoo.envs.cybersecurity.env.spaces.actions import (
+from free_range_zoo.envs.cybersecurity.env.spaces.actions import (
     build_single_attacker_action_space,
     build_single_defender_action_space,
     build_action_space,

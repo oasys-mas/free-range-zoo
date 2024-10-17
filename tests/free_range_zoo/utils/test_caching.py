@@ -4,8 +4,8 @@ import unittest
 
 import torch
 
-from free_range_zoo.free_range_zoo.utils.caching import (convert_using_xxhash, convert_using_tuple, positional_encoding_hash,
-                                                         optimized_convert_hashable)
+from free_range_zoo.utils.caching import (convert_using_xxhash, convert_using_tuple, positional_encoding_hash,
+                                          optimized_convert_hashable)
 
 
 class TestHashableConversion(ABC):

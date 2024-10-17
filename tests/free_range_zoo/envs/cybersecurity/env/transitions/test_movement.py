@@ -2,8 +2,8 @@ import unittest
 
 import torch
 
-from free_range_zoo.free_range_zoo.envs.cybersecurity.env.transitions.movement import MovementTransition
-from free_range_zoo.free_range_zoo.envs.cybersecurity.env.structures.state import CybersecurityState
+from free_range_zoo.envs.cybersecurity.env.transitions.movement import MovementTransition
+from free_range_zoo.envs.cybersecurity.env.structures.state import CybersecurityState
 
 
 class TestMovementTransitionForward(unittest.TestCase):

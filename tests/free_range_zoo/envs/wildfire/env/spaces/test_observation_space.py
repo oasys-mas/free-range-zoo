@@ -5,10 +5,9 @@ import torch
 import numpy as np
 from gymnasium.spaces import Box, Tuple, Dict
 
-from free_range_zoo.free_range_zoo.envs.wildfire.env.spaces.observations import (build_observation_space,
-                                                                                 build_single_observation_space,
-                                                                                 build_single_agent_observation_space,
-                                                                                 build_single_fire_observation_space)
+from free_range_zoo.envs.wildfire.env.spaces.observations import (build_observation_space, build_single_observation_space,
+                                                                  build_single_agent_observation_space,
+                                                                  build_single_fire_observation_space)
 
 
 class TestCaching(ABC):
