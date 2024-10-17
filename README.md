@@ -75,7 +75,24 @@ free_range_zoo
 └── pyproject.toml                      # Package dependencies and package definition
 ```
 
-### Environment Structure
+### Interacting with environments
+Interaction with environments is a relatively simple process. All environments follow the policy of `observe -> act -> environment_step -> repeat` consistent with
+the standard agent environment cycle (AEC). The state of the environment will be updated once all actions have been submitted, and will return as below. An example
+of interacting with the AEC cycle is shown below.
+
+```python
+while not torch.all(env.finished):
+    agent_actions = {agent_name: torch.stack([agents[agent_name].act()]) for agent_name in env.agents} # Policy action determination here
+
+    observations, rewards, terminations, truncations, infos = env.step(agent_actions)
+    rewards = {agent_name: rewards[agent_name].item() for agent_name in env.agents}
+
+    for agent_name, agent in agents.items():
+        agent.observe(observations[agent_name][0]) # Policy observation processing here
+        cum_rewards[agent_name] += rewards[agent_name]
+
+    main_logger.info(f"Step {current_step}: {rewards}")
+```
 
 ## Roadmap
 
