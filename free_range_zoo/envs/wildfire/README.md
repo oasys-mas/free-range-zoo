@@ -4,7 +4,7 @@
 
 ----
 
-| Import             | `from free_range_zoo.free_range_zoo.envs import wildfire_v0` |
+| Import             | `from free_range_zoo.envs import wildfire_v0` |
 |--------------------|------------------------------------|
 | Actions            | Discrete \& Stochastic                            |
 | Observations | Discrete \& Fully Observed with private observations [^1]
