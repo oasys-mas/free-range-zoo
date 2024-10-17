@@ -16,7 +16,7 @@ Action Shape       | (envs, 2)              |
 | Action Values      |  [-1, $\|tasks\|$], [0] [^2]             
 |
 | Observation Shape | TensorDict: { <br> &emsp; **Agent's self obs**, <ins>'self'</ins>: 4 `<ypos, xpos, fire power, suppressant>`, <br> &emsp; **Other agent obs**, <ins>'others'</ins>: ($\|Ag\| \times 4$) `<ypos,xpos,fire power, suppressant>`, <br> &emsp; **Fire/Task obs**, <ins>'tasks'</ins>: ($\|X\| \times 4$) `<y, x, fire level, intensity>` <br> **batch_size: `num_envs`** <br>}|
-| Observation Values   | <ins>Self</ins> <br> **y**: [0,grid_height], <br> **x**: [0, grid_width], <br> *fire_reduction_power*: [0, initial_fire_power_reduction], <br> **suppressant**: [0,suppressant_states) <br> <br> <ins>Other Agents</ins> <br> **y**: [0,grid_height], <br> **x**: [0, grid_width], <br> *fire_reduction_power*: [0, initial_fire_power_reduction], <br> **suppressant**: [0,suppressant_states)  <br> <br> <ins>Task</ins> <br> **y**: [0,grid_height], <br> **x**: [0, grid_width], <br> **fire level**: [initial_fire_level] <br> **intensity**: [0,num_fire_states) |
+| Observation Values   | <ins>Self</ins> <br> **ypos**: [0,grid_height], <br> **xpos**: [0, grid_width], <br> *fire_reduction_power*: [0, initial_fire_power_reduction], <br> **suppressant**: [0,suppressant_states) <br> <br> <ins>Other Agents</ins> <br> **ypos**: [0,grid_height], <br> **xpos**: [0, grid_width], <br> *fire_reduction_power*: [0, initial_fire_power_reduction], <br> **suppressant**: [0,suppressant_states)  <br> <br> <ins>Task</ins> <br> **ypos**: [0,grid_height], <br> **xpos**: [0, grid_width], <br> **fire level**: [initial_fire_level] <br> **intensity**: [0,num_fire_states) |
 
 
 """

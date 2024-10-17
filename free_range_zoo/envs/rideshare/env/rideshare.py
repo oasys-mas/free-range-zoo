@@ -1,23 +1,22 @@
 """
 # Rideshare
 
-Observations are always implemented with a **Tuple** space containing: a single `np.int` **Box** space for task-global observations, and multiple `np.int` **Box** spaces for task observations. **The exception** to this is if one of the observations is not a integer, in which case the observations spaces listed here are what is actually implemented. <ins>**This is one such environment**</ins>. We show the observation spaces not as **Box**es because it is easier to interprete that way. Please look at the `observation_space` function in each environment before using it. 
-
 ---
 
 | Import             | `from freerangezoo.otask import rideshare_v0` |
 |--------------------|------------------------------------|
-| Actions            | Discrete \& Perfect                            |
+| Actions            | Discrete and perfect                            |
+| Observations | Discrete and fully observed with private observations |
 | Parallel API       | Yes                                |
 | Manual Control     | No                                 |
-| Agent Names             | ['$`driver\_0`$', ..., '$`driver\_n`$']` |
-| #Agents             |    $`driver\_count`$                                  |
-| Action Shape       | (2)                 |
-| Action Values      | **Discrete**($`\|customers\|`$),**OneOf**( **Discrete**(1), $`\|customers\| \times`$ **Discrete**(1)  )                    |
-| Observation Shape | (4,  8 $\times$ **Discrete**($`max\_customers`$)) |
-| Observation Values   | <ins>Global Observation</ins> <br> *Agent Index*: **Discrete**($`driver\_count`$), <br> *Location*: **Discrete**($`grid\_x`$ * $`grid\_y`$), <br> *accepted_customers*: **Discrete**($\|customers\|$), <br> *passengers*: **Discrete**($\|customers\|$), <br> <br> <ins>Task Specific Observation</ins> <br>*rel_distance*: **Box**(low=0.0, high= $`grid\_max\_distance`$), <br> rel_direction: **Discrete**(4?**TODO** check direction options), <br> *agent_accepting*: **Discrete**($`driver\_count`$+1, start=-1), <br> *agent_riding_with*: **Discrete**($`driver\_count`$+1, start=-1), <br> <br> *start*: **Discrete**($`grid\_x`$ * $`grid\_y`$), <br> *destination*: **Discrete**($`grid\_x`$ * $`grid\_y`$), <br> *action_type*: **Discrete**(3), <br> *entry_time*: **Discrete**($`max\_timesteps`$)  |
-|
- 
+| Agent Names             | [$driver$_0, ..., $driver$_n] |
+| #Agents             |    $n$                                  |
+| Action Shape       | (envs, 2)                 |
+| Action Values      | [-1, $\|tasks\|$], [-1,2]\*                    |
+| Observation Shape | TensorDict: { <br> &emsp; **Agent's self obs**, <ins>'self'</ins>: 5 `<agent index, ypos, xpos, #accepted passengers, #riding passengers>`, <br> &emsp; **Other agent obs**, <ins>'others'</ins>: ($\|Ag\| \times 5$) `<agent index, ypos, xpos, #accepted passengers, #riding passengers>`, <br> &emsp; **Fire/Task obs**, <ins>'tasks'</ins>: ($\|X\| \times 5$) `<task index, ystart, xstart, yend, xend, acceptedBy, ridingWith, fare, time entered>` <br> **batch_size: `num_envs`** <br>}|
+| Observation Values   | <ins>self</ins> <br> **agent index**: [0,n), <br> **ypos**: [0,grid_height], <br> **xpos**: [0, grid_width], <br> **number accepted passengers**: [0, $\infty$), <br> **number riding passengers**: [0,$\infty$) <br> <br> <ins>others</ins> <br> **agent index**: [0,$n$), <br> **ypos**: [0,grid_height], <br> **xpos**: [0, grid_width], <br> **number accepted passengers**: [0, $\infty$), <br> **number riding passengers**: [0,$\infty$)  <br> <br> <ins>tasks</ins> <br> **task index**: [0, $\infty$), <br> **ystart**: [0,grid_height], <br> **xstart**: [0, grid_width], <br> **yend**: [0, grid_height], <br> **xend**: [0,grid_width] <br> **accepted by**: [0,$n$) <br> **riding with**: [0,$n$), <br> **fare**: (0, $\infty$), <br> **time entered**: [0,max steps] |
+
+
 """
 
 from typing import Tuple, Dict, Any, Union, List, Optional, Tuple
