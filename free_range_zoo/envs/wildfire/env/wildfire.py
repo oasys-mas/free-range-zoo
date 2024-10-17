@@ -427,7 +427,9 @@ class raw_env(BatchedAECEnv):
             # If all fires are out then the episode is over
             batch_is_dead = fires_are_out
 
+        newly_terminated = torch.logical_xor(self.terminated, batch_is_dead)
         for agent in self.agents:
+            rewards[agent][newly_terminated] += self.reward_config.termination_reward
             terminations[agent] = batch_is_dead
 
         return rewards, terminations, infos
