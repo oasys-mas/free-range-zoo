@@ -81,6 +81,11 @@ the standard agent environment cycle (AEC). The state of the environment will be
 of interacting with the AEC cycle is shown below.
 
 ```python
+env = <environment>.parallel_env(<environment arguments>)
+observations, infos = env.reset()
+
+# Initialize agents and give initial observations
+
 while not torch.all(env.finished):
     agent_actions = {agent_name: torch.stack([agents[agent_name].act()]) for agent_name in env.agents} # Policy action determination here
 
