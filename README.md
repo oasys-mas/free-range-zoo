@@ -27,6 +27,78 @@ the from the environment. Allowing for testing with each form in complete isolat
     - Environments:
         - `wildfire`: Agents can damage their equipment over time, and have their capabilities slowly degrade. On the other hand, agents might also recieve different equipment upon leaving the environment to resupply.
 
+## Documentation
+
+A description of repository and domain structures are given below. For more comprehensive documentation visit our [documentation]() page.
+
+### Domain structure
+
+The structure of each domain definition is described below and is mostly consistent across domains:
+
+```python
+envs
+├── <environment>               #   <Environment implementation>
+│   ├── configs                 #       Benchmark configurations
+│   └── env                     #       Environment definitions
+│       ├── spaces              #           Action / observation spaces
+│       ├── structures          #           Configuration settings and state
+│       ├── transitions         #           Environment transition functions
+│       ├── utils               #           Misc. calculation / generation utilities
+│       └── <environment>.py    #       Main environment definition
+└── <environment>_vX.py         # Environment import file
+```
+
+### Repository Structure
+
+The structure of the repository described below:
+
+```python
+free_range_zoo
+├── experiments                         # Experimental code
+├── free_range_zoo
+│   ├── envs                            # Environment implementations
+│   │   ├── cybersecurity               #   Cybersecurity
+│   │   ├── rideshare                   #   Rideshare
+│   │   └── wildfire                    #   Wildfire
+│   ├── utils                           # Converters / environment abstract classes
+│   └── wrappers                        # Model wrappers and utilities
+├── models                              # Model code (planning / MOHITO / ddqn)
+├── notebooks                           # Environment runtime notebooks (primarily for development)
+├── tests                               # Tests
+│   ├── free_range_zoo
+│   │   ├── envs                        #   Tests for all environment utilities
+│   │   └── utils                       #   Tests for all package utilities
+│   ├── profiles                        # Environment performance profiles
+│   └── utils                           # Testing utilities
+├── README.md
+├── poetry.lock
+└── pyproject.toml                      # Package dependencies and package definition
+```
+
+### Interacting with environments
+Interaction with environments is a relatively simple process. All environments follow the policy of `observe -> act -> environment_step -> repeat` consistent with
+the standard agent environment cycle (AEC). The state of the environment will be updated once all actions have been submitted, and will return as below. An example
+of interacting with the AEC cycle is shown below.
+
+```python
+env = <environment>.parallel_env(<environment arguments>)
+observations, infos = env.reset()
+
+# Initialize agents and give initial observations
+
+while not torch.all(env.finished):
+    agent_actions = {agent_name: torch.stack([agents[agent_name].act()]) for agent_name in env.agents} # Policy action determination here
+
+    observations, rewards, terminations, truncations, infos = env.step(agent_actions)
+    rewards = {agent_name: rewards[agent_name].item() for agent_name in env.agents}
+
+    for agent_name, agent in agents.items():
+        agent.observe(observations[agent_name][0]) # Policy observation processing here
+        cum_rewards[agent_name] += rewards[agent_name]
+
+    main_logger.info(f"Step {current_step}: {rewards}")
+```
+
 ## Roadmap
 
 [TODO.md](TODO.md)
@@ -59,9 +131,51 @@ This project has been developed and utilized in collaboration by the following o
 - University of Nebraska - Lincoln -  Lincoln, NE
 - Oberlin College - Oberlin, OH
 
-## Citations
+## Repository Structure
 
-```
-Terry, J., Black, B., Grammel, N., Jayakumar, M., Hari, A., Sullivan, R., Santos, L. S., Dieffendahl, C., Horsch, C., Perez-Vicente, R., & others (2021). Pettingzoo: Gym for multi-agent reinforcement learning. Advances in Neural Information Processing Systems, 34, 15032–15043.
-```
-
+free_range_zoo
+├── experiments                         # Experimental code
+├── free_range_zoo
+│   ├── envs                            # Environment implementations
+│   │   ├── cybersecurity               #   Cybersecurity
+│   │   │   ├── configs                 #       Benchmark configurations
+│   │   │   └── env                     #       Environment definitions
+│   │   │       ├── spaces              #           Action / observation spaces
+│   │   │       ├── structures          #           Configuration settings and state
+│   │   │       ├── transitions         #           Environment transition functions
+│   │   │       ├── utils               #           Misc. calculation / generation utilities
+│   │   │       └── cybersecurity.py    #       Main environment definition
+│   │   ├── rideshare                   #   Rideshare
+│   │   │   ├── env                     #       Environment definitions
+│   │   │   │   ├── assets              #           Assets
+│   │   │   │   ├── structures          #           Configuration settings and state
+│   │   │   │   ├── utils               #           Misc. calculation utilities
+│   │   │   │   └── rideshare.py        #       Main environment definition
+│   │   │   └── README.md
+│   │   ├── wildfire                    #   Wildfire
+│   │   │   ├── configs                 #       Benchmark configurations
+│   │   │   ├── env                     #       Environment definitions
+│   │   │   │   ├── spaces              #           Action / observation spaces
+│   │   │   │   ├── structures          #           Configuration settings and state
+│   │   │   │   ├── transitions         #           Environment transition functions
+│   │   │   │   ├── utils               #           Misc. calculation / generation utilities
+│   │   │   │   └── wildfire.py         #       Main environment definition
+│   │   │   └── README.md
+│   │   ├── cybersecurity_v0.py         # Cybersecurity import file
+│   │   ├── rideshare_v0.py             # Rideshare import file
+│   │   └── wildfire_v0.py              # Wildfire import fire
+│   ├── utils
+│   └── wrappers
+├── models                              # Model code (planning / MOHITO / ddqn)
+├── notebooks                           # Environment runtime notebooks (primarily for development)
+├── tests                               # Tests
+│   ├── free_range_zoo
+│   │   ├── envs                        #   Tests for all environment utilities
+│   │   └── utils                       #   Tests for all package utilities
+│   ├── profiles                        # Environment performance profiles
+│   ├── utils                           # Testing Utilities
+│   └── test_mem_restrict.py
+├── README.md
+├── pyproject.toml
+├── poetry.lock
+└── pyproject.md
