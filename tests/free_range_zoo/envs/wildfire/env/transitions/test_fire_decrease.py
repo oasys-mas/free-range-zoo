@@ -3,8 +3,8 @@ from copy import deepcopy
 
 import torch
 
-from free_range_zoo.free_range_zoo.envs.wildfire.env.structures.state import WildfireState
-from free_range_zoo.free_range_zoo.envs.wildfire.env.transitions.fire_decrease import FireDecreaseTransition
+from free_range_zoo.envs.wildfire.env.structures.state import WildfireState
+from free_range_zoo.envs.wildfire.env.transitions.fire_decrease import FireDecreaseTransition
 
 
 class TestTransitionForward(unittest.TestCase):
@@ -17,33 +17,52 @@ class TestTransitionForward(unittest.TestCase):
 
         self.device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
 
-        self.state = WildfireState(fires=torch.ones((self.parallel_envs, self.max_y, self.max_x),
-                                                    dtype=torch.int32,
-                                                    device=self.device),
-                                   intensity=torch.ones((self.parallel_envs, self.max_y, self.max_x),
-                                                        dtype=torch.int32,
-                                                        device=self.device),
-                                   fuel=torch.zeros((self.parallel_envs, self.max_y, self.max_x),
-                                                    dtype=torch.int32,
-                                                    device=self.device),
-                                   agents=torch.randint(0,
-                                                        self.max_y, (self.num_agents, 2),
-                                                        dtype=torch.int32,
-                                                        device=self.device),
-                                   capacity=torch.ones((self.parallel_envs, self.num_agents),
-                                                       dtype=torch.float32,
-                                                       device=self.device),
-                                   suppressants=torch.ones((self.parallel_envs, self.num_agents),
-                                                           dtype=torch.float32,
-                                                           device=self.device),
-                                   equipment=torch.ones((self.parallel_envs, self.num_agents),
-                                                        dtype=torch.int32,
-                                                        device=self.device))
+        self.state = WildfireState(
+            fires=torch.ones(
+                (self.parallel_envs, self.max_y, self.max_x),
+                dtype=torch.int32,
+                device=self.device,
+            ),
+            intensity=torch.ones(
+                (self.parallel_envs, self.max_y, self.max_x),
+                dtype=torch.int32,
+                device=self.device,
+            ),
+            fuel=torch.zeros(
+                (self.parallel_envs, self.max_y, self.max_x),
+                dtype=torch.int32,
+                device=self.device,
+            ),
+            agents=torch.randint(
+                0,
+                self.max_y,
+                (self.num_agents, 2),
+                dtype=torch.int32,
+                device=self.device,
+            ),
+            capacity=torch.ones(
+                (self.parallel_envs, self.num_agents),
+                dtype=torch.float32,
+                device=self.device,
+            ),
+            suppressants=torch.ones(
+                (self.parallel_envs, self.num_agents),
+                dtype=torch.float32,
+                device=self.device,
+            ),
+            equipment=torch.ones(
+                (self.parallel_envs, self.num_agents),
+                dtype=torch.int32,
+                device=self.device,
+            ),
+        )
 
-        self.fire_decrease_transition = FireDecreaseTransition(fire_shape=(self.parallel_envs, self.max_y, self.max_x),
-                                                               stochastic_decrease=False,
-                                                               decrease_probability=0.5,
-                                                               extra_power_decrease_bonus=0.1).to(self.device)
+        self.fire_decrease_transition = FireDecreaseTransition(
+            fire_shape=(self.parallel_envs, self.max_y, self.max_x),
+            stochastic_decrease=False,
+            decrease_probability=0.5,
+            extra_power_decrease_bonus=0.1,
+        ).to(self.device)
 
         self.randomness_source = torch.tensor(
             [[0.1, 0.6, 0.1, 0.6], [0.1, 0.6, 0.3, 0.8], [0.3, 0.8, 0.2, 0.7], [0.3, 0.8, 0.2, 0.7]],

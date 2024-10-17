@@ -3,7 +3,7 @@ from unittest.mock import MagicMock, Mock, PropertyMock, patch
 
 import torch
 
-from free_range_zoo.free_range_zoo.utils.env import BatchedAECEnv
+from free_range_zoo.utils.env import BatchedAECEnv
 
 
 class MockedBatchedAECEnv(BatchedAECEnv):

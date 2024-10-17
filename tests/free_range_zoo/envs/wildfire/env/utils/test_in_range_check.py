@@ -2,10 +2,11 @@ import unittest
 import torch
 from abc import ABC
 
-from free_range_zoo.free_range_zoo.envs.wildfire.env.utils.in_range_check import chebyshev, euclidean
+from free_range_zoo.envs.wildfire.env.utils.in_range_check import chebyshev, euclidean
 
 
 class TestDistanceFunction(ABC):
+
     def distance_function(self, agent_position, task_position, attack_range):
         raise NotImplementedError('Subclasses must implement this method')
 
@@ -45,6 +46,7 @@ class TestDistanceFunction(ABC):
 
 
 class TestChebyshev(TestDistanceFunction, unittest.TestCase):
+
     def distance_function(self, agent_position, task_position, attack_range):
         return chebyshev(agent_position, task_position, attack_range)
 
@@ -62,6 +64,7 @@ class TestChebyshev(TestDistanceFunction, unittest.TestCase):
 
 
 class TestEuclidean(TestDistanceFunction, unittest.TestCase):
+
     def distance_function(self, agent_position, task_position, attack_range):
         return euclidean(agent_position, task_position, attack_range)
 

@@ -2,7 +2,7 @@
 
 import torch
 
-from free_range_zoo.free_range_zoo.envs.cybersecurity.env.structures.configuration import (
+from free_range_zoo.envs.cybersecurity.env.structures.configuration import (
     CybersecurityConfiguration,
     AttackerConfiguration,
     DefenderConfiguration,

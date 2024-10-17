@@ -6,7 +6,7 @@ import unittest
 
 import torch
 
-from free_range_zoo.free_range_zoo.envs import wildfire_v0
+from free_range_zoo.envs import wildfire_v0
 from tests.utils.wildfire_configs import non_stochastic
 
 

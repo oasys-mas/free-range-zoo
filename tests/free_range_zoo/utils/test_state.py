@@ -1,9 +1,10 @@
 import unittest
 
-from free_range_zoo.free_range_zoo.utils.state import State
+from free_range_zoo.utils.state import State
 
 
 class TestState(unittest.TestCase):
+
     def test_state_includes_to(self) -> None:
         self.assertTrue(hasattr(State, 'to'), 'State does not include to method')
         self.assertTrue(callable(State.to), 'State to method is not callable')

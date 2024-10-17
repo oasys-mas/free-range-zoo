@@ -2,7 +2,7 @@ import unittest
 
 from abc import ABC
 
-from free_range_zoo.free_range_zoo.envs.wildfire.env.structures.configuration import (
+from free_range_zoo.envs.wildfire.env.structures.configuration import (
     AgentConfiguration,
     FireConfiguration,
     StochasticConfiguration,

@@ -1,6 +1,6 @@
 import unittest
 
-from free_range_zoo.free_range_zoo.envs.cybersecurity.env.structures.state import CybersecurityState
+from free_range_zoo.envs.cybersecurity.env.structures.state import CybersecurityState
 
 
 class TestCybersecurityState(unittest.TestCase):

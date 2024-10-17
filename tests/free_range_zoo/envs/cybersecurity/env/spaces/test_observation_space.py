@@ -5,7 +5,7 @@ import torch
 import numpy as np
 from gymnasium.spaces import Box, Tuple, Dict
 
-from free_range_zoo.free_range_zoo.envs.cybersecurity.env.spaces.observations import (
+from free_range_zoo.envs.cybersecurity.env.spaces.observations import (
     build_observation_space,
     build_single_agent_observation_space,
     build_single_defender_observation_space,

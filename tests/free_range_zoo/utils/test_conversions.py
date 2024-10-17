@@ -3,10 +3,11 @@ from unittest.mock import MagicMock, call
 
 import torch
 
-from free_range_zoo.free_range_zoo.utils.conversions import batched_aec_to_batched_parallel_wrapper
+from free_range_zoo.utils.conversions import batched_aec_to_batched_parallel_wrapper
 
 
 class TestReset(unittest.TestCase):
+
     def setUp(self) -> None:
         self.env = MagicMock()
         self.wrapped_env = batched_aec_to_batched_parallel_wrapper(self.env)
@@ -28,6 +29,7 @@ class TestReset(unittest.TestCase):
 
 
 class TestResetBatches(unittest.TestCase):
+
     def setUp(self) -> None:
         self.env = MagicMock()
         self.wrapped_env = batched_aec_to_batched_parallel_wrapper(self.env)
@@ -38,6 +40,7 @@ class TestResetBatches(unittest.TestCase):
 
 
 class TestStep(unittest.TestCase):
+
     def setUp(self) -> None:
         self.device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
         self.env = MagicMock()
@@ -62,26 +65,31 @@ class TestStep(unittest.TestCase):
 
         self.env.observe.assert_has_calls([call(agent) for agent in self.env.agents])
 
-        self.assertTrue(all([agent in r for agent in self.env.agents]), f"""
+        self.assertTrue(
+            all([agent in r for agent in self.env.agents]), f"""
             \rExpected all agents to have rewards
                 \rExpected: {self.env.agents}
                 \rActual: {r}""")
 
-        self.assertEqual(te, self.env.terminations, f"""
+        self.assertEqual(
+            te, self.env.terminations, f"""
             \rTerminations do not match
                 \rExpected:\n{self.env.terminations}
                 \rActual:\n{te}""")
-        self.assertEqual(tr, self.env.truncations, f"""
+        self.assertEqual(
+            tr, self.env.truncations, f"""
             \rTruncations do not match
                 \rExpected:\n{self.env.truncations}
                 \rActual:\n{tr}""")
-        self.assertEqual(i, self.env.infos, f"""
+        self.assertEqual(
+            i, self.env.infos, f"""
             \rInfos do not match
                 \rExpected:\n{self.env.infos}
                 \rActual:\n{i}""")
 
 
 class TestCalcuatedProperties(unittest.TestCase):
+
     def setUp(self) -> None:
         self.env = MagicMock()
         self.wrapped_env = batched_aec_to_batched_parallel_wrapper(self.env)
