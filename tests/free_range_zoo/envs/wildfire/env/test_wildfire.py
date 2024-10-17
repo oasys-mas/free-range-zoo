@@ -1,38 +1,45 @@
+import sys
+
+sys.path.append('.')
+
 import unittest
-from unittest.mock import MagicMock, call
 
 import torch
 
-from free_range_zoo.free_range_zoo.envs.wildfire.env.wildfire import raw_env
+from free_range_zoo.free_range_zoo.envs import wildfire_v0
+from tests.utils.wildfire_configs import non_stochastic
 
 
-class TestEnvironmentInitialization(unittest.TestCase):
-    pass
+class TestWildfireEnvironmentRuntime(unittest.TestCase):
+
+    def setUp(self) -> None:
+        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        self.configuration = non_stochastic()
+        self.env = wildfire_v0.parallel_env(
+            parallel_envs=100,
+            max_steps=15,
+            configuration=self.configuration,
+            device=self.device,
+        )
+
+    def test_environment_runtime(self) -> None:
+        self.env.reset()
+
+        current_step = 1
+        while not torch.all(self.env.finished):
+            action = {}
+
+            for agent in self.env.agents:
+                self.env.observation_space(agent)
+                actions = []
+                for action_space in self.env.action_space(agent):
+                    actions.append(action_space.sample())
+                actions = torch.tensor(actions, device=self.device, dtype=torch.int32)
+                action[agent] = actions
+
+            observation, reward, term, trunc, info = self.env.step(action)
+            current_step += 1
 
 
-class TestEnvironmentReset(unittest.TestCase):
-    pass
-
-
-class TestEnvironmentResetBatches(unittest.TestCase):
-    pass
-
-
-class TestEnvironmentStep(unittest.TestCase):
-    pass
-
-
-class TestUpdateActions(unittest.TestCase):
-    pass
-
-
-class TestUpdateObservations(unittest.TestCase):
-    pass
-
-
-class TestActionSpace(unittest.TestCase):
-    pass
-
-
-class TestObservationSpace(unittest.TestCase):
-    pass
+if __name__ == '__main__':
+    unittest.main()
