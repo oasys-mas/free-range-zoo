@@ -1,4 +1,28 @@
-"""Wildfire environment definition and raw, parallel, and aec wrappers."""
+"""
+
+# Wildfire
+
+| Import             | `from free_range_zoo.envs import wildfire_v0` |
+|--------------------|------------------------------------|
+| Actions            | Discrete & Stochastic                            |
+| Observations | Discrete & Fully Observed with private observations [^1]
+| Parallel API       | Yes                                |
+| Manual Control     | No                                 
+|
+| Agent Names             | ['$`firefighter_0`$', ..., '$`firefighter_n`$']` |
+| #Agents             |    $`n`$                                  |
+| 
+Action Shape       | (envs, 2)              |
+| Action Values      |  [-1, '$`|X|`$'], [0][^2]              
+|
+| Observation Shape | TensorDict: { <br> &emsp; <bf>Agent's self obs, 'self'</bf>: 4 `<y, x, fire power, suppressant>`, <br> &emsp; <bf>Other agent obs, 'others'</bf>: ('$`|Ag| \times 4`$') <y,x,fire power, suppressant>, <br> &emsp; <bf>Fire/Task obs, 'fire'</bf>: ('$`|X| \times 4`$') <y, x, fire level, intensity> <br> <bf>batch_size: `num_envs`</bf> <br>}|
+| Observation Values   | <ins>Self</ins> <br> <bf>y</bf>: [0,grid_height], <br> <bf>x</bf>: [0, grid_width], <br> *fire_reduction_power*: [0, initial_fire_power_reduction], <br> <bf>suppressant</bf>: [0,suppressant_states) <br> <br> <ins>Other Agents</ins> <br> <bf>y</bf>: [0,grid_height], <br> <bf>x</bf>: [0, grid_width], <br> *fire_reduction_power*: [0, initial_fire_power_reduction], <br> <bf>suppressant</bf>: [0,suppressant_states)  <br> <br> <ins>Task</ins> <br> <bf>y</bf>: [0,grid_height], <br> <bf>x</bf>: [0, grid_width], <br> <bf>fire level</bf>: [initial_fire_level] <br> *intensity*: [0,$`num_fire_states`$) |
+
+
+"""
+
+
+
 from typing import Tuple, Dict, Any, Union, List, Optional
 
 import torch
