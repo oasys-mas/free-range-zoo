@@ -19,7 +19,7 @@ if __name__ == '__main__':
                         type=str,
                         nargs='*',
                         choices=['calls', 'cumtime', 'file', 'ncalls', 'pcalls', 'line', 'name', 'nfl', 'stdname', 'tottime'],
-                        default='tottime',
+                        default=['tottime'],
                         help='The way to sort the results')
 
     parser.add_argument('--amount', type=float, default=0.2, help='The amount of data to display')
