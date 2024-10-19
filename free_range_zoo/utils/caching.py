@@ -19,21 +19,17 @@ def optimized_convert_hashable(data: torch.Tensor) -> Union[int, float]:
     Convert a tensor to a hashable value using one of a few hashing functions.
 
     Hashing functions:
-    - If the data is on the GPU, a positional encoding hash is used.
-    - If the size of the tensor is greater than 10000, xxhash is used, otherwise a tuple is used.
+    - Uses a xxhash to encode a tensor into a hashable uint64.
 
     Args:
         data: torch.Tensor - The data to convert
     Returns:
         int | float - The hashable value
     """
-    if torch.cuda.is_available() and data.is_cuda:
-        return positional_encoding_hash(data)
+    # if torch.cuda.is_available() and data.is_cuda:
+    #     return positional_encoding_hash(data)
 
-    if data.shape[0] > 10000:
-        return convert_using_xxhash(data)
-
-    return convert_using_tuple(data)
+    return convert_using_xxhash(data)
 
 
 def positional_encoding_hash(data: torch.Tensor, batched: bool = False) -> int:
