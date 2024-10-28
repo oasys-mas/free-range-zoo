@@ -204,7 +204,7 @@ class BatchedAECEnv(ABC, AECEnv):
                 for agent in self.agents:
                     self.truncations[agent] = is_truncated
 
-                    if is_truncated:
+                    if torch.any(is_truncated):
                         print("hi")
         else:
             # Wait to allocate rewards until all agents have submitted their actions
