@@ -389,11 +389,15 @@ class raw_env(BatchedAECEnv):
                     not_monitor = self.actions[agent][:, 1] != -3
                     agent_mask = torch.ones(self.defender_config.num_defenders, dtype=torch.bool, device=self.device)
                     agent_mask[agent_index] = False
-                    observation = TensorDict({
-                        'self': defender_observation[:, agent_index],
-                        'others': defender_observation[:, agent_mask][:, :, self.defender_observation_mask],
-                        'tasks': self._state.network_state,
-                    })
+                    observation = TensorDict(
+                        {
+                            'self': defender_observation[:, agent_index],
+                            'others': defender_observation[:, agent_mask][:, :, self.defender_observation_mask],
+                            'tasks': self._state.network_state,
+                        },
+                        batch_size=[self.parallel_envs],
+                        device=self.device,
+                    )
 
                     if self.partially_obserable:
                         observation['tasks'][not_monitor] = observation['tasks'][not_monitor].fill_(-100)
@@ -401,11 +405,15 @@ class raw_env(BatchedAECEnv):
                 case 'attacker':
                     agent_mask = torch.ones(self.attacker_config.num_attackers, dtype=torch.bool, device=self.device)
                     agent_mask[agent_index] = False
-                    observation = TensorDict({
-                        'self': attacker_observation[:, agent_index],
-                        'others': attacker_observation[:, agent_mask][:, :, self.attacker_observation_mask],
-                        'tasks': self._state.network_state,
-                    })
+                    observation = TensorDict(
+                        {
+                            'self': attacker_observation[:, agent_index],
+                            'others': attacker_observation[:, agent_mask][:, :, self.attacker_observation_mask],
+                            'tasks': self._state.network_state,
+                        },
+                        batch_size=[self.parallel_envs],
+                        device=self.device,
+                    )
 
             self.observations[agent] = observation
 
