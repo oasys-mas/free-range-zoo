@@ -4,6 +4,7 @@ my_secrets.py
 .neptune
 **/plotting/*-paper*
 *.csv
+*.gif
 *.pkl
 *.prof
 
