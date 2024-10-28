@@ -1,4 +1,34 @@
-"""Wildfire environment definition and raw, parallel, and aec wrappers."""
+"""
+
+# Wildfire
+
+| Import             | `from free_range_zoo.envs import wildfire_v0` |
+|--------------------|------------------------------------|
+| Actions            | Discrete & Stochastic                            |
+| Observations | Discrete and fully Observed with private observations [^1]
+| Parallel API       | Yes                                |
+| Manual Control     | No                                 
+|
+| Agent Names             | [$firefighter$_0, ..., $firefighter$_n] |
+| #Agents             |    $[0,n]$                                  |
+| 
+Action Shape       | (envs, 2)              |
+| Action Values      |  [-1, $\|tasks\|$], [0] [^2]             
+|
+| Observation Shape | TensorDict: { <br> &emsp; **Agent's self obs**, <ins>'self'</ins>: 4 `<ypos, xpos, fire power, suppressant>`, <br> &emsp; **Other agent obs**, <ins>'others'</ins>: ($\|Ag\| \times 4$) `<ypos,xpos,fire power, suppressant>`, <br> &emsp; **Fire/Task obs**, <ins>'tasks'</ins>: ($\|X\| \times 4$) `<y, x, fire level, intensity>` <br> **batch_size: `num_envs`** <br>}|
+| Observation Values   | <ins>Self</ins> <br> **ypos**: [0,grid_height], <br> **xpos**: [0, grid_width], <br> *fire_reduction_power*: [0, initial_fire_power_reduction], <br> **suppressant**: [0,suppressant_states) <br> <br> <ins>Other Agents</ins> <br> **ypos**: [0,grid_height], <br> **xpos**: [0, grid_width], <br> *fire_reduction_power*: [0, initial_fire_power_reduction], <br> **suppressant**: [0,suppressant_states)  <br> <br> <ins>Task</ins> <br> **ypos**: [0,grid_height], <br> **xpos**: [0, grid_width], <br> **fire level**: [initial_fire_level] <br> **intensity**: [0,num_fire_states) |
+
+## Description
+
+A cooperative **agent open** and **task open** domain where agents coordinate to extinguish fires before they burn out. 
+Agents do not move, and they choose to either *suppress* (0) a fire they can reach, or *NOOP* (-1) to refill their suppressant. 
+
+Task openness is present as fires which ignite and spread according to a realistic wildfire spreading model used in prior implementations of this environment <cite wildfire papers>. Agents are not present in the environment when out of suppressant as they can only NOOP.
+
+"""
+
+
+
 from typing import Tuple, Dict, Any, Union, List, Optional
 
 import torch

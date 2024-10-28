@@ -27,6 +27,9 @@ pygame = "^2.6.0"
 rich = "^13.9.1"
 slurm_tuner = { git = "https://github.com/C4theBomb/slurm-tuner" }
 
+[tool.poetry.group.docs.dependencies]
+free-range-zoo-docs = { path = "docs", develop = true }
+
 [tool.poetry.group.models]
 optional = true
 
