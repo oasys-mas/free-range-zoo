@@ -36,9 +36,9 @@ class CybersecurityState(State):
             CybersecurityState - State at the specified indices
         """
         return CybersecurityState(
-            state=self.state[indices],
-            location=self.agents[indices],
-            presence=self.agents[indices],
+            network_state=self.network_state[indices],
+            location=self.location[indices],
+            presence=self.presence[indices],
         )
 
     def __hash__(self) -> int:
