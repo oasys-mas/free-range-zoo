@@ -1,7 +1,7 @@
 import torch
 import numpy as np
 
-from free_range_zoo.free_range_zoo.envs.wildfire.env.structures.configuration import (WildfireConfiguration,
+from free_range_zoo.envs.wildfire.env.structures.configuration import (WildfireConfiguration,
                                                                                       FireConfiguration,
                                                                                       AgentConfiguration,
                                                                                       StochasticConfiguration)

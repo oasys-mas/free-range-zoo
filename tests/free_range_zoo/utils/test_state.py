@@ -1,6 +1,6 @@
 import unittest
 
-from free_range_zoo.free_range_zoo.utils.state import State
+from free_range_zoo.utils.state import State
 
 
 class TestWildfireState(unittest.TestCase):

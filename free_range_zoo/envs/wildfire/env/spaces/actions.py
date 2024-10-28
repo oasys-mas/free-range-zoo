@@ -6,7 +6,7 @@ import torch
 from gymnasium.spaces import Discrete, OneOf
 import gymnasium
 
-from free_range_zoo.free_range_zoo.utils.caching import optimized_convert_hashable
+from free_range_zoo.utils.caching import optimized_convert_hashable
 
 
 @cachetools.cached(cache=cachetools.LRUCache(float('inf')),

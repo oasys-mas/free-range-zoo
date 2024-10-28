@@ -1,6 +1,6 @@
 import unittest
 
-from free_range_zoo.free_range_zoo.utils.configuration import Configuration
+from free_range_zoo.utils.configuration import Configuration
 
 
 class TestConfiguration(unittest.TestCase):

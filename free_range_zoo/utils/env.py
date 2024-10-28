@@ -7,8 +7,8 @@ import gymnasium
 import torch
 from tensordict import TensorDict
 
-from free_range_zoo.free_range_zoo.utils.configuration import Configuration
-from free_range_zoo.free_range_zoo.utils.state import State
+from free_range_zoo.utils.configuration import Configuration
+from free_range_zoo.utils.state import State
 
 
 class BatchedAECEnv(ABC, AECEnv):

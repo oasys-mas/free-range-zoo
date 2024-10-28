@@ -6,14 +6,14 @@ import gymnasium
 
 from pettingzoo.utils import wrappers
 
-from free_range_zoo.free_range_zoo.utils.env import BatchedAECEnv
-from free_range_zoo.free_range_zoo.wrappers.planning import planning_wrapper_v0
-from free_range_zoo.free_range_zoo.utils.conversions import batched_aec_to_batched_parallel
+from free_range_zoo.utils.env import BatchedAECEnv
+from free_range_zoo.wrappers.planning import planning_wrapper_v0
+from free_range_zoo.utils.conversions import batched_aec_to_batched_parallel
 
-from free_range_zoo.free_range_zoo.envs.wildfire.env.utils import in_range_check, random_generator
-from free_range_zoo.free_range_zoo.envs.wildfire.env.spaces import actions, observations
-from free_range_zoo.free_range_zoo.envs.wildfire.env.structures.state import WildfireState
-from free_range_zoo.free_range_zoo.envs.wildfire.env.transitions import (suppressant_refill,
+from free_range_zoo.envs.wildfire.env.utils import in_range_check, random_generator
+from free_range_zoo.envs.wildfire.env.spaces import actions, observations
+from free_range_zoo.envs.wildfire.env.structures.state import WildfireState
+from free_range_zoo.envs.wildfire.env.transitions import (suppressant_refill,
                                                                          suppressant_decrease,
                                                                          capacity,
                                                                          equipment,

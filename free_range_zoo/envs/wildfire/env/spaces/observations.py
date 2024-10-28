@@ -7,7 +7,7 @@ import numpy as np
 from gymnasium.spaces import Box, Dict, Tuple as TupleSpace
 import gymnasium
 
-from free_range_zoo.free_range_zoo.utils.caching import optimized_convert_hashable
+from free_range_zoo.utils.caching import optimized_convert_hashable
 
 
 @cachetools.cached(cache=cachetools.LRUCache(float('inf')),

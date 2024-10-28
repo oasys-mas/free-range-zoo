@@ -6,8 +6,8 @@ import pandas as pd
 
 import torch
 
-from free_range_zoo.free_range_zoo.utils.state import State
-from free_range_zoo.free_range_zoo.utils.caching import optimized_convert_hashable
+from free_range_zoo.utils.state import State
+from free_range_zoo.utils.caching import optimized_convert_hashable
 
 
 @dataclass

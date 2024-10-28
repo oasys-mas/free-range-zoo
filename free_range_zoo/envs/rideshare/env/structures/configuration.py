@@ -1,8 +1,8 @@
 from typing import Self, Tuple, Optional, Union, Dict, List
 from dataclasses import dataclass
 
-from free_range_zoo.free_range_zoo.utils.state import State
-from free_range_zoo.free_range_zoo.utils.configuration import Configuration
+from free_range_zoo.utils.state import State
+from free_range_zoo.utils.configuration import Configuration
 
 import torch
 from tensordict.tensordict import TensorDict

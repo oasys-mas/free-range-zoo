@@ -5,7 +5,7 @@ import functools
 import torch
 import numpy as np
 
-from free_range_zoo.free_range_zoo.utils.configuration import Configuration
+from free_range_zoo.utils.configuration import Configuration
 
 
 @dataclass

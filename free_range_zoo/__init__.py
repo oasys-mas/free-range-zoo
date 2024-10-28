@@ -1,1 +1,1 @@
-import free_range_zoo.free_range_zoo
+import free_range_zoo

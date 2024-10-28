@@ -9,12 +9,12 @@ import gymnasium
 
 from pettingzoo.utils import wrappers
 
-from free_range_zoo.free_range_zoo.utils.env import BatchedAECEnv
-from free_range_zoo.free_range_zoo.wrappers.planning import planning_wrapper_v0
-from free_range_zoo.free_range_zoo.utils.conversions import batched_aec_to_batched_parallel
-from free_range_zoo.free_range_zoo.envs.rideshare.env.structures.state import RideshareState
-from free_range_zoo.free_range_zoo.envs.rideshare.env.utils.direct_distance import DirectPath
-from free_range_zoo.free_range_zoo.envs.rideshare.env.utils.action_space_modifier import action_space_OneOf_adjuster
+from free_range_zoo.utils.env import BatchedAECEnv
+from free_range_zoo.wrappers.planning import planning_wrapper_v0
+from free_range_zoo.utils.conversions import batched_aec_to_batched_parallel
+from free_range_zoo.envs.rideshare.env.structures.state import RideshareState
+from free_range_zoo.envs.rideshare.env.utils.direct_distance import DirectPath
+from free_range_zoo.envs.rideshare.env.utils.action_space_modifier import action_space_OneOf_adjuster
 
 
 def parallel_env(planning: bool = False, **kwargs):

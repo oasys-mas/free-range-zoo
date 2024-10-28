@@ -6,7 +6,7 @@ from pettingzoo.utils.wrappers import OrderEnforcingWrapper
 
 import torch
 
-from free_range_zoo.free_range_zoo.utils.env import BatchedAECEnv
+from free_range_zoo.utils.env import BatchedAECEnv
 
 
 def batched_aec_to_batched_parallel(aec_env: BatchedAECEnv) -> ParallelEnv[AgentID, ObsType, ActionType]:
