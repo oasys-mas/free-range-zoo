@@ -1,5 +1,5 @@
 import os
-from typing import Self, Tuple, Union, Optional, List, Dict
+from typing import Self, Tuple, Union, Optional, List, Dict, Any
 from dataclasses import dataclass
 
 import pandas as pd
@@ -53,9 +53,9 @@ class RideshareState(State):
             partial_log: Optional[List[int]] = None,
             actions: Union[Dict[str, torch.Tensor], List[str]] = None,
             rewards: Union[Dict[str, torch.Tensor], List[float]] = None,
+            infos: Dict[str, Any] = None,
             log_exclusions: List[str] = [],
-            masked_attributes: Dict[Tuple[str,int], torch.Tensor] = None
-        ) -> None:
+            masked_attributes: Dict[Tuple[str, int], torch.Tensor] = None) -> None:
         """
         construct the logging version of the state
 
@@ -78,8 +78,7 @@ class RideshareState(State):
                 assert not os.path.exists(os.path.join(
                     path, "0.csv")), "path already exists and files found, check path. Don't waste experiments!"
 
-
-        batch_size = torch.max((self.agents[:,0]+1).reshape(-1)).to(torch.int).item()
+        batch_size = torch.max((self.agents[:, 0] + 1).reshape(-1)).to(torch.int).item()
 
         if isinstance(actions, dict):
             # print(actions)
@@ -109,25 +108,30 @@ class RideshareState(State):
             "locations": log_locations,
         }
 
-        log_dict = log_dict | {f"driver_{agent}_state": log_agents[log_agents[:,1]==agent] for agent in torch.unique(log_agents[:,1].to(torch.int)).tolist()}
-        batches = torch.unique(log_agents[:,0].to(torch.int)).tolist()
+        log_dict = log_dict | {
+            f"driver_{agent}_state": log_agents[log_agents[:, 1] == agent]
+            for agent in torch.unique(log_agents[:, 1].to(torch.int)).tolist()
+        }
+        batches = torch.unique(log_agents[:, 0].to(torch.int)).tolist()
 
         for batch in batches:
 
-            batch_random_variables = {key:[str(value[value[:,0] == batch].tolist())] for key, value in log_dict.items()}
+            batch_random_variables = {key: [str(value[value[:, 0] == batch].tolist())] for key, value in log_dict.items()}
             batched_actions = {k: [v[batch]] for k, v in actions.items()}
-            batched_rewards = {k+"_rewards": [v[batch]] for k, v in rewards.items()}
+            batched_rewards = {k + "_rewards": [v[batch]] for k, v in rewards.items()}
 
-            state_data = batch_random_variables | batched_actions | batched_rewards
+            batched_info = {}
+            for _ag, _ag_infos in infos.items():
+                for _info_key, _info_value in _ag_infos.items():
+                    batched_info[f"{_ag}_{_info_key}"] = [v[batch] for v in _info_value]
+
+            state_data = batch_random_variables | batched_actions | batched_rewards | batched_info
 
             df = pd.DataFrame(state_data)
             df['label'] = label
             df['new_episode'] = new_episode
 
             df.to_csv(os.path.join(path, f"{batch}.csv"), mode='a' if not initial else 'w', header=initial, index=False)
-
-
-
 
     def __hash__(self) -> int:
         """

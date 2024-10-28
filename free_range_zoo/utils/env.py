@@ -101,11 +101,15 @@ class BatchedAECEnv(ABC, AECEnv):
         self.agents = self.possible_agents
         self.rewards = {agent: torch.zeros(self.parallel_envs, dtype=torch.float32, device=self.device) for agent in self.agents}
         self._cumulative_rewards = {agent: torch.zeros(self.parallel_envs, device=self.device) for agent in self.agents}
-        self.terminations = {agent: torch.zeros(self.parallel_envs, dtype=torch.bool, device=self.device)
-                             for agent in self.agents}
-        self.truncations = {agent: torch.zeros(self.parallel_envs, dtype=torch.bool, device=self.device)
-                            for agent in self.agents}
-        self.infos = {agent: {} for agent in self.agents}
+        self.terminations = {
+            agent: torch.zeros(self.parallel_envs, dtype=torch.bool, device=self.device)
+            for agent in self.agents
+        }
+        self.truncations = {agent: torch.zeros(self.parallel_envs, dtype=torch.bool, device=self.device) for agent in self.agents}
+
+        #task-action-index-map identifies the global<->local task indices for environments
+        #this is used when the availability of actions/tasks is not uniform across agents & environments for logging
+        self.infos = {agent: {'task-action-index-map': [None for _ in range(self.parallel_envs)]} for agent in self.agents}
 
         self.num_moves = torch.zeros(self.parallel_envs, dtype=torch.int32, device=self.device)
 
@@ -114,7 +118,7 @@ class BatchedAECEnv(ABC, AECEnv):
         self.agent_selection = self.agent_selector.reset()
 
         # Intialize the mapping of the tasks "in" the environment, used to map actions
-        self.environment_task_count = torch.empty((self.parallel_envs,), dtype=torch.int32)
+        self.environment_task_count = torch.empty((self.parallel_envs, ), dtype=torch.int32)
         self.agent_task_count = torch.empty((self.num_agents, self.parallel_envs), dtype=torch.int32)
 
         #switch reset flag
@@ -155,7 +159,7 @@ class BatchedAECEnv(ABC, AECEnv):
         raise NotImplementedError('This method should be implemented in the subclass')
 
     @torch.no_grad()
-    def step(self, actions: torch.Tensor, log_label:Optional[str]=None) -> None:
+    def step(self, actions: torch.Tensor, log_label: Optional[str] = None) -> None:
         """
         Take a step in the environment
         Args:
@@ -166,12 +170,12 @@ class BatchedAECEnv(ABC, AECEnv):
         if torch.all(self.terminations[self.agent_selection]) or torch.all(self.truncations[self.agent_selection]):
             return
 
-        #?reset logging, logs if any batches reset.         
+        #?reset logging, logs if any batches reset.
         if self._any_reset and self.is_logging:
             self._state.log(path=self.log_dir, new_episode=True, \
                 constant_observations=self.constant_observations, initial=self.is_new_environment, label=log_label,\
-                partial_log=self._any_reset, actions=self.agents, log_exclusions=self.log_exclusions, rewards=self.rewards, info=self.infos)
-            
+                partial_log=self._any_reset, actions=self.agents, log_exclusions=self.log_exclusions, rewards=self.rewards, infos=self.infos)
+
             #flip tags
             self._any_reset = None
             self.is_new_environment = False
@@ -181,7 +185,6 @@ class BatchedAECEnv(ABC, AECEnv):
 
         # Create the awards aggregation array for this agent
         self._cumulative_rewards[agent] = torch.zeros(self.parallel_envs, device=self.device)
-
 
         is_last = self.agent_selector.is_last()
 
@@ -200,6 +203,9 @@ class BatchedAECEnv(ABC, AECEnv):
                 is_truncated = self.num_moves >= self.max_steps
                 for agent in self.agents:
                     self.truncations[agent] = is_truncated
+
+                    if is_truncated:
+                        print("hi")
         else:
             # Wait to allocate rewards until all agents have submitted their actions
             self._clear_rewards()
@@ -214,12 +220,11 @@ class BatchedAECEnv(ABC, AECEnv):
         self.update_observations()
         self.update_actions()
 
-
         #?log the new state of the environment
         if self.is_logging and is_last:
             self._state.log(path=self.log_dir, new_episode=False, \
                 constant_observations=self.constant_observations, initial=False, label=log_label\
-                ,actions=self.actions, rewards=self.rewards, info=self.infos, log_exclusions=self.log_exclusions)
+                ,actions=self.actions, rewards=self.rewards, infos=self.infos, log_exclusions=self.log_exclusions)
 
         # Render the current environment state in a human-viewable way
         match self.render_mode:
