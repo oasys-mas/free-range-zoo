@@ -54,7 +54,8 @@ class BatchedAECEnv(ABC, AECEnv):
             self.config = configuration.to(device)
 
             for key, value in configuration.__dict__.items():
-                setattr(self, key, value)
+                if isinstance(value, Configuration):
+                    setattr(self, key, value)
 
         # Checks if any environments reset for logging purposes
         self._any_reset = None
