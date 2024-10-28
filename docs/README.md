@@ -1,38 +1,45 @@
-# PettingZoo docs
+# free-range-zoo Documentation
 
-This folder contains the documentation for [FreeRangeZoo](https://github.com/oasys-mas/free-range-zoo). This is adapted from [PettingZoo's Docs](https://github.com/Farama-Foundation/PettingZoo/tree/master/docs). 
+This folder contains the documentation for [free-range-zoo](https://github.com/oasys-mas/free-range-zoo).
 
-## Editing an environment page
+## Installation
 
-To generate the environments pages you need to execute the `docs/_scripts/gen_envs_mds.py` script:
-
-```
-cd docs
-python _scripts/gen_envs_mds.py
+To install the dependencies for the documentation package you must run the following:
+```sh 
+poetry install
 ```
 
-## Build the Documentation
+Note that if you have already installed the dependencies for `free-range-zoo` then the dependencies are already available.
 
-Install the required packages and PettingZoo:
+## Scripts
+### 1. Generating Environment Documentation Files
 
-```
-pip install -r docs/requirements.txt
-```
-
-To build the documentation once:
-
-```
-cd docs
-make dirhtml
+Generate the pages for each environment you need to execute the following command.
+```sh
+poetry run gen
 ```
 
-To rebuild the documentation automatically every time a change is made:
+From here you have two options available:
 
-```
-cd docs
-sphinx-autobuild -b dirhtml . _build
+### 2a. Building Documentation
+
+To build the documentation files run the following:
+```sh
+poetry run build
 ```
 
-## Test the documentation
+### 2b. Watching for Changes
+
+If you want to actively change files and watch for changes then run the following:
+```sh
+poetry run build
+```
+
+## Testing[^1]
+
 The plugin [pytest-markdown-docs](https://github.com/modal-labs/pytest-markdown-docs) allows us to test our documentation to ensure that example code runs successfully. To test, run the following command:
-pytest docs --markdown-docs -m markdown-docs
+```sh
+poetry run test
+```
+
+[^1]: NOTE: **At the current moment this script is broken**
