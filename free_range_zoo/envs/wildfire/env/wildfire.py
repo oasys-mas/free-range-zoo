@@ -27,8 +27,6 @@ Task openness is present as fires which ignite and spread according to a realist
 
 """
 
-
-
 from typing import Tuple, Dict, Any, Union, List, Optional
 
 import torch
@@ -320,7 +318,7 @@ class raw_env(BatchedAECEnv):
         # Initialize storages
         rewards = {agent: torch.zeros(self.parallel_envs, dtype=torch.float32, device=self.device) for agent in self.agents}
         terminations = {agent: torch.zeros(self.parallel_envs, dtype=torch.bool, device=self.device) for agent in self.agents}
-        infos = {agent: {'task-action-index-map':[None for _ in range(self.parallel_envs)]} for agent in self.agents}
+        infos = {agent: {'task-action-index-map': [None for _ in range(self.parallel_envs)]} for agent in self.agents}
 
         # For simplification purposes, one randomness generation is done per step, then taken piecewise
         field_randomness, self.generator_states = random_generator.generate_field_randomness(

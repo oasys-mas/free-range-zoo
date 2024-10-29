@@ -14,10 +14,9 @@ def chebyshev(agent_position: torch.Tensor, task_position: torch.Tensor, attack_
     Returns:
         torch.Tensor - boolean tensor indicating if the task is within the attack range of the agent
     """
-    stacked_distances = torch.stack([
-        torch.abs(agent_position[:, 0] - task_position[:, 0]),
-        torch.abs(agent_position[:, 1] - task_position[:, 1])
-    ], dim=1)
+    stacked_distances = torch.stack(
+        [torch.abs(agent_position[:, 0] - task_position[:, 0]),
+         torch.abs(agent_position[:, 1] - task_position[:, 1])], dim=1)
 
     chebyshev_distance = torch.max(stacked_distances, dim=1)[0]
 
@@ -37,8 +36,9 @@ def euclidean(agent_position: torch.Tensor, task_position: torch.Tensor, attack_
     Returns:
         torch.Tensor - boolean tensor indicating if the task is within the attack range of the agent
     """
-    distance_diff = torch.stack([torch.abs(agent_position[:, 0] - task_position[:, 0]),
-                                 torch.abs(agent_position[:, 1] - task_position[:, 1])], dim=1)
+    distance_diff = torch.stack(
+        [torch.abs(agent_position[:, 0] - task_position[:, 0]),
+         torch.abs(agent_position[:, 1] - task_position[:, 1])], dim=1)
 
     squared_diff_y = torch.pow(distance_diff[:, 0].float(), 2)
     squared_diff_x = torch.pow(distance_diff[:, 1].float(), 2)

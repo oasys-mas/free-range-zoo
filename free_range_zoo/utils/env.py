@@ -205,7 +205,7 @@ class BatchedAECEnv(ABC, AECEnv):
         """
         # Handle stepping an agent which is completely dead
         if torch.all(self.terminations[self.agent_selection]) or torch.all(self.truncations[self.agent_selection]):
-            return                
+            return
 
         # Reset logging, logs if any batches reset
         if self._any_reset and self.is_logging:
@@ -263,7 +263,6 @@ class BatchedAECEnv(ABC, AECEnv):
                                 infos=self.infos)
 
         self.agent_selection = self.agent_selector.next()
-
 
     @torch.no_grad()
     def _accumulate_rewards(self) -> None:
