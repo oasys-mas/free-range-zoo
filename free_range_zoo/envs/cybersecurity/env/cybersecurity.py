@@ -400,7 +400,7 @@ class raw_env(BatchedAECEnv):
                     )
 
                     if self.partially_obserable:
-                        observation['tasks'][not_monitor] = observation['tasks'][not_monitor].fill_(-100)
+                        observation['tasks'][not_monitor] = observation['tasks'][not_monitor].clone().fill_(-100)
 
                 case 'attacker':
                     agent_mask = torch.ones(self.attacker_config.num_attackers, dtype=torch.bool, device=self.device)
