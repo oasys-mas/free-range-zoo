@@ -264,7 +264,8 @@ def render(
     #find agents
     agent_cols = df.columns[df.columns.str.contains('driver')]
     agent_states = [col for col in agent_cols if 'state' in col]
-    agent_actions = [col for col in agent_cols if not 'state' in col]
+    agent_actions = [col for col in agent_cols if 'action_choice' in col]
+
 
     for col in agent_cols:
         df[col] = df[col].apply(lambda x: x.replace('tensor', '')[1:-1] if type(x) == str else '[-1,-1]')
@@ -517,7 +518,7 @@ def render(
     return frames if render_mode == 'rgb_array' else None
 
 
-frames = render(path="/home/dredder/gits/free-range-zoo/notebooks/log_5/0.csv", render_mode='rgb_array')
+frames = render(path="/home/dredder/gits/free-range-zoo/notebooks/log_32/0.csv", render_mode='rgb_array')
 
 import numpy as np
 from PIL import Image

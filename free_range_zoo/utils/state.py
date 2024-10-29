@@ -110,7 +110,7 @@ class State(ABC):
 
             batch_random_variables = {key: [value[batch]] for key, value in random_variables.items()}
 
-            batched_actions = {k: [v[batch]] for k, v in actions.items()}
+            batched_actions = {k + "_action_choice": [v[batch]] for k, v in actions.items()}
             batched_rewards = {k + "_rewards": [v[batch]] for k, v in rewards.items()}
 
             batched_info = {}

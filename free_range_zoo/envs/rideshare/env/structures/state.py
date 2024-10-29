@@ -116,7 +116,7 @@ class RideshareState(State):
         for batch in batches:
 
             batch_random_variables = {key: [str(value[value[:, 0] == batch].tolist())] for key, value in log_dict.items()}
-            batched_actions = {k: [v[batch]] for k, v in actions.items()}
+            batched_actions = {k+"_action_choice": [v[batch]] for k, v in actions.items()}
             batched_rewards = {k + "_rewards": [v[batch]] for k, v in rewards.items()}
 
             batched_info = {}
