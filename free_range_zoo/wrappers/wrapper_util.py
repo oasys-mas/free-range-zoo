@@ -11,6 +11,7 @@ import torch
 
 
 class shared_wrapper_aec(BaseWrapper):
+
     def __init__(self, env, modifier_class):
         super().__init__(env)
 
@@ -119,6 +120,7 @@ class shared_wrapper_aec(BaseWrapper):
 
 
 class shared_wrapper_parr(BaseParallelWrapper):
+
     def __init__(self, env, modifier_class):
         super().__init__(env)
 
@@ -174,8 +176,9 @@ class shared_wrapper_parr(BaseParallelWrapper):
                 if self._cur_seed is not None:
                     self._cur_seed += 1
 
-    def reset(self, seed: Union[int, List[int]] = None, options: Dict[str, Any] = None) -> Tuple[Dict[str, torch.Tensor],
-                                                                                                 Dict[str, Any]]:
+    def reset(self,
+              seed: Union[int, List[int]] = None,
+              options: Dict[str, Any] = None) -> Tuple[Dict[str, torch.Tensor], Dict[str, Any]]:
         """
         Resets the environment and returns the initial observations
 
@@ -192,17 +195,13 @@ class shared_wrapper_parr(BaseParallelWrapper):
         self.add_modifiers(self.agents)
         for agent, mod in self.modifiers.items():
             mod.reset(seed=seed, options=options)
-        observations = {
-            agent: self.modifiers[agent].modify_obs(obs)
-            for agent, obs in observations.items()
-        }
+        observations = {agent: self.modifiers[agent].modify_obs(obs) for agent, obs in observations.items()}
         return observations, infos
 
-    def step(self, actions: Dict[str, ActionType]) -> Tuple[Dict[str, torch.Tensor],
-                                                            Dict[str, torch.Tensor],
-                                                            Dict[str, torch.Tensor],
-                                                            Dict[str, torch.Tensor],
-                                                            Dict[str, Any]]:
+    def step(
+        self, actions: Dict[str, ActionType]
+    ) -> Tuple[Dict[str, torch.Tensor], Dict[str, torch.Tensor], Dict[str, torch.Tensor], Dict[str, torch.Tensor], Dict[str,
+                                                                                                                        Any]]:
         """
         Steps the environment for all agents
 
@@ -212,20 +211,15 @@ class shared_wrapper_parr(BaseParallelWrapper):
             Tuple[Dict[str, torch.Tensor], Dict[str, torch.Tensor], Dict[str, torch.Tensor], Dict[str, torch.Tensor],
                   Dict[str, Dict]] - The observations, rewards, terminations, truncations, and infos
         """
-        actions = {
-            agent: self.modifiers[agent].modify_action(action)
-            for agent, action in actions.items()
-        }
+        actions = {agent: self.modifiers[agent].modify_action(action) for agent, action in actions.items()}
         observations, rewards, terminations, truncations, infos = super().step(actions)
         self.add_modifiers(self.agents)
-        observations = {
-            agent: self.modifiers[agent].modify_obs(obs)
-            for agent, obs in observations.items()
-        }
+        observations = {agent: self.modifiers[agent].modify_obs(obs) for agent, obs in observations.items()}
         return observations, rewards, terminations, truncations, infos
 
 
 class shared_wrapper_gym(gymnasium.Wrapper):
+
     def __init__(self, env, modifier_class):
         super().__init__(env)
         self.modifier = modifier_class()
@@ -247,11 +241,10 @@ class shared_wrapper_gym(gymnasium.Wrapper):
         obs = self.modifier.modify_obs(obs)
         return obs, info
 
-    def step(self, action: Dict[str, ActionType]) -> Tuple[Dict[str, torch.Tensor],
-                                                           Dict[str, torch.Tensor],
-                                                           Dict[str, torch.Tensor],
-                                                           Dict[str, torch.Tensor],
-                                                           Dict[str, Any]]:
+    def step(
+        self, action: Dict[str, ActionType]
+    ) -> Tuple[Dict[str, torch.Tensor], Dict[str, torch.Tensor], Dict[str, torch.Tensor], Dict[str, torch.Tensor], Dict[str,
+                                                                                                                        Any]]:
         """
         Steps the environment
 

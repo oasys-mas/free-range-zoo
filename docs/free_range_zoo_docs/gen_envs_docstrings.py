@@ -14,8 +14,8 @@ def get_python_file_name(env_type, env_name):
     for env_file in os.listdir(os.path.join(dir_path, env_type)):
         if env_file == env_name:
             with open(
-                os.path.join(dir_path, env_type, env_file, env_file + ".py"),
-                encoding="utf-8",
+                    os.path.join(dir_path, env_type, env_file, env_file + ".py"),
+                    encoding="utf-8",
             ) as file:
                 if env_name in file.name:
                     return file.name
@@ -37,7 +37,7 @@ def remove_front_matter(string):
     match = regex.match(string)
     if match:
         g = match.group(0)
-        return string[len(g) :]
+        return string[len(g):]
     else:
         return string
 

@@ -27,8 +27,6 @@ Task openness is present as fires which ignite and spread according to a realist
 
 """
 
-
-
 from typing import Tuple, Dict, Any, Union, List, Optional
 
 import torch
