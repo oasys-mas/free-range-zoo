@@ -77,9 +77,8 @@ class State(ABC):
             rewards = {key: value.tolist() for key, value in rewards.items()}
         else:
             rewards = {key: [0.0 for _ in range(batch_size)] for key in rewards}
-        
-        infos = {key: value if value!={} else {'task-action-indices':[None for _ in range(batch_size)]} for key, value in infos.items()}
-        
+
+        infos = {key: {_k: _v if isinstance(_v, list) else [_v] for _k, _v in value.items()} for key, value in infos.items()}
 
         if partial_log is None:
             random_variables = {key: value.tolist() for key, value in random_variables.items()}
@@ -117,7 +116,7 @@ class State(ABC):
             batched_info = {}
             for _ag, _ag_infos in infos.items():
                 for _info_key, _info_value in _ag_infos.items():
-                    batched_info[f"{_ag}_{_info_key}"] = [v[batch] for v in _info_value]
+                    batched_info[f"{_ag}_{_info_key}"] = _info_value[batch]
 
             data = batch_random_variables | constants | batched_actions | batched_rewards | batched_info
 

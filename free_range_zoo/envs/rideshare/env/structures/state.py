@@ -91,7 +91,6 @@ class RideshareState(State):
         else:
             rewards = {key: [0.0 for _ in range(batch_size)] for key in rewards}
 
-
         if label is not None:
             assert "test" not in label and "train" not in label, "label should not be used to distinguish between test and train data make a new file"
 
@@ -123,7 +122,10 @@ class RideshareState(State):
             batched_info = {}
             for _ag, _ag_infos in infos.items():
                 for _info_key, _info_value in _ag_infos.items():
-                    batched_info[f"{_ag}_{_info_key}"] = [v[batch] for v in _info_value]
+                    if isinstance(_info_value[batch],torch.Tensor):
+                        batched_info[f"{_ag}_{_info_key}"] = str(_info_value[batch].tolist())
+                    else:
+                        batched_info[f"{_ag}_{_info_key}"] = _info_value[batch]
 
             state_data = batch_random_variables | batched_actions | batched_rewards | batched_info
 

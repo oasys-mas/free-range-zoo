@@ -371,7 +371,7 @@ class raw_env(BatchedAECEnv):
         if len(bad_actions['agent_index']) > 0:
             for agent_name, agent_position in zip(bad_actions['agent_name'], bad_actions['agent_index']):
                 rewards[agent_name][agent_position[0]] = self.BAD_ATTACK_PENALTY
-                infos[agent_name]['bad_attack'] = True
+                # infos[agent_name]['bad_attack'] = True
 
         fire_rewards = torch.zeros_like(self._state.fires, device=self.device, dtype=torch.float)
         fire_rewards[just_put_out] = self.fire_rewards[just_put_out]
