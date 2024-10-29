@@ -13,14 +13,14 @@ class WildfireState(State):
     Representation of the wildfire environment state
 
     Fire Attributes:
-        fires: torch.Tensor - Tensor representing the fire intensity of each cell
-        intensity: torch.Tensor - Tensor representing the intensity of each fire
-        fuel: torch.Tensor - Tensor representing the fuel remaining in each cell
+        fires: torch.Tensor - Tensor representing the fire intensity of each cell <Z, y, x>
+        intensity: torch.Tensor - Tensor representing the intensity of each fire <Z, y, x>
+        fuel: torch.Tensor - Tensor representing the fuel remaining in each cell <Z, y, x>
     Agent Attributes:
-        agents: torch.Tensor - Tensor representing the location of each agent
-        suppressants: torch.Tensor - Tensor representing the suppressant of each agent
-        capacity: torch.Tensor - Tensor representing the maximum suppressant of each agent
-        equipment: torch.Tensor - Tensor representing the power of each agent
+        agents: torch.Tensor - Tensor representing the location of each agent <agent, 2> (y, x)
+        suppressants: torch.Tensor - Tensor representing the suppressant of each agent <Z, agent, 1> (suppressant)
+        capacity: torch.Tensor - Tensor representing the maximum suppressant of each agent <Z, agent, 1> (capacity)
+        equipment: torch.Tensor - Tensor representing the power of each agent <Z, agent, 1> (equipment)
     """
     fires: torch.Tensor
     intensity: torch.Tensor

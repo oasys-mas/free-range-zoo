@@ -15,10 +15,10 @@ class CybersecurityState(State):
     Representation of the cybersecurity environment state.
 
     Subnetwork Attributes:
-        network_state: torch.IntTensor - Graph data representing the subnetwork states and connections
+        network_state: torch.IntTensor - Graph data representing the subnetwork states and connections <Z, network, 1> (latency)
     Agent Attributes:
-        location: torch.IntTensor - Tensor representing the current subnetwork position of each defender agent
-        presence: torch.BoolTensor - Tensor representing the presence of each all agents in the subnetworks (attackers, defenders)
+        location: torch.IntTensor - Tensor representing the current subnetwork position of each defender agent <Z, agent, 1> (location)
+        presence: torch.BoolTensor - Tensor representing the presence of each all agents in the subnetworks (attackers, defenders) <Z, agent, 1> (presence)
     """
 
     network_state: torch.IntTensor
