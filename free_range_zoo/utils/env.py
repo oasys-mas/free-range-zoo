@@ -262,7 +262,7 @@ class BatchedAECEnv(ABC, AECEnv):
                                 log_exclusions=self.log_exclusions,
                                 infos=self.infos)
 
-        self.agent_selection = self.agent_selector.next
+        self.agent_selection = self.agent_selector.next()
 
 
     @torch.no_grad()
