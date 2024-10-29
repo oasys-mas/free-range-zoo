@@ -16,6 +16,7 @@ tensordict = "^0.5.0"
 torchaudio = "^2.4.0"
 torchvision = "^0.19.0"
 xxhash = "^3.5.0"
+yapf = "^0.40.2"
 
 [tool.poetry.group.scripts.dependencies]
 jupyter = "^1.0.0"
@@ -35,6 +36,16 @@ optional = true
 
 [tool.poetry.group.models.dependencies]
 planning = { path = "models/planning", develop = true }
+
+[tool.pycodestyle]
+max-line-length = 130
+ignore = ["E402", "W503"]
+
+[tool.flake8]
+max-complexity = 25
+
+[tool.yapf]
+COLUMN_LIMIT = 130
 
 [build-system]
 requires = ["poetry-core"]
