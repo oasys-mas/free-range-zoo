@@ -1,20 +1,15 @@
+"""Create action spaces for the wildfire environment."""
 from typing import List
 import functools
-import cachetools
 
 import torch
 from gymnasium.spaces import Discrete, OneOf
 import gymnasium
 
-from free_range_zoo.utils.caching import optimized_convert_hashable
 
-
-@cachetools.cached(cache=cachetools.LRUCache(float('inf')),
-                   key=lambda environment_task_counts, *args, **kwargs: optimized_convert_hashable(environment_task_counts),
-                   info=True)
 def build_action_space(environment_task_counts: torch.Tensor) -> List[gymnasium.Space]:
     """
-    Builds the action space for all environments in a batched environment
+    Build the action space for all environments in a batched environment.
 
     Args:
         environment_task_counts: torch.Tensor - The number of tasks in each environment
@@ -24,10 +19,15 @@ def build_action_space(environment_task_counts: torch.Tensor) -> List[gymnasium.
     return [build_single_action_space(task_count) for task_count in environment_task_counts]
 
 
-@functools.lru_cache(maxsize=None)
+@functools.lru_cache(maxsize=100)
 def build_single_action_space(num_tasks_in_environment: int) -> gymnasium.Space:
     """
-    Builds the action space for a single environment
+    Build the action space for a single environment.
+
+    Action Space structure is defined as follows:
+        - If there are no tasks in the environment, the action space is a single action with a value of -1 (noop)
+        - If there are tasks in the environment, the action space is a single action for each task, with an additional
+          action for noop
 
     Args:
         num_tasks_in_environment: int - The number of tasks in the environment

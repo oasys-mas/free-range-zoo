@@ -143,7 +143,7 @@ class AgentConfiguration(Configuration):
 
 
 @dataclass()
-class RideShareConfig(Configuration):
+class RideShareConfiguration(Configuration):
     grid_conf: GridConfiguration
     passenger_conf: PassengerConfiguration
     agent_conf: AgentConfiguration

@@ -3,7 +3,8 @@ import unittest
 from free_range_zoo.utils.state import State
 
 
-class TestWildfireState(unittest.TestCase):
+class TestState(unittest.TestCase):
+
     def test_state_includes_to(self) -> None:
         self.assertTrue(hasattr(State, 'to'), 'State does not include to method')
         self.assertTrue(callable(State.to), 'State to method is not callable')
@@ -25,8 +26,8 @@ class TestWildfireState(unittest.TestCase):
         self.assertTrue(callable(State.restore_from_checkpoint), 'State restore_from_checkpoint method is not callable')
 
     def test_state_includes_clone(self) -> None:
-        self.assertTrue(hasattr(State, '_clone'), 'State does not include _clone method')
-        self.assertTrue(callable(State._clone), 'State _clone method is not callable')
+        self.assertTrue(hasattr(State, 'clone'), 'State does not include clone method')
+        self.assertTrue(callable(State.clone), 'State clone method is not callable')
 
 
 if __name__ == '__main__':

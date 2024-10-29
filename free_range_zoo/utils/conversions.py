@@ -53,7 +53,7 @@ class batched_aec_to_batched_parallel_wrapper(aec_to_parallel_wrapper):
 
         observations = {agent: self.aec_env.observe(agent) for agent in self.agents}
 
-        infos = dict(**self.aec_env.infos)
+        infos = self.aec_env.infos
         return observations, infos
 
     def step(
@@ -85,17 +85,17 @@ class batched_aec_to_batched_parallel_wrapper(aec_to_parallel_wrapper):
         infos = {}
 
         for agent in self.aec_env.agents:
-            obs, rew, termination, truncation, info = self.aec_env.last()
             self.aec_env.step(actions[agent])
             for agent in self.aec_env.agents:
                 rewards[agent] += self.aec_env.rewards[agent]
 
-        terminations = dict(**self.aec_env.terminations)
-        truncations = dict(**self.aec_env.truncations)
-        infos = dict(**self.aec_env.infos)
+        terminations = self.aec_env.terminations
+        truncations = self.aec_env.truncations
+        infos = self.aec_env.infos
         observations = {agent: self.aec_env.observe(agent) for agent in self.aec_env.agents}
 
         self.agents = self.aec_env.agents
+
         return observations, rewards, terminations, truncations, infos
 
     @property

@@ -8,6 +8,8 @@ my_secrets.py
 *.pkl
 *.prof
 
+unittest_logs
+
 # Created by https://www.toptal.com/developers/gitignore/api/virtualenv,python,visualstudiocode
 # Edit at https://www.toptal.com/developers/gitignore?templates=virtualenv,python,visualstudiocode
 

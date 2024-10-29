@@ -1,5 +1,5 @@
+"""Observation space constructors for wildfire simulation environment."""
 from typing import Tuple, List
-import cachetools
 import functools
 
 import numpy as np
@@ -7,20 +7,11 @@ import numpy as np
 from gymnasium.spaces import Box, Dict, Tuple as TupleSpace
 import gymnasium
 
-from free_range_zoo.utils.caching import optimized_convert_hashable
 
-
-@cachetools.cached(cache=cachetools.LRUCache(float('inf')),
-                   key=lambda environment_task_counts, *args, **kwargs: optimized_convert_hashable(environment_task_counts),
-                   info=True)
-def build_observation_space(environment_task_counts,
-                            num_agents: int,
-                            agent_high: Tuple[int],
-                            fire_high: Tuple[int],
-                            include_suppressant: bool,
-                            include_power: bool) -> List[gymnasium.Space]:
+def build_observation_space(environment_task_counts, num_agents: int, agent_high: Tuple[int], fire_high: Tuple[int],
+                            include_suppressant: bool, include_power: bool) -> List[gymnasium.Space]:
     """
-    Builds the observation space for all environments in a batched environment
+    Build the observation space for all environments in a batched environment.
 
     Args:
         environment_task_counts: torch.Tensor - The number of tasks in each environment
@@ -32,15 +23,13 @@ def build_observation_space(environment_task_counts,
     Returns:
         List[gymnasium.Space] - The observation spaces for the environments
     """
-    return [build_single_observation_space(agent_high,
-                                           fire_high,
-                                           task_count,
-                                           num_agents,
-                                           include_suppressant,
-                                           include_power) for task_count in environment_task_counts]
+    return [
+        build_single_observation_space(agent_high, fire_high, task_count, num_agents, include_suppressant, include_power)
+        for task_count in environment_task_counts
+    ]
 
 
-@functools.lru_cache(maxsize=None)
+@functools.lru_cache(maxsize=100)
 def build_single_observation_space(agent_high: Tuple[int],
                                    fire_high: Tuple[int],
                                    num_tasks: int,
@@ -48,7 +37,7 @@ def build_single_observation_space(agent_high: Tuple[int],
                                    include_power: bool = True,
                                    include_suppressant: bool = True) -> gymnasium.Space:
     """
-    Builds the observation space for a single environment
+    Build the observation space for a single environment.
 
     Args:
         agent_high: Tuple[int] - The high values for the agent observation space (y, x, power, suppressant)
@@ -72,14 +61,20 @@ def build_single_observation_space(agent_high: Tuple[int],
     return Dict({
         'self': build_single_agent_observation_space(agent_high),
         'others': TupleSpace([*[build_single_agent_observation_space(other_high) for _ in range(num_agents - 1)]]),
-        'fire': build_single_fire_observation_space(fire_high, num_tasks),
+        'tasks': build_single_fire_observation_space(fire_high, num_tasks),
     })
 
 
-@functools.lru_cache(maxsize=None)
+@functools.lru_cache(maxsize=100)
 def build_single_agent_observation_space(high: Tuple[int]):
     """
-    Builds the observation space for a single agent
+    Build the observation space for a single agent.
+
+    The agent observation space is defined as follows:
+        - If the agent observation space includes both the suppressant and the power, the space is (y, x, power, suppressant)
+        - If the agent observation space includes the suppressant but not the power, the space is (y, x, suppressant)
+        - If the agent observation space includes the power but not the suppressant, the space is (y, x, power)
+        - If the agent observation space includes neither the suppressant nor the power, the space is (y, x)
 
     Args:
         high: Tuple[int] - The high values for the agent observation space (y, x, power, suppressant) if unfiltered
@@ -89,10 +84,13 @@ def build_single_agent_observation_space(high: Tuple[int]):
     return Box(low=np.array([0] * len(high)), high=np.array(high), dtype=np.float32)
 
 
-@functools.lru_cache(maxsize=None)
+@functools.lru_cache(maxsize=100)
 def build_single_fire_observation_space(high: Tuple[int], num_tasks: int):
     """
-    Builds the observation space for the fire
+    Build the observation space for the fire.
+
+    The fire observation space is defined as follows:
+        - If the fire observation space includes the level and intensity, the space is (y, x, level, intensity)
 
     Args:
         high: Tuple[int] - The high values for the fire observation space (y, x, level, intensity) if unfiltered

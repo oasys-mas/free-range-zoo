@@ -1,3 +1,4 @@
+"""BatchedAECEnv class for batched environments."""
 from abc import ABC, abstractmethod
 from typing import Dict, Tuple, List, Any, Optional
 
@@ -12,9 +13,7 @@ from free_range_zoo.utils.state import State
 
 
 class BatchedAECEnv(ABC, AECEnv):
-    """
-    Pettingzoo environment for batched environments
-    """
+    """Pettingzoo environment for adapter for batched environments."""
 
     def __init__(self,
                  *args,
@@ -24,7 +23,21 @@ class BatchedAECEnv(ABC, AECEnv):
                  device: torch.DeviceObjType = torch.device('cpu'),
                  render_mode: str | None = None,
                  log_dir: str = None,
+                 single_seeding: bool = False,
                  **kwargs):
+        """
+        Initialize the environment.
+
+        Args:
+            configuration: Configuration - the configuration for the environment
+            max_steps: int - the maximum number of steps to take in the environment
+            parallel_envs: int - the number of parallel environments to run
+            device: torch.DeviceObjType - the device to run the environment on
+            render_mode: str | None - the mode to render the environment in
+            log: bool - whether to log the environment
+            log_dir: str - the directory to log the environment to
+            single_seeding: bool - whether to seed all parallel environments with the same seed
+        """
         super().__init__(*args, **kwargs)
         self.parallel_envs = parallel_envs
         self.max_steps = max_steps
@@ -32,6 +45,7 @@ class BatchedAECEnv(ABC, AECEnv):
         self.render_mode = render_mode
         self.log_dir = log_dir
         self.is_logging = log_dir is not None
+        self.single_seeding = single_seeding
         self.is_new_environment = True
 
         if configuration is not None:
@@ -40,7 +54,7 @@ class BatchedAECEnv(ABC, AECEnv):
             for key, value in configuration.__dict__.items():
                 setattr(self, key, value)
 
-        #checks if any environments reset for logging purposes
+        # Checks if any environments reset for logging purposes
         self._any_reset = None
         #default logging param
         self.constant_observations = []
@@ -49,7 +63,7 @@ class BatchedAECEnv(ABC, AECEnv):
     @torch.no_grad()
     def _seed(self, seed: torch.Tensor = None, partial_seeding: torch.Tensor = None) -> None:
         """
-        Seeds the environment, or randomly generates a seed if none is provided
+        Seeds the environment, or randomly generates a seed if none is provided.
 
         Args:
             seed: torch.Tensor - the seed to use for the environment
@@ -58,6 +72,12 @@ class BatchedAECEnv(ABC, AECEnv):
         if seed is None:
             seed_shape = self.seeds.shape if partial_seeding is None else partial_seeding.shape
             seed = torch.randint(100000000, seed_shape, device=self.device)
+
+        if self.single_seeding:
+            self.seeds[:] = seed
+            generator = torch.Generator(device=self.device)
+            self.generator_states[0] = generator.get_state()
+            return
 
         match partial_seeding:
             case None:
@@ -76,7 +96,7 @@ class BatchedAECEnv(ABC, AECEnv):
     @torch.no_grad()
     def reset(self, seed: Optional[List[int]] = None, options: Optional[Dict[str, Any]] = None) -> None:
         """
-        Resets the environment
+        Reset the environment.
 
         Args:
             seed: Union[List[int], None] - the seed to use
@@ -89,12 +109,25 @@ class BatchedAECEnv(ABC, AECEnv):
         # Set seeding if given (prepares for the next random number generation i.e. self._make_randoms())
         self.seeds = torch.zeros((self.parallel_envs), dtype=torch.int32, device=self.device)
 
-        if self.device != torch.device('cpu') and self.device != 'cpu':
-            state_size = 16
-        else:
-            state_size = 5056
+        if options and options.get('skip_seeding', False):
+            if not hasattr(self, 'seeds') or not hasattr(self, 'generator_states'):
+                raise ValueError("Seed must be set before skipping seeding is possible")
 
-        self.generator_states = torch.empty((self.parallel_envs, state_size), dtype=torch.uint8, device=torch.device('cpu'))
+        match str(self.device):
+            case device if device.startswith('cuda'):
+                state_size = 16
+            case 'cpu':
+                state_size = 5056
+            case _:
+                raise ValueError(f"Device {self.device} not supported")
+
+        if self.single_seeding:
+            self.seeds = torch.empty((1, ), dtype=torch.int32, device=self.device)
+            self.generator_states = torch.empty((1, state_size), dtype=torch.uint8, device=torch.device('cpu'))
+        else:
+            self.seeds = torch.empty((self.parallel_envs), dtype=torch.int32, device=self.device)
+            self.generator_states = torch.empty((self.parallel_envs, state_size), dtype=torch.uint8, device=torch.device('cpu'))
+
         self._seed(seed)
 
         # Initial environment AEC attributes
@@ -111,6 +144,12 @@ class BatchedAECEnv(ABC, AECEnv):
         #this is used when the availability of actions/tasks is not uniform across agents & environments for logging
         self.infos = {agent: {'task-action-index-map': [None for _ in range(self.parallel_envs)]} for agent in self.agents}
 
+        # Dictionary storing actions for each agent
+        self.actions = {
+            agent: torch.empty((self.parallel_envs, 2), dtype=torch.int32, device=self.device)
+            for agent in self.agents
+        }
+
         self.num_moves = torch.zeros(self.parallel_envs, dtype=torch.int32, device=self.device)
 
         # Initialize AEC agent selection
@@ -118,10 +157,9 @@ class BatchedAECEnv(ABC, AECEnv):
         self.agent_selection = self.agent_selector.reset()
 
         # Intialize the mapping of the tasks "in" the environment, used to map actions
-        self.environment_task_count = torch.empty((self.parallel_envs, ), dtype=torch.int32)
-        self.agent_task_count = torch.empty((self.num_agents, self.parallel_envs), dtype=torch.int32)
+        self.environment_task_count = torch.empty((self.parallel_envs, ), dtype=torch.int32, device=self.device)
+        self.agent_task_count = torch.empty((self.num_agents, self.parallel_envs), dtype=torch.int32, device=self.device)
 
-        #switch reset flag
         self._any_reset = True
 
     @torch.no_grad()
@@ -130,7 +168,7 @@ class BatchedAECEnv(ABC, AECEnv):
                       seed: Optional[List[int]] = None,
                       options: Optional[Dict[str, Any]] = None) -> None:
         """
-        Reset a batch of environments
+        Reset a batch of environments.
 
         Args:
             batch_indices: List[int] - The batch indices to reset
@@ -141,50 +179,54 @@ class BatchedAECEnv(ABC, AECEnv):
 
         for agent in self.agents:
             self.rewards[agent][batch_indices] = 0
+            self._cumulative_rewards[agent][batch_indices] = 0
             self.terminations[agent][batch_indices] = False
             self.truncations[agent][batch_indices] = False
             self.actions[agent][batch_indices] = torch.empty(2, dtype=torch.int32, device=self.device)
 
         self.num_moves[batch_indices] = 0
 
-        #switch reset flag
         self._any_reset = batch_indices
 
     @abstractmethod
     @torch.no_grad()
     def step_environment(self) -> Tuple[Dict[str, torch.Tensor], Dict[str, torch.Tensor], Dict[str, Dict[str, bool]]]:
-        """
-        Simulatenous step of the entire environment
-        """
+        """Simulatenous step of the entire environment."""
         raise NotImplementedError('This method should be implemented in the subclass')
 
     @torch.no_grad()
     def step(self, actions: torch.Tensor, log_label: Optional[str] = None) -> None:
         """
-        Take a step in the environment
+        Take a step in the environment.
+
         Args:
             actions: torch.Tensor - The actions to take in the environment
             log_label: Optional[str] - A additional label added as a column to the log file if logging is enabled
         """
         # Handle stepping an agent which is completely dead
         if torch.all(self.terminations[self.agent_selection]) or torch.all(self.truncations[self.agent_selection]):
-            return
+            return                
 
-        #?reset logging, logs if any batches reset.
+        # Reset logging, logs if any batches reset
         if self._any_reset and self.is_logging:
-            self._state.log(path=self.log_dir, new_episode=True, \
-                constant_observations=self.constant_observations, initial=self.is_new_environment, label=log_label,\
-                partial_log=self._any_reset, actions=self.agents, log_exclusions=self.log_exclusions, rewards=self.rewards, infos=self.infos)
+            self._state.log(path=self.log_dir,
+                            new_episode=True,
+                            constant_observations=self.constant_observations,
+                            initial=self.is_new_environment,
+                            label=log_label,
+                            partial_log=self._any_reset,
+                            actions=self.agents,
+                            log_exclusions=self.log_exclusions,
+                            rewards=self.rewards,
+                            infos=self.infos)
 
-            #flip tags
+            # Flip tags
             self._any_reset = None
             self.is_new_environment = False
 
+        self._clear_rewards()
         agent = self.agent_selection
         self.actions[agent] = actions
-
-        # Create the awards aggregation array for this agent
-        self._cumulative_rewards[agent] = torch.zeros(self.parallel_envs, device=self.device)
 
         is_last = self.agent_selector.is_last()
 
@@ -204,69 +246,51 @@ class BatchedAECEnv(ABC, AECEnv):
                 for agent in self.agents:
                     self.truncations[agent] = is_truncated
 
-                    if torch.any(is_truncated):
-                        print("hi")
-        else:
-            # Wait to allocate rewards until all agents have submitted their actions
-            self._clear_rewards()
+            self._accumulate_rewards()
+            self.update_observations()
+            self.update_actions()
 
-        # Update the agent selection to the next agent in the sequence
-        self.agent_selection = self.agent_selector.next()
+            # Log the new state of the environment
+            if self.is_logging and is_last:
+                self._state.log(path=self.log_dir,
+                                new_episode=False,
+                                constant_observations=self.constant_observations,
+                                initial=False,
+                                label=log_label,
+                                actions=self.actions,
+                                rewards=self.rewards,
+                                log_exclusions=self.log_exclusions,
+                                infos=self.infos)
 
-        # Accumulate the episodic rewards
-        self._accumulate_rewards()
+        self.agent_selection = self.agent_selector.next
 
-        # Update the observations and actions for the next step
-        self.update_observations()
-        self.update_actions()
-
-        #?log the new state of the environment
-        if self.is_logging and is_last:
-            self._state.log(path=self.log_dir, new_episode=False, \
-                constant_observations=self.constant_observations, initial=False, label=log_label\
-                ,actions=self.actions, rewards=self.rewards, infos=self.infos, log_exclusions=self.log_exclusions)
-
-        # Render the current environment state in a human-viewable way
-        match self.render_mode:
-            case 'human':
-                raise NotImplementedError("Human rendering is not yet implemented")
-            case 'rgb_array':
-                raise NotImplementedError("RGB array rendering is not yet implemented")
 
     @torch.no_grad()
     def _accumulate_rewards(self) -> None:
-        """
-        Accumulate environmental rewards while taking into account parallel environments
-        """
+        """Accumulate environmental rewards while taking into account parallel environments."""
         for agent in self.agents:
             self._cumulative_rewards[agent] += self.rewards[agent]
 
     @torch.no_grad()
     def _clear_rewards(self) -> None:
-        """
-        Clear environmental rewards while taking into account parallel environments
-        """
+        """Clear environmental rewards while taking into account parallel environments."""
         for agent in self.rewards:
             self.rewards[agent] = torch.zeros(self.parallel_envs, dtype=torch.float32, device=self.device)
 
     @abstractmethod
     def update_actions(self) -> None:
-        """
-        Update tasks in the environment for the next step and renew agent action-task mappings
-        """
+        """Update tasks in the environment for the next step and renew agent action-task mappings."""
         raise NotImplementedError('This method should be implemented in the subclass')
 
     @abstractmethod
     def update_observations(self) -> None:
-        """
-        Update observations for the next step and update observation space
-        """
+        """Update observations for the next step and update observation space."""
         raise NotImplementedError('This method should be implemented in the subclass')
 
     @torch.no_grad()
     def observe(self, agent: str) -> TensorDict:
         """
-        Returns the current observations for this agent
+        Return the current observations for this agent.
 
         Args:
             agent (str): the name of the agent to retrieve the observations for
@@ -279,7 +303,7 @@ class BatchedAECEnv(ABC, AECEnv):
     @torch.no_grad()
     def action_space(self, agent: str) -> List[gymnasium.Space]:
         """
-        Returns the action space for the given agent
+        Return the action space for the given agent.
 
         Args:
             agent (str): the name of the agent to retrieve the action space for
@@ -292,20 +316,19 @@ class BatchedAECEnv(ABC, AECEnv):
     @torch.no_grad()
     def observation_space(self, agent: str) -> List[gymnasium.Space]:
         """
-        Returns the observation space for the given agent
+        Return the observation space for the given agent.
 
         Args:
             agent (str): the name of the agent to retrieve the observation space for
         Returns:
             List[gymnasium.Space]: the observation space for the given agent
         """
-
         raise NotImplementedError('This method should be implemented in the subclass')
 
     @torch.no_grad()
     def state(self) -> State:
         """
-        Returns the current state of the environment
+        Return the current state of the environment.
 
         Returns:
             WildfireState: the current state of the environment
@@ -315,29 +338,27 @@ class BatchedAECEnv(ABC, AECEnv):
     @property
     def finished(self) -> torch.Tensor:
         """
-        Returns a boolean tensor indicating which environments have finished
+        Return a boolean tensor indicating which environments have finished.
 
         Returns:
             torch.Tensor - The tensor indicating which environments have finished
         """
-
         return torch.logical_or(self.terminated, self.truncated)
 
     @property
     def terminated(self) -> torch.Tensor:
         """
-        Returns a boolean tensor indicating which environments have terminated
+        Return a boolean tensor indicating which environments have terminated.
 
         Returns:
             torch.Tensor - The tensor indicating which environments have terminated
         """
-
         return torch.all(torch.stack([self.terminations[agent] for agent in self.agents]), dim=0)
 
     @property
     def truncated(self) -> torch.Tensor:
         """
-        Returns a boolean tensor indicating which environments have been truncated
+        Return a boolean tensor indicating which environments have been truncated.
 
         Returns:
             torch.Tensor - The tensor indicating which environments have been truncated

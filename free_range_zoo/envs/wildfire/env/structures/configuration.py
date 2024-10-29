@@ -1,3 +1,6 @@
+"""Configurations classes for the wildfire environments."""
+from __future__ import annotations
+
 from dataclasses import dataclass
 from typing import List
 
@@ -9,17 +12,46 @@ from free_range_zoo.utils.configuration import Configuration
 
 
 @dataclass
+class RewardConfiguration(Configuration):
+    """
+    Settings for configuring the reward function.
+
+    fire_rewards: torch.FloatTensor - Reward for extinguishing a fire
+    bad_attack_penalty: float - Penalty for attacking a tile that is not on fire
+    burnout_penalty: float - Penalty for attacking a burned out fire
+    termination_reward: float - Reward for terminating the environment
+    """
+
+    fire_rewards: torch.FloatTensor
+    bad_attack_penalty: float
+    burnout_penalty: float
+    termination_reward: float
+
+    def validate(self) -> bool:
+        """
+        Validate the configuration to ensure logical consistency.
+
+        Returns:
+            bool - True if the configuration is valid
+        """
+        if len(self.fire_rewards.shape) != 2:
+            raise ValueError('fire_rewards should be a 2D tensor')
+
+        return True
+
+
+@dataclass
 class FireConfiguration(Configuration):
     """
-    Setting for configuring fire properties in the environment
+    Setting for configuring fire properties in the environment.
 
     General Attributes:
         fire_types: torch.Tensor - Required attack power in order to extinguish the fire
         num_fire_states: int - Number of fire states
-        fire_rewards: torch.Tensor - Reward for extinguishing the fire
-        lit: torch.Tensor - Tensor representing the initially lit tiles
+        lit: torch.IntTensor - Tensor representing the initially lit tiles
         intensity_increase_probability: float - Probability of fire intensity increase
         intensity_decrease_probability: float - Probability of fire intensity decrease
+        extra_power_decrease_bonus: float - Additional decrease bonus per extra power
         burnout_probability: float - Probability of fire burnout
     Fire Spreads Attributes:
         base_spread_rate: float - Base spread rate of the fire
@@ -27,7 +59,7 @@ class FireConfiguration(Configuration):
         random_ignition_probability: float - Probability of random ignition
         cell_size: float - Size of each cell
         wind_direction: float - Direction of the wind (radians)
-        ignition_temp: torch.Tensor - Initial intensity of each fire once ignited
+        ignition_temp: torch.IntTensor - Initial intensity of each fire once ignited
         initial_fuel: int - Initial fuel value of each cell in the grid, controls the number of re-ignitions
     Calculated Attributes:
         realistic_burnout_probability: float - Burnout probability with realistic spread rates
@@ -36,12 +68,13 @@ class FireConfiguration(Configuration):
         max_fire_type: int - Maximum fire type
         realistic_spread_rates: List[float] - Spread rates in each direction calculated with wind direction
     """
-    fire_types: torch.Tensor
-    fire_rewards: torch.Tensor
+
+    fire_types: torch.IntTensor
     num_fire_states: int
     lit: torch.Tensor
     intensity_increase_probability: float
     intensity_decrease_probability: float
+    extra_power_decrease_bonus: float
     burnout_probability: float
 
     base_spread_rate: float
@@ -49,34 +82,39 @@ class FireConfiguration(Configuration):
     random_ignition_probability: float
     cell_size: float
     wind_direction: float
-    ignition_temp: torch.Tensor
+    ignition_temp: torch.IntTensor
     initial_fuel: int
 
     @functools.cached_property
     def realistic_burnout_probability(self) -> float:
+        """Return the burnout probability with realistic spread rates."""
         return 4 * 0.167 * self.grid_conf.max_spread_rate / self.grid_conf.cell_size
 
     @functools.cached_property
     def burned_out(self) -> int:
+        """Return the burned out fire state."""
         return self.num_fire_states - 1
 
     @functools.cached_property
     def almost_burned_out(self) -> int:
+        """Return the alomst burned out fire state."""
         return self.num_fire_states - 2
 
     @functools.cached_property
     def max_fire_type(self) -> int:
+        """Return the maximum fire type."""
         return self.fire_types.max().item()
 
     @functools.cached_property
     def realistic_spread_rates(self) -> List[float]:
+        """Return the spread rates in each direction calculated with the wind direction."""
         cell_spread_factor = self.base_spread_rate / self.cell_size
         max_spread_factor = 1 - self.base_spread_rate / self.max_spread_rate
 
         cos_terms = [
-            np.cos(0 - self.wind_direction),          # North
+            np.cos(0 - self.wind_direction),  # North
             np.cos(0.5 * np.pi - self.wind_direction),  # East
-            np.cos(np.pi - self.wind_direction),      # South
+            np.cos(np.pi - self.wind_direction),  # South
             np.cos(1.5 * np.pi - self.wind_direction)  # West
         ]
 
@@ -92,8 +130,6 @@ class FireConfiguration(Configuration):
         """
         if len(self.fire_types.shape) != 2:
             raise ValueError('fires should be a 2D tensor')
-        if len(self.fire_rewards.shape) != 2:
-            raise ValueError('fire_rewards should be a 2D tensor')
         if self.num_fire_states < 4:
             raise ValueError('num_fire_states should be greater than 4')
         if len(self.lit.shape) != 2:
@@ -110,8 +146,8 @@ class FireConfiguration(Configuration):
         if not (0.0 <= self.wind_direction <= 2 * np.pi):
             raise ValueError("Wind direction must be between 0 and 2 * pi")
 
-        if not (self.lit.shape == self.fire_types.shape == self.fire_rewards.shape == self.ignition_temp.shape):
-            raise ValueError("lit, fire_types, fire_rewards, and ignition_temp must have the same shape")
+        if not (self.lit.shape == self.fire_types.shape == self.ignition_temp.shape):
+            raise ValueError("lit, fire_types, and ignition_temp must have the same shape")
         if self.base_spread_rate > self.max_spread_rate:
             raise ValueError('base_spread_rate should be less than max_spread_rate')
         return True
@@ -120,12 +156,11 @@ class FireConfiguration(Configuration):
 @dataclass
 class AgentConfiguration(Configuration):
     """
-    Setting for configuring agent properties in the environment
+    Setting for configuring agent properties in the environment.
 
     General Attributes:
-        agents: torch.Tensor - Tensor representing the location of each agent
-        fire_reduction_power: torch.Tensor - Power of each agent to reduce the fire intensity
-        fire_reduction_power_per_extra_agent: float - Additional fire reduction power per agent after minimum threshold
+        agents: torch.IntTensor - Tensor representing the location of each agent
+        fire_reduction_power: torch.FloatTensor - Power of each agent to reduce the fire intensity
         attack_range: torch.Tensor - Range of attack for each agent
     Suppressant Attributes:
         suppressant_states: int - Number of suppressant states
@@ -134,7 +169,7 @@ class AgentConfiguration(Configuration):
         suppressant_refill_probability: float - Probability of suppressant refill
     Equipment Attributes:
         intial_equipment_state: int - Initial equipment state for each agent
-        equipment_states: torch.Tensor - Definition of equipment states modifiers
+        equipment_states: torch.FloatTensor - Definition of equipment states modifiers in the form of (capacity, power, range)
         repair_probability: float - Probability that an agent get their repaired equipment once fully damaged
         degrade_probability: float - Probability that an agent's tank will degrade
         critical_error_probability: float - Probability that an agent at full will suffer a critical error
@@ -147,9 +182,9 @@ class AgentConfiguration(Configuration):
         max_fire_reduction_power: float - Maximum fire reduction power of the agents
         num_equipment_states: int - Number of equipment states
     """
-    agents: torch.Tensor
-    fire_reduction_power: torch.Tensor
-    fire_reduction_power_per_extra_agent: float
+
+    agents: torch.IntTensor
+    fire_reduction_power: torch.FloatTensor
     attack_range: torch.Tensor
 
     suppressant_states: int
@@ -158,7 +193,7 @@ class AgentConfiguration(Configuration):
     suppressant_refill_probability: float
 
     initial_equipment_state: int
-    equipment_states: torch.Tensor
+    equipment_states: torch.FlaotTensor
     repair_probability: float
     degrade_probability: float
     critical_error_probability: float
@@ -170,14 +205,17 @@ class AgentConfiguration(Configuration):
 
     @functools.cached_property
     def num_agents(self) -> int:
+        """Return the number of agents."""
         return self.agents.shape[0]
 
     @functools.cached_property
-    def max_fire_reduction_power(self) -> int:
+    def max_fire_reduction_power(self) -> float:
+        """Return the maximum fire reduction power of the agents."""
         return self.fire_reduction_power.max().item()
 
     @functools.cached_property
     def num_equipment_states(self) -> int:
+        """Return the number of equipment states."""
         return self.equipment_states.shape[0]
 
     def validate(self) -> bool:
@@ -232,7 +270,7 @@ class AgentConfiguration(Configuration):
 @dataclass
 class StochasticConfiguration(Configuration):
     """
-    Configuration for the stochastic elements of the environment
+    Configuration for the stochastic elements of the environment.
 
     General Fire Attributes:
         special_burnout_probability: bool - Whether to use special burnout probabilities
@@ -244,12 +282,15 @@ class StochasticConfiguration(Configuration):
         critical_error: bool - Whether equipment state can have a critical error
         degrade: bool - Whether equipment state stochastically degrades
         repair: bool - Whether equipment state stochastically repairs
-    Stochastic Fire Spread Attributes:
+    Stochastic Fire Attributes:
+        fire_decrease: bool - Whether fires decrease stochastically
+        fire_increase: bool - Whether fires increase stochastically
         fire_spread: bool - Whether fires spread
         realistic_fire_spread: bool - Whether fires spread realistically
         random_fire_ignition: bool - Whether fires can ignite randomly
         fire_fuel: bool - Whether fires consume fuel and have limited ignitions
     """
+
     special_burnout_probability: bool
 
     suppressant_refill: bool
@@ -260,6 +301,8 @@ class StochasticConfiguration(Configuration):
     degrade: bool
     repair: bool
 
+    fire_increase: bool
+    fire_decrease: bool
     fire_spread: bool
     realistic_fire_spread: bool
     random_fire_ignition: bool
@@ -284,7 +327,7 @@ class StochasticConfiguration(Configuration):
 @dataclass
 class WildfireConfiguration(Configuration):
     """
-    Configuration for the wildfire environment
+    Configuration for the wildfire environment.
 
     Attributes:
         grid_width: int - Width of the grid
@@ -292,6 +335,7 @@ class WildfireConfiguration(Configuration):
     Configuration Attributes:
         fire_configuration: FireConfiguration - Configuration for the fire properties
         agent_configuration: AgentConfiguration - Configuration for the agent properties
+        reward_configuration: RewardConfiguration - Configuration for the environment rewards
         stochastic_configuration: StochasticConf - Configuration for the stochastic elements
     """
 
@@ -300,10 +344,12 @@ class WildfireConfiguration(Configuration):
 
     fire_config: FireConfiguration
     agent_config: AgentConfiguration
+    reward_config: RewardConfiguration
     stochastic_config: StochasticConfiguration
 
     @functools.cached_property
     def fire_spread_weights(self) -> torch.Tensor:
+        """Return the fire spread weights with the current fire and stochastic configuration."""
         if not self.stochastic_config.fire_spread:
             return torch.zeros((1, 1, 3, 3), dtype=torch.float32)
 
@@ -317,30 +363,32 @@ class WildfireConfiguration(Configuration):
         else:
             Ns, Es, Ss, Ws = [self.fire_config.base_spread_rate] * 4
 
-        filter = torch.tensor([
+        fire_filter = torch.tensor([
             [0.0, Ns, 0.0],
             [Ws, 0.0, Es],
-            [0.0, Ss, 0.0]
-        ])
+            [0.0, Ss, 0.0],
+        ], dtype=torch.float32)
 
         if self.stochastic_config.random_fire_ignition:
-            filter[1, 1] = filter[1, 1] + self.fire_config.random_ignition_probability
+            fire_filter[1, 1] = fire_filter[1, 1] + self.fire_config.random_ignition_probability
 
-        return filter.unsqueeze(0).unsqueeze(0).to(torch.float32)
+        return fire_filter.unsqueeze(0).unsqueeze(0).to(torch.float32)
 
     def validate(self) -> bool:
         """
         Validate the configuration to ensure logical consistency.
+
         Returns:
             bool - True if the configuration is valid
         """
+        super().validate()
+
         if self.grid_width < 1:
             raise ValueError('grid_width should be greater than 0')
         if self.grid_height < 1:
             raise ValueError('grid_height should be greater than 0')
 
-        self.fire_config.validate()
-        self.agent_config.validate()
-        self.stochastic_config.validate()
+        if not (self.fire_config.lit.shape == self.reward_config.fire_rewards.shape):
+            raise ValueError('lit and fire_rewards should have the same shape')
 
         return True

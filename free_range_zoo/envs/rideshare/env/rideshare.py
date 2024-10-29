@@ -1,6 +1,29 @@
+"""
+# Rideshare
+
+---
+
+| Import             | `from freerangezoo.otask import rideshare_v0` |
+|--------------------|------------------------------------|
+| Actions            | Discrete and perfect                            |
+| Observations | Discrete and fully observed with private observations |
+| Parallel API       | Yes                                |
+| Manual Control     | No                                 |
+| Agent Names             | [$driver$_0, ..., $driver$_n] |
+| #Agents             |    $n$                                  |
+| Action Shape       | (envs, 2)                 |
+| Action Values      | [-1, $\|tasks\|$], [-1,2]\*                    |
+| Observation Shape | TensorDict: { <br> &emsp; **Agent's self obs**, <ins>'self'</ins>: 5 `<agent index, ypos, xpos, #accepted passengers, #riding passengers>`, <br> &emsp; **Other agent obs**, <ins>'others'</ins>: ($\|Ag\| \times 5$) `<agent index, ypos, xpos, #accepted passengers, #riding passengers>`, <br> &emsp; **Fire/Task obs**, <ins>'tasks'</ins>: ($\|X\| \times 5$) `<task index, ystart, xstart, yend, xend, acceptedBy, ridingWith, fare, time entered>` <br> **batch_size: `num_envs`** <br>}|
+| Observation Values   | <ins>self</ins> <br> **agent index**: [0,n), <br> **ypos**: [0,grid_height], <br> **xpos**: [0, grid_width], <br> **number accepted passengers**: [0, $\infty$), <br> **number riding passengers**: [0,$\infty$) <br> <br> <ins>others</ins> <br> **agent index**: [0,$n$), <br> **ypos**: [0,grid_height], <br> **xpos**: [0, grid_width], <br> **number accepted passengers**: [0, $\infty$), <br> **number riding passengers**: [0,$\infty$)  <br> <br> <ins>tasks</ins> <br> **task index**: [0, $\infty$), <br> **ystart**: [0,grid_height], <br> **xstart**: [0, grid_width], <br> **yend**: [0, grid_height], <br> **xend**: [0,grid_width] <br> **accepted by**: [0,$n$) <br> **riding with**: [0,$n$), <br> **fare**: (0, $\infty$), <br> **time entered**: [0,max steps] |
+
+
+"""
+
 from typing import Tuple, Dict, Any, Union, List, Optional, Tuple
 from collections import defaultdict
 import warnings
+
+import numpy as np
 
 import torch
 import torch.nn.functional as F
@@ -482,7 +505,7 @@ class raw_env(BatchedAECEnv):
                     agent_pos = self._state.agents[self._state.agents[:, 0] == batch_index][agent, 2:]
 
                     #?doesn't need to use "used_space" because that is already accounted for in action index conversion
-                    passenger_pos = self._state.locations[self._state.locations[:, 0] == batch_index][action[0], 1:]
+                    passenger_pos = self._state.locations[action[0], 1:]
 
                     #i'm not at the passenger let's go get them
                     if not torch.all(agent_pos == passenger_pos):
@@ -869,30 +892,31 @@ class raw_env(BatchedAECEnv):
         #TODO optimize this like crazy later
         for batch_index in range(self.parallel_envs):
 
-            number_of_present_tasks = torch.sum(self._state.used_space[self._state.used_space[:, 0] == batch_index])
+            number_of_present_tasks = torch.sum(self._state.used_space[self._state.associations[:, 0] == batch_index])
 
             space = gymnasium.spaces.Dict(
                 {
                     'self': gymnasium.spaces.Box(
-                        low=(ag, 0, 0, 0, 0),
-                        high=(ag, self.grid_height, self.grid_width, self.pool_limit, self.pool_limit),
+                        low=np.array([ag, 0, 0, 0, 0]),
+                        high=np.array([ag, self.grid_height, self.grid_width, self.pool_limit, self.pool_limit]),
                     ),
 
                     'others': gymnasium.spaces.Tuple(
                         [
                         gymnasium.spaces.Box(
-                                low=(0, 0, 0, 0, 0),
-                                high=(self.num_agents, self.grid_height, self.grid_width, self.pool_limit, self.pool_limit),
+                                low=np.array([0, 0, 0, 0, 0]),
+                                high=np.array([self.num_agents, self.grid_height, self.grid_width, self.pool_limit, self.pool_limit]),
                             )
                         for _ in range(self.num_agents - 1)
                         ]
                     ),
-                    'passengers': gymnasium.spaces.Tuple(
+                    #passenger details
+                    'tasks': gymnasium.spaces.Tuple(
                         [
                             gymnasium.spaces.Box(
-                                low=(0, 0, 0, 0 -1, -1, 0),
-                                high=(self.grid_height, self.grid_width, self.grid_height, self.grid_width,\
-                                    len(self.possible_agents), len(self.possible_agents), self.max_steps
+                                low=np.array([0, 0, 0, 0, -1, -1, 0]),
+                                high=np.array([self.grid_height, self.grid_width, self.grid_height, self.grid_width,\
+                                    len(self.possible_agents), len(self.possible_agents), self.max_steps]
                                 )
                             )
                         for _ in range(number_of_present_tasks)

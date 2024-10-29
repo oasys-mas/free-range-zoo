@@ -30,7 +30,7 @@ class State(ABC):
             log_exclusions: List[str] = [],
             masked_attributes: Dict[Tuple[str, int], torch.Tensor] = None):
         """
-        Save the state to log files
+        Save the state to log files.
 
         Only includes constants on the first line, then the empty on the rest
 
@@ -145,7 +145,7 @@ class State(ABC):
         """
         Save the initial state
         """
-        self.initial_state = self._clone()
+        self.initial_state = self.clone()
 
     def restore_initial(self, batch_indices: Optional[torch.Tensor] = None) -> None:
         """
@@ -172,7 +172,7 @@ class State(ABC):
         """
         Save the current state as a checkpoint
         """
-        self.checkpoint = self._clone()
+        self.checkpoint = self.clone()
 
     def restore_from_checkpoint(self, batch_indices: Optional[torch.Tensor] = None) -> None:
         """
@@ -215,7 +215,7 @@ class State(ABC):
                 else:
                     setattr(self, attribute, value)
 
-    def _clone(self) -> Self:
+    def clone(self) -> Self:
         """
         Clone the state
 
@@ -261,6 +261,31 @@ class State(ABC):
         stacked = states[0].__class__(**stacked_attributes)
 
         return stacked
+
+    @staticmethod
+    def cat(states: List[State], *args, **kwargs) -> Self:
+        """
+        Concatenate a list of batched state tensors
+
+        Args:
+            states: List[State] - The states to stack
+            args: Any - Additional arguments for torch.stack
+            kwargs: Any - Additional keyword arguments for torch.stack
+        Returns:
+            Self - The stacked states
+        """
+        concatenated = {}
+        for attribute in states[0].__dict__.keys():
+            if attribute in ['initial_state', 'checkpoint']:
+                continue
+            if attribute in ['agents']:
+                concatenated[attribute] = getattr(states[0], attribute)
+                continue
+            concatenated[attribute] = torch.cat([getattr(state, attribute) for state in states], *args, **kwargs)
+
+        concat = states[0].__class__(**concatenated)
+
+        return concat
 
     def unwrap(self) -> List[Self]:
         """
