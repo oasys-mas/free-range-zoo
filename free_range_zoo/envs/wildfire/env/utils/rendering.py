@@ -219,7 +219,8 @@ def draw_dash_arrow(window, start_pos, end_pos, cell_size, x_offset, y_offset):
 
 def render(
         path: str,
-        render_mode: str,
+        episode: int,
+        render_mode: str = 'human',
         # Define grid dimensions (m rows, n columns)
         y=10,
         x=10,
@@ -250,42 +251,37 @@ def render(
     #?load log
     df = pd.read_csv(path)
 
-    df['locations'] = df['locations'].apply(literal_eval)
-    df['destinations'] = df['destinations'].apply(literal_eval)
+    df['intensity'] = df['intensity'].apply(literal_eval)
+    df['fuel'] = df['fuel'].apply(literal_eval)
+    df['fires'] = df['fires'].apply(literal_eval)
+    df['suppressants'] = df['suppressants'].apply(literal_eval)
+    df['capacity'] = df['capacity'].apply(literal_eval)
+    df['agents'] = df['agents'].apply(literal_eval)
 
-    #handle columns with NaNs
-    df['associations'] = df['associations'].apply(lambda x: x.replace('nan', '-1'))
-    df['timing'] = df['timing'].apply(lambda x: x.replace('nan', '-1'))
-
-    df['associations'] = df['associations'].apply(literal_eval)
-    df['timing'] = df['timing'].apply(literal_eval)
+    agent_locations = df['agents'].loc[0]
 
     #find agents
-    agent_cols = df.columns[df.columns.str.contains('driver')]
-    agent_states = [col for col in agent_cols if 'state' in col]
-    agent_actions = [col for col in agent_cols if 'action_choice' in col]
+    agent_cols = df.columns[df.columns.str.contains('firefighter')]
 
-    for col in agent_cols:
-        df[col] = df[col].apply(lambda x: x.replace('tensor', '')[1:-1] if type(x) == str else '[-1,-1]')
-        df[col] = df[col].apply(literal_eval)
-
-    number_of_agents = len(agent_states)
-    max_number_of_tasks = df['locations'].apply(lambda x: len(x)).max()
+    number_of_agents = len(agent_cols)
+    num_burnable_tiles = sum([sum([r != 0 for r in c]) for c in df['fires'].loc[0]])
+    max_fire_type = max([max([abs(r) for r in c]) for c in df['fires'].loc[0]])
 
     #preparing assets
-    car_hues = 360 // number_of_agents
-    passenger_hues = 360 // max_number_of_tasks
+    firefighter_hues = 360 // number_of_agents
+    fire_hues = 360 // max_fire_type
 
-    base_car = render_image('car_asset.png', cell_size=cell_size)
-    base_passenger = render_image('passenger_asset.png', cell_size=cell_size)
+    base_lint_fire = render_image('small_fire.png', cell_size=cell_size)
+    base_mint_fire = render_image('medium_fire.png', cell_size=cell_size)
+    base_hint_fire = render_image('large_fire.png', cell_size=cell_size)
+    base_firefighter = render_image('firefighter.png', cell_size=cell_size)
 
     assets = {
-        'car': [change_hue(base_car, i * car_hues) for i in range(number_of_agents)],
-        'passenger': [change_hue(base_passenger, i * passenger_hues) for i in range(max_number_of_tasks)]
+        'fire_low_int': [change_hue(base_lint_fire, i * fire_hues) for i in range(max_fire_type)],
+        'fire_med_int': [change_hue(base_mint_fire, i * fire_hues) for i in range(max_fire_type)],
+        'fire_hi_int': [change_hue(base_hint_fire, i * fire_hues) for i in range(max_fire_type)],
+        'fighter': [change_hue(base_firefighter, i * firefighter_hues) for i in range(number_of_agents)]
     }
-    #create ghosts of destinations
-    assets['passenger_dest'] = [v.copy().convert_alpha() for v in assets['passenger']]
-    [img.set_alpha(128) for img in assets['passenger_dest']]
 
     #?organizing for rendering
     state_record = defaultdict(lambda *args, **kwargs: {})
@@ -293,18 +289,26 @@ def render(
     for i, row in df.iterrows():
         time_step = {}
 
-        #add passengers (location and destination)
-        for ix, passenger in enumerate(row['locations']):
-            key = (passenger[1], passenger[2], ix + number_of_agents)
-            dest_key = (row['destinations'][ix][1], row['destinations'][ix][2], ix + number_of_agents)
-            time_step[key] = {'asset': assets['passenger'][ix], 'type': 'passenger'}
-            time_step[dest_key] = {'asset': assets['passenger_dest'][ix], 'type': 'passenger_dest'}
+        #add fire fighters
+        for ix, fighter_location in enumerate(agent_locations):
+            key = (fighter_location[0], fighter_location[1], ix)
+
+            action = df.loc[i + 1][agent_cols[ix]] if df.shape[0] > i + 1 else [-1, -1]
+
+            time_step[key] = {
+                'asset': assets['fighter'][ix],
+                'type': 'fighter',
+                'action': 'noop' if action[1] == -1 else 'fight',
+            }
+
+            if action[1] != -1:
+                task_index = action[0]
+
         state_record[i] = time_step
 
         for agent_index, (agent_state, agent_action) in enumerate(zip(agent_states, agent_actions)):
 
             ag_state = row[agent_state]
-            ag_action = df.loc[i + 1][agent_action] if df.shape[0] > i + 1 else [-1, -1]
 
             key = (ag_state[2], ag_state[3], agent_index)
 

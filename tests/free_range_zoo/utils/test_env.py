@@ -150,8 +150,8 @@ class TestReset(unittest.TestCase):
                     \rExpected:\n{expected_rewards[agent]}
                     \rActual:\n{self.env.truncations[agent]}""")
 
-            self.assertEqual({}, self.env.infos[agent], f"""
-                \rInfos for {agent} should be initialized to an empty dictionary
+            self.assertTrue({} == self.env.infos[agent] or "task-action-index-map" in self.env.infos[agent].keys() and len(self.env.infos[agent]), f"""
+                \rInfos for {agent} should be initialized to an empty dictionary or a dict with a empty task-action-indices key
                     \rActual:\n{self.env.infos[agent]}""")
 
         self.assertTrue(

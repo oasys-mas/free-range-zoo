@@ -24,7 +24,11 @@ class State(ABC):
             initial: Optional[bool] = False,
             label: Optional[str] = None,
             partial_log: Optional[List[int]] = None,
-            actions: Union[Dict[str, torch.Tensor], List[str]] = None):
+            actions: Union[Dict[str, torch.Tensor], List[str]] = None,
+            rewards: Union[Dict[str, torch.Tensor], List[float]] = None,
+            infos: Union[Dict[str, torch.Tensor], List[str]] = None,
+            log_exclusions: List[str] = [],
+            masked_attributes: Dict[Tuple[str, int], torch.Tensor] = None):
         """
         Save the state to log files.
 
@@ -36,6 +40,10 @@ class State(ABC):
             constant_observations: Optional[List[str] - list of attributes that are constant throughout the episode
             initial: bool - use file headers
             label: Optional[str] - a generic string filled in as the "label" column
+            partial_log: Optional[List[int]] - list of specific batch indices to log
+            actions: Union[Dict[str, torch.Tensor], List[str]] - dictionary of actions to log
+            exclusions: List[str] - list of attributes to exclude from logging
+            masked_attributes: Dict[Tuple[str, int], torch.Tensor] - dictionary of attributes (per batch) to mask rather than batch index
         """
 
         if initial:
@@ -51,7 +59,8 @@ class State(ABC):
         #ensure all elements are tensors (in case of nested states)
         random_variables = {
             key: value
-            for key, value in self.__dict__.items() if isinstance(value, torch.Tensor) and key not in constant_observations
+            for key, value in self.__dict__.items()
+            if isinstance(value, torch.Tensor) and key not in constant_observations and key not in log_exclusions
         }
 
         #all elements have the same batch size
@@ -59,11 +68,17 @@ class State(ABC):
         assert all([random_variables[key].shape[0] == random_variables[list(random_variables.keys())[0]].shape[0]\
              for key in random_variables.keys()]), "All elements must have the same batch size, check constant_observations list"
 
+        #?handle defaults / env init states
         if isinstance(actions, dict):
-            print(actions)
             actions = {key: value.tolist() for key, value in actions.items()}
         else:
             actions = {key: [None for _ in range(batch_size)] for key in actions}
+        if isinstance(rewards, dict):
+            rewards = {key: value.tolist() for key, value in rewards.items()}
+        else:
+            rewards = {key: [0.0 for _ in range(batch_size)] for key in rewards}
+
+        infos = {key: {_k: _v if isinstance(_v, list) else [_v] for _k, _v in value.items()} for key, value in infos.items()}
 
         if partial_log is None:
             random_variables = {key: value.tolist() for key, value in random_variables.items()}
@@ -95,9 +110,15 @@ class State(ABC):
 
             batch_random_variables = {key: [value[batch]] for key, value in random_variables.items()}
 
-            batched_actions = {k: [v[batch]] for k, v in actions.items()}
+            batched_actions = {k + "_action_choice": [v[batch]] for k, v in actions.items()}
+            batched_rewards = {k + "_rewards": [v[batch]] for k, v in rewards.items()}
 
-            data = batch_random_variables | constants | batched_actions
+            batched_info = {}
+            for _ag, _ag_infos in infos.items():
+                for _info_key, _info_value in _ag_infos.items():
+                    batched_info[f"{_ag}_{_info_key}"] = _info_value[batch]
+
+            data = batch_random_variables | constants | batched_actions | batched_rewards | batched_info
 
             df = pd.DataFrame(data)
 

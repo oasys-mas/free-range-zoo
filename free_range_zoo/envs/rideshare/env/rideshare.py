@@ -39,6 +39,13 @@ from free_range_zoo.envs.rideshare.env.structures.state import RideshareState
 from free_range_zoo.envs.rideshare.env.utils.direct_distance import DirectPath
 from free_range_zoo.envs.rideshare.env.utils.action_space_modifier import action_space_OneOf_adjuster
 
+#?spaces used in action_space(agent)
+noop = gymnasium.spaces.Discrete(1, start=-1)
+accept = gymnasium.spaces.Discrete(1)
+pickup = gymnasium.spaces.Discrete(1, start=1)
+dropoff = gymnasium.spaces.Discrete(1, start=2)
+action_choice = {-1: noop, 0: accept, 1: pickup, 2: dropoff}
+
 
 def parallel_env(planning: bool = False, **kwargs):
     env = raw_env(**kwargs)
@@ -253,9 +260,6 @@ class raw_env(BatchedAECEnv):
         self._state.associations[free_space] = masked_assoc
         self._state.timing[free_space] = masked_timing
 
-        # print(self._state.used_space.shape, free_space.shape)
-        # print("free", free_space.shape)
-        # print(self._state.used_space)
         #mark space as used
         free_space[:needed_space + torch.sum(self._state.used_space)] = False
 
@@ -276,6 +280,7 @@ class raw_env(BatchedAECEnv):
 
         # clear dictionary storing actions for each agent
         self.actions = {agent: torch.empty(self.parallel_envs, 2) for agent in self.agents}
+        self.agent_task_indices: Dict[str, List[torch.IntTensor]] = {}
 
         self._state = RideshareState(agents=torch.empty((self.parallel_envs * self.num_agents, 4), device=self.device),
                                      locations=torch.empty((self.parallel_envs * self.per_batch_buffer_allocation_size, 3),
@@ -422,7 +427,7 @@ class raw_env(BatchedAECEnv):
         # Initialize storages
         rewards = {agent: torch.zeros(self.parallel_envs, dtype=torch.float32, device=self.device) for agent in self.agents}
         terminations = {agent: torch.zeros(self.parallel_envs, dtype=torch.bool, device=self.device) for agent in self.agents}
-        infos = {agent: {} for agent in self.agents}
+        infos = {agent: {'task-action-index-map': None} for agent in self.agents}
 
         #?collect accept actions to process later
         accepts = [defaultdict(lambda: []) for _ in range(self.parallel_envs)]
@@ -457,8 +462,6 @@ class raw_env(BatchedAECEnv):
             ],
                                             dim=0)
 
-            print(waiting_penalties)
-
             #apply penalties
             rewards = {agent: rewards[agent] + waiting_penalties for agent in self.agents}
 
@@ -469,6 +472,11 @@ class raw_env(BatchedAECEnv):
             agent = self.agent_name_mapping[agent_name]
 
             for batch_index, action in enumerate(self.actions[agent_name]):
+
+                #switch to global indices
+                #! this handles cases where we accidentally duplicate actions across batches (as ref rather than copies)
+                action = action.clone()
+                action[0] = self.agent_task_indices[agent_name][batch_index][action[0]][0]
 
                 #accept #?(handle conflicts later)
                 if action[1] == 0:
@@ -600,7 +608,78 @@ class raw_env(BatchedAECEnv):
 
     @torch.no_grad()
     def update_actions(self) -> None:
-        pass
+        """
+        Update the available actions for all agents, based on the current state
+
+        Must be executed prior to action_space(agent)
+        """
+
+        # masked_batch_index = self._state.associations[self._state.used_space][:, 0]
+        self.agent_task_indices = {}
+
+        for agent, agent_idx in self.agent_name_mapping.items():
+
+            #TODO this will be switched to a nested_tensor when I update step_environment to be vectorized. For now having it as a list doesn't change anything.
+            self.agent_task_indices[agent] = []
+            self.infos[agent]['task-action-index-map'] = []
+
+            #driver related passengers
+            accept_mask = self._state.associations[:, 1] == agent_idx
+            ride_mask = self._state.associations[:, 2] == agent_idx
+
+            try:
+                driver_related_mask = torch.logical_or(accept_mask, ride_mask)
+            except Exception as e:
+                raise e
+
+            #hide dead memory
+            driver_related_mask = driver_related_mask[self._state.used_space]
+
+            #unaccepted passengers
+            unaccepted_passengers = self._state.associations[:, 1][self._state.used_space].isnan()
+
+            #find available action for each passenger
+            action_tensor = torch.ones_like(driver_related_mask, dtype=torch.float)
+            action_tensor[action_tensor.clone().to(torch.bool)] = torch.nan
+            action_tensor[torch.logical_not(accept_mask[self._state.used_space])] = 0.0
+            action_tensor[torch.logical_and(accept_mask[self._state.used_space],
+                                            torch.logical_not(ride_mask[self._state.used_space]))] = 1.0
+            action_tensor[ride_mask[self._state.used_space]] = 2.0
+
+            assert torch.all(~torch.isnan(action_tensor)), "Invalid action tensor, check for a valid state"
+
+            action_tensor = action_tensor.to(torch.int)
+
+            #?find global indices (batch, global index, action type, masked_index [used only in logging])
+            index_array = torch.arange(self._state.used_space.shape[0], device=self.device)
+
+            index_array = torch.cat([
+                index_array.unsqueeze(1)[self._state.used_space], self._state.locations[:, [0]][self._state.used_space],
+                action_tensor.unsqueeze(1),
+                torch.arange(index_array[self._state.used_space].shape[0], device=self.device).unsqueeze(1)
+            ],
+                                    dim=1).to(torch.int)
+
+            #construct task lists
+            for batch_index in range(self.parallel_envs):
+
+                #construct global index <--> task index mapping
+                driver_batch_mask = torch.logical_and(driver_related_mask, index_array[:, 1] == batch_index)
+                riding_or_accepted_passengers = index_array[driver_batch_mask][:, [0, 2, 3]]
+
+                unaccepted_batch_mask = torch.logical_and(unaccepted_passengers, index_array[:, 1] == batch_index)
+                unaccepted_passengers_batch = index_array[unaccepted_batch_mask][:, [0, 2, 3]]
+
+                passenger_list = torch.cat([
+                    torch.tensor([-1, -1, -1], device=self.device).unsqueeze(0), riding_or_accepted_passengers,
+                    unaccepted_passengers_batch
+                ],
+                                           dim=0)
+
+                self.agent_task_indices[agent].append(passenger_list[:, [0, 1]])  #use global index
+                self.infos[agent]['task-action-index-map'].append(
+                    passenger_list
+                )  #use global index to uniquely identify tasks, use local index to find them in the masked state
 
     @torch.no_grad()
     def view_state(self):
@@ -645,7 +724,8 @@ class raw_env(BatchedAECEnv):
 
                     batch_passengers[agent] = torch.cat(
                         [
-                            index_array[unac_pass_ind][batch_mask][:, [0]],
+                            #!dep prior displayed global index as observation
+                            # index_array[unac_pass_ind][batch_mask][:, [0]],
                             #TODO confirm this simple heuristic is acceptable
                             torch.abs(locations_masked[unac_pass_ind][batch_mask][:, [1, 2]] -
                                       self._state.agents[agent_batch_map][:, [2, 3]]),
@@ -661,7 +741,8 @@ class raw_env(BatchedAECEnv):
                 unaccepted_passengers.append(
                     torch.cat(
                         [
-                            index_array[unac_pass_ind][batch_mask][:, [0]],
+                            #!dep prior displayed global index as observation
+                            # index_array[unac_pass_ind][batch_mask][:, [0]],
                             locations_masked[unac_pass_ind][batch_mask][:, [1, 2]],
                             destinations_masked[unac_pass_ind][batch_mask][:, [1, 2]],
                             associations_masked[unac_pass_ind][batch_mask][:, [1, 2, 3]],
@@ -717,7 +798,8 @@ class raw_env(BatchedAECEnv):
                     accepted_passengers.append(
                         torch.cat(
                             [
-                                index_array[accpt_pass_mask][batch_mask][:, [0]],
+                                #!DEP prior displayed global index as observation
+                                # index_array[accpt_pass_mask][batch_mask][:, [0]],
 
                                 #manhattan distance (location)
                                 torch.sum(torch.abs(dstart), dim=1).unsqueeze(1),
@@ -732,7 +814,8 @@ class raw_env(BatchedAECEnv):
                     accepted_passengers.append(
                         torch.cat(
                             [
-                                index_array[accpt_pass_mask][batch_mask][:, [0]],
+                                #!DEP prior displayed global index as observation
+                                # index_array[accpt_pass_mask][batch_mask][:, [0]],
                                 locations_masked[accpt_pass_mask][batch_mask][:, [1, 2]],
                                 destinations_masked[accpt_pass_mask][batch_mask][:, [1, 2]],
                                 associations_masked[accpt_pass_mask][batch_mask][:, [1, 2, 3]],
@@ -756,9 +839,8 @@ class raw_env(BatchedAECEnv):
         observations = {
             agent: TensorDict({
                 'self': agent_obs[i],
-                'others':torch.stack([obs for ag, obs in agent_obs.items() if ag != agent], dim=1),
-                #passenger observations
-                'tasks': torch.nested.nested_tensor(
+                'others':torch.stack([obs for ag, obs in agent_obs.items() if ag != i], dim=1) if len(self.possible_agents)>1 else torch.ones((self.parallel_envs,1),dtype=torch.float)*torch.nan,
+                'passengers': torch.nested.nested_tensor(
                     [torch.cat([passenger_observations[i][b], unaccepted_passengers[b]\
                         if not self.use_relative_distance else unaccepted_passengers[b][i]],dim=0)
                     for b in range(self.parallel_envs)]
@@ -780,80 +862,11 @@ class raw_env(BatchedAECEnv):
             List[gymnasium.Space] - the action spaces for the agent batchwise listed
         """
 
-        masked_batch_index = self._state.associations[self._state.used_space][:, 0]
-
-        if use_fast_action_space:
-            individual_generic_space = gymnasium.spaces.Discrete(3)
-
-            # construct task-action spaces
-            spaces = [
-                gymnasium.spaces.OneOf([individual_generic_space] * torch.sum(masked_batch_index == batch) +
-                                       [gymnasium.spaces.Discrete(1, start=-1)], ) for batch in range(self.parallel_envs)
-            ]
-
-            return spaces
-
-        agent_idx = self.agent_name_mapping[agent]
-
-        #driver related passengers
-        accept_mask = self._state.associations[:, 1] == agent_idx
-        ride_mask = self._state.associations[:, 2] == agent_idx
-
-        driver_related_mask = torch.logical_or(accept_mask, ride_mask)
-        #hide dead memory
-        driver_related_mask = driver_related_mask[self._state.used_space]
-
-        #unaccepted passengers
-        unaccepted_passengers = self._state.associations[:, 1][self._state.used_space].isnan()
-
-        #find available action for each passenger
-        action_tensor = torch.ones_like(driver_related_mask, dtype=torch.float)
-        action_tensor[action_tensor.clone().to(torch.bool)] = torch.nan
-
-        action_tensor[torch.logical_not(accept_mask[self._state.used_space])] = 0.0
-        action_tensor[torch.logical_and(accept_mask[self._state.used_space],
-                                        torch.logical_not(ride_mask[self._state.used_space]))] = 1.0
-        action_tensor[ride_mask[self._state.used_space]] = 2.0
-
-        assert torch.all(~torch.isnan(action_tensor)), "Invalid action tensor, check for a valid state"
-
-        action_tensor = action_tensor.to(torch.int)
-
-        #construct action spaces
-        accept = gymnasium.spaces.Discrete(1)
-        pickup = gymnasium.spaces.Discrete(1, start=1)
-        dropoff = gymnasium.spaces.Discrete(1, start=2)
-        action_choice = {0: accept, 1: pickup, 2: dropoff}
-
-        #?find global indices (batch, global index, action type)
-        index_array = torch.arange(self._state.used_space.shape[0], device=self.device)
-        index_array = torch.cat([
-            index_array.unsqueeze(1)[self._state.used_space], self._state.locations[:, [0]][self._state.used_space],
-            action_tensor.unsqueeze(1)
-        ],
-                                dim=1).to(torch.int)
-
+        agent_task_actions = self.agent_task_indices[agent]
         spaces = []
 
-        #construct task lists
-        for batch_index in range(self.parallel_envs):
-
-            #construct global index <--> task index mapping
-            driver_batch_mask = torch.logical_and(driver_related_mask, index_array[:, 1] == batch_index)
-            riding_or_accepted_passengers = index_array[driver_batch_mask][:, [0, 2]].tolist()
-
-            unaccepted_batch_mask = torch.logical_and(unaccepted_passengers, index_array[:, 1] == batch_index)
-            unaccepted_passengers_batch = index_array[unaccepted_batch_mask][:, [0, 2]].tolist()
-
-            passenger_list = riding_or_accepted_passengers + unaccepted_passengers_batch
-
-            #construct action space
-            space = gymnasium.spaces.OneOf([gymnasium.spaces.Discrete(1, start=-1)] +
-                                           [action_choice[passenger[1]] for passenger in passenger_list])
-
-            #?Create a monkey patcher that makes OneOf.sample() -> [global index, ....]
-            action_space_OneOf_adjuster(global_index_map=[passen[0] for passen in passenger_list], space=space)
-
+        for batch in range(self.parallel_envs):
+            space = gymnasium.spaces.OneOf([action_choice[task_action[1]] for task_action in agent_task_actions[batch].tolist()])
             spaces.append(space)
 
         return spaces

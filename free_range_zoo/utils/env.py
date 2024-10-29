@@ -22,7 +22,6 @@ class BatchedAECEnv(ABC, AECEnv):
                  parallel_envs: int = 1,
                  device: torch.DeviceObjType = torch.device('cpu'),
                  render_mode: str | None = None,
-                 log: bool = False,
                  log_dir: str = None,
                  single_seeding: bool = False,
                  **kwargs):
@@ -44,10 +43,9 @@ class BatchedAECEnv(ABC, AECEnv):
         self.max_steps = max_steps
         self.device = device
         self.render_mode = render_mode
-        self.is_logging = log
         self.log_dir = log_dir
+        self.is_logging = log_dir is not None
         self.single_seeding = single_seeding
-
         self.is_new_environment = True
 
         if configuration is not None:
@@ -58,6 +56,9 @@ class BatchedAECEnv(ABC, AECEnv):
 
         # Checks if any environments reset for logging purposes
         self._any_reset = None
+        #default logging param
+        self.constant_observations = []
+        self.log_exclusions = []
 
     @torch.no_grad()
     def _seed(self, seed: torch.Tensor = None, partial_seeding: torch.Tensor = None) -> None:
@@ -138,7 +139,10 @@ class BatchedAECEnv(ABC, AECEnv):
             for agent in self.agents
         }
         self.truncations = {agent: torch.zeros(self.parallel_envs, dtype=torch.bool, device=self.device) for agent in self.agents}
-        self.infos = {agent: {} for agent in self.agents}
+
+        #task-action-index-map identifies the global<->local task indices for environments
+        #this is used when the availability of actions/tasks is not uniform across agents & environments for logging
+        self.infos = {agent: {'task-action-index-map': [None for _ in range(self.parallel_envs)]} for agent in self.agents}
 
         # Dictionary storing actions for each agent
         self.actions = {
@@ -201,7 +205,7 @@ class BatchedAECEnv(ABC, AECEnv):
         """
         # Handle stepping an agent which is completely dead
         if torch.all(self.terminations[self.agent_selection]) or torch.all(self.truncations[self.agent_selection]):
-            return
+            return                
 
         # Reset logging, logs if any batches reset
         if self._any_reset and self.is_logging:
@@ -211,14 +215,16 @@ class BatchedAECEnv(ABC, AECEnv):
                             initial=self.is_new_environment,
                             label=log_label,
                             partial_log=self._any_reset,
-                            actions=self.agents)
+                            actions=self.agents,
+                            log_exclusions=self.log_exclusions,
+                            rewards=self.rewards,
+                            infos=self.infos)
 
             # Flip tags
             self._any_reset = None
             self.is_new_environment = False
 
         self._clear_rewards()
-
         agent = self.agent_selection
         self.actions[agent] = actions
 
@@ -244,30 +250,20 @@ class BatchedAECEnv(ABC, AECEnv):
             self.update_observations()
             self.update_actions()
 
-        # Update the agent selection to the next agent in the sequence
+            # Log the new state of the environment
+            if self.is_logging and is_last:
+                self._state.log(path=self.log_dir,
+                                new_episode=False,
+                                constant_observations=self.constant_observations,
+                                initial=False,
+                                label=log_label,
+                                actions=self.actions,
+                                rewards=self.rewards,
+                                log_exclusions=self.log_exclusions,
+                                infos=self.infos)
+
         self.agent_selection = self.agent_selector.next()
 
-        # Log the new state of the environment
-        if self.is_logging and is_last:
-            self._state.log(path=self.log_dir,
-                            new_episode=False,
-                            constant_observations=self.constant_observations,
-                            initial=False,
-                            label=log_label,
-                            actions=self.actions)
-
-        #?log the new state of the environment
-        if self.is_logging and is_last:
-            self._state.log(path=self.log_dir, new_episode=False, \
-                constant_observations=self.constant_observations, initial=False, label=log_label\
-                ,actions=self.actions)
-
-        # Render the current environment state in a human-viewable way
-        match self.render_mode:
-            case 'human':
-                raise NotImplementedError("Human rendering is not yet implemented")
-            case 'rgb_array':
-                raise NotImplementedError("RGB array rendering is not yet implemented")
 
     @torch.no_grad()
     def _accumulate_rewards(self) -> None:
