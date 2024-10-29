@@ -45,8 +45,6 @@ def main():
                 configuration=configuration,
                 device=device,
             )
-        case _:
-            raise ValueError(f'Invalid environment: {args.environment}')
 
     env.reset()
 
