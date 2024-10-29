@@ -36,8 +36,9 @@ class batched_aec_to_batched_parallel_wrapper(aec_to_parallel_wrapper):
     def reset_batches(self, *args, **kwargs):
         self.aec_env.reset_batches(*args, **kwargs)
 
-    def reset(self, seed: Union[int, List[int]] = None, options: Dict[str, Any] = None) -> Tuple[Dict[str, torch.Tensor],
-                                                                                                 Dict[str, Any]]:
+    def reset(self,
+              seed: Union[int, List[int]] = None,
+              options: Dict[str, Any] = None) -> Tuple[Dict[str, torch.Tensor], Dict[str, Any]]:
         """
         Resets the environment and returns the initial observations
 
@@ -55,11 +56,10 @@ class batched_aec_to_batched_parallel_wrapper(aec_to_parallel_wrapper):
         infos = dict(**self.aec_env.infos)
         return observations, infos
 
-    def step(self, actions: Dict[str, ActionType]) -> Tuple[Dict[str, torch.Tensor],
-                                                            Dict[str, torch.Tensor],
-                                                            Dict[str, torch.Tensor],
-                                                            Dict[str, torch.Tensor],
-                                                            Dict[str, Dict]]:
+    def step(
+        self, actions: Dict[str, ActionType]
+    ) -> Tuple[Dict[str, torch.Tensor], Dict[str, torch.Tensor], Dict[str, torch.Tensor], Dict[str, torch.Tensor], Dict[str,
+                                                                                                                        Dict]]:
         """
         Modified step function to handle parallel environments
 
@@ -69,12 +69,18 @@ class batched_aec_to_batched_parallel_wrapper(aec_to_parallel_wrapper):
             Tuple[Dict[str, torch.Tensor], Dict[str, torch.Tensor], Dict[str, torch.Tensor], Dict[str, torch.Tensor],
                   Dict[str, Dict]] - The observations, rewards, terminations, truncations, and infos
         """
-        terminations = {agent: torch.zeros(self.aec_env.parallel_envs, dtype=torch.bool, device=self.aec_env.device)
-                        for agent in self.aec_env.agents}
-        truncations = {agent: torch.zeros(self.aec_env.parallel_envs, dtype=torch.bool, device=self.aec_env.device)
-                       for agent in self.aec_env.agents}
-        rewards = {agent: torch.zeros(self.aec_env.parallel_envs, dtype=torch.float32, device=self.aec_env.device)
-                   for agent in self.aec_env.agents}
+        terminations = {
+            agent: torch.zeros(self.aec_env.parallel_envs, dtype=torch.bool, device=self.aec_env.device)
+            for agent in self.aec_env.agents
+        }
+        truncations = {
+            agent: torch.zeros(self.aec_env.parallel_envs, dtype=torch.bool, device=self.aec_env.device)
+            for agent in self.aec_env.agents
+        }
+        rewards = {
+            agent: torch.zeros(self.aec_env.parallel_envs, dtype=torch.float32, device=self.aec_env.device)
+            for agent in self.aec_env.agents
+        }
         observations = {}
         infos = {}
 
@@ -87,9 +93,7 @@ class batched_aec_to_batched_parallel_wrapper(aec_to_parallel_wrapper):
         terminations = dict(**self.aec_env.terminations)
         truncations = dict(**self.aec_env.truncations)
         infos = dict(**self.aec_env.infos)
-        observations = {
-            agent: self.aec_env.observe(agent) for agent in self.aec_env.agents
-        }
+        observations = {agent: self.aec_env.observe(agent) for agent in self.aec_env.agents}
 
         self.agents = self.aec_env.agents
         return observations, rewards, terminations, truncations, infos

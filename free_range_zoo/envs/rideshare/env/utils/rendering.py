@@ -245,7 +245,6 @@ def render(
     pygame.init()
     clock = pygame.time.Clock()
 
-
     assert render_mode in ['human', 'rgb_array'], "Invalid render mode. Choose from 'human' or 'rgb_array'."
 
     #?load log
@@ -265,7 +264,6 @@ def render(
     agent_cols = df.columns[df.columns.str.contains('driver')]
     agent_states = [col for col in agent_cols if 'state' in col]
     agent_actions = [col for col in agent_cols if 'action_choice' in col]
-
 
     for col in agent_cols:
         df[col] = df[col].apply(lambda x: x.replace('tensor', '')[1:-1] if type(x) == str else '[-1,-1]')
@@ -511,18 +509,6 @@ def render(
 
         clock.tick(frame_rate)
 
-
-
     # Quit Pygame
     pygame.quit()
     return frames if render_mode == 'rgb_array' else None
-
-
-frames = render(path="/home/dredder/gits/free-range-zoo/notebooks/log_32/0.csv", render_mode='rgb_array')
-
-import numpy as np
-from PIL import Image
-
-frames = [Image.fromarray(np.swapaxes(frame, 0, 1)) for frame in frames]
-
-frames[0].save('test.gif', save_all=True, append_images=frames[1:], duration=100, loop=0)

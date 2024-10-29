@@ -219,8 +219,8 @@ def draw_dash_arrow(window, start_pos, end_pos, cell_size, x_offset, y_offset):
 
 def render(
         path: str,
-        episode:int,
-        render_mode:str='human',
+        episode: int,
+        render_mode: str = 'human',
         # Define grid dimensions (m rows, n columns)
         y=10,
         x=10,
@@ -246,7 +246,6 @@ def render(
     pygame.init()
     clock = pygame.time.Clock()
 
-
     assert render_mode in ['human', 'rgb_array'], "Invalid render mode. Choose from 'human' or 'rgb_array'."
 
     #?load log
@@ -265,8 +264,8 @@ def render(
     agent_cols = df.columns[df.columns.str.contains('firefighter')]
 
     number_of_agents = len(agent_cols)
-    num_burnable_tiles = sum([ sum([r!=0 for r in c]) for c in df['fires'].loc[0]])
-    max_fire_type = max([ max([abs(r) for r in c]) for c in df['fires'].loc[0]])
+    num_burnable_tiles = sum([sum([r != 0 for r in c]) for c in df['fires'].loc[0]])
+    max_fire_type = max([max([abs(r) for r in c]) for c in df['fires'].loc[0]])
 
     #preparing assets
     firefighter_hues = 360 // number_of_agents
@@ -297,21 +296,19 @@ def render(
             action = df.loc[i + 1][agent_cols[ix]] if df.shape[0] > i + 1 else [-1, -1]
 
             time_step[key] = {
-                'asset': assets['fighter'][ix], 
+                'asset': assets['fighter'][ix],
                 'type': 'fighter',
                 'action': 'noop' if action[1] == -1 else 'fight',
             }
 
             if action[1] != -1:
                 task_index = action[0]
-            
 
         state_record[i] = time_step
 
         for agent_index, (agent_state, agent_action) in enumerate(zip(agent_states, agent_actions)):
 
             ag_state = row[agent_state]
-            
 
             key = (ag_state[2], ag_state[3], agent_index)
 
@@ -516,18 +513,6 @@ def render(
 
         clock.tick(frame_rate)
 
-
-
     # Quit Pygame
     pygame.quit()
     return frames if render_mode == 'rgb_array' else None
-
-
-frames = render(path="/home/dredder/gits/free-range-zoo/unittest_logs/0.csv", episode=0, render_mode='rgb_array')
-
-import numpy as np
-from PIL import Image
-
-frames = [Image.fromarray(np.swapaxes(frame, 0, 1)) for frame in frames]
-
-frames[0].save('test.gif', save_all=True, append_images=frames[1:], duration=100, loop=0)

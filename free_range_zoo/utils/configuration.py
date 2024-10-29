@@ -7,6 +7,7 @@ import torch
 
 @dataclass
 class Configuration(ABC):
+
     @abstractmethod
     def validate(self):
         """

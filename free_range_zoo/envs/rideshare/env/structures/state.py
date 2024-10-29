@@ -116,13 +116,13 @@ class RideshareState(State):
         for batch in batches:
 
             batch_random_variables = {key: [str(value[value[:, 0] == batch].tolist())] for key, value in log_dict.items()}
-            batched_actions = {k+"_action_choice": [v[batch]] for k, v in actions.items()}
+            batched_actions = {k + "_action_choice": [v[batch]] for k, v in actions.items()}
             batched_rewards = {k + "_rewards": [v[batch]] for k, v in rewards.items()}
 
             batched_info = {}
             for _ag, _ag_infos in infos.items():
                 for _info_key, _info_value in _ag_infos.items():
-                    if isinstance(_info_value[batch],torch.Tensor):
+                    if isinstance(_info_value[batch], torch.Tensor):
                         batched_info[f"{_ag}_{_info_key}"] = str(_info_value[batch].tolist())
                     else:
                         batched_info[f"{_ag}_{_info_key}"] = _info_value[batch]
