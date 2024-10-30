@@ -269,12 +269,8 @@ class raw_env(BatchedAECEnv):
         self.num_burnouts = torch.zeros(self.parallel_envs, dtype=torch.int32, device=self.device)
 
         # Intialize the mapping of the tasks "in" the environment, used to map actions
-        self.environment_task_indices = torch.nested.nested_tensor([torch.tensor([]) for _ in range(self.parallel_envs)],
-                                                                   dtype=torch.int32)
-        self.agent_task_indices = {
-            agent: torch.nested.nested_tensor([torch.tensor([]) for _ in range(self.parallel_envs)], dtype=torch.int32)
-            for agent in self.agents
-        }
+        self.environment_task_indices = None
+        self.agent_task_indices = {agent: None for agent in self.agents}
 
         # Set the observations and action space
         if not options or not options.get('skip_observations', False):

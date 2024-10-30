@@ -17,6 +17,7 @@
 
 from typing import Tuple, Dict, Any, Union, List, Optional
 
+import functools
 import torch
 from tensordict.tensordict import TensorDict
 import gymnasium
@@ -170,10 +171,7 @@ class raw_env(BatchedAECEnv):
         # Set up initial caches environment and agent task indices
         self.network_range = torch.arange(0, self.network_config.num_nodes, dtype=torch.int32, device=self.device)
         self.environment_task_indices = self.network_range.unsqueeze(0).expand(self.parallel_envs, -1)
-        self.agent_task_indices = {
-            agent: torch.nested.nested_tensor([torch.tensor([]) for _ in range(self.parallel_envs)])
-            for agent in self.agents
-        }
+        self.agent_task_indices = {agent: None for agent in self.agents}
 
         self.environment_range = torch.arange(0, self.parallel_envs, dtype=torch.int32, device=self.device)
 
@@ -441,6 +439,7 @@ class raw_env(BatchedAECEnv):
         )
 
     @torch.no_grad()
+    @functools.lru_cache(maxsize=4)  # Observation space never changes size
     def observation_space(self, agent: str) -> List[gymnasium.Space]:
         """
         Return the observation space for the given agent.
