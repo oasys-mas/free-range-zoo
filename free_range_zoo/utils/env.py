@@ -142,6 +142,8 @@ class BatchedAECEnv(ABC, AECEnv):
 
         #task-action-index-map identifies the global<->local task indices for environments
         #this is used when the availability of actions/tasks is not uniform across agents & environments for logging
+        # Task-action-index-map identifies the global<->local task indices for environments
+        # This is used when the availability of actions/tasks is not uniform across agents & environments for logging
         self.infos = {agent: {'task-action-index-map': [None for _ in range(self.parallel_envs)]} for agent in self.agents}
 
         # Dictionary storing actions for each agent
