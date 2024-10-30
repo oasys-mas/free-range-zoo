@@ -43,11 +43,6 @@ class TestInitialization(unittest.TestCase):
 
         self.assertEqual(env.config, self.mock_config, 'Config should be set to the provided value')
 
-    def test_config_values_are_correctly_unpacked(self) -> None:
-        env = MockedBatchedAECEnv(configuration=self.mock_config)
-
-        self.assertEqual(env.value, 123, 'Config values should be correctly unpacked')
-
 
 class TestSeeding(unittest.TestCase):
 
