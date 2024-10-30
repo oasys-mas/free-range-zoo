@@ -11,12 +11,13 @@
 | # Agents           | [0, $n_{attackers}$ + $n_{defenders}$]                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
 | Action Shape       | ($envs$, 2)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
 | Action Values      | Attackers: [$move_0$, ..., $move_{tasks}$, $noop$ (-1)]<br>Defenders: [$move_0$, ..., $move_{tasks}$, $noop$ (-1), $patch$ (-2), $monitor$ (-3)]                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
-| Observation Shape  | Attackers: TensorDict { <br>&emsp;**self**: $<power, presence>$ <br>&emsp;**others**: $<power, presence>$ <br>&emsp;**tasks**: $<state>$ <br>} <br> Defenders: TensorDict { <br>&emsp;**self**: $<power, presence, location>$ <br>&emsp;**others**: $<power, presence, location>$ <br>&emsp;**tasks**: $<state>$<br>}                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| Observation Shape  | Attackers: TensorDict { <br>&emsp;**self**: $<power, presence>$ <br>&emsp;**others**: $<power, presence>$ <br>&emsp;**tasks**: $<state>$ <br> **batch_size**: $num\_envs$ } <br> Defenders: TensorDict { <br>&emsp;**self**: $<power, presence, location>$ <br>&emsp;**others**: $<power, presence, location>$ <br>&emsp;**tasks**: $<state>$<br> **batch_size**: $num\_envs$}                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
 | Observation Values | Attackers: <br>&emsp;<u>**self**</u><br>&emsp;&emsp;$power$: [$0$, $max\_power_{attacker}$]<br>&emsp;&emsp;$presence$: [$0$, $1$]<br>&emsp;<u>**others**</u><br>&emsp;&emsp;$power$: [$0$, $max\_power_{attacker}$]<br>&emsp;&emsp;$presence$: [$0$, $1$]<br>&emsp;<u>**tasks**</u><br>&emsp;&emsp;$state$: [$0$, $n_{network\_states}$] <br><br> Defenders: <br>&emsp;<u>**self**</u><br>&emsp;&emsp;$power$: [$0$, $max\_power_{defender}$]<br>&emsp;&emsp;$presence$: [$0$, $1$]<br>&emsp;&emsp;$location$: [$0$, $n_{subnetworks}$]<br>&emsp;<u>**others**</u><br>&emsp;&emsp;$power$: [$0$, $max\_power_{defender}$]<br>&emsp;&emsp;$presence$: [$0$, $1$]<br>&emsp;&emsp;$location$: [$0$, $n_{subnetworks}$]</u><br>&emsp;<u>**tasks**</u><br>&emsp;&emsp;$state$: [$0$, $n_{network\_states}$] |
 """
 
 from typing import Tuple, Dict, Any, Union, List, Optional
 
+import functools
 import torch
 from tensordict.tensordict import TensorDict
 import gymnasium
@@ -26,7 +27,6 @@ from free_range_zoo.utils.env import BatchedAECEnv
 from free_range_zoo.wrappers.planning import planning_wrapper_v0
 from free_range_zoo.utils.conversions import batched_aec_to_batched_parallel
 from free_range_zoo.envs.cybersecurity.env.spaces import actions, observations
-from free_range_zoo.envs.cybersecurity.env.utils import random_generator
 from free_range_zoo.envs.cybersecurity.env.structures.state import CybersecurityState
 
 
@@ -171,10 +171,7 @@ class raw_env(BatchedAECEnv):
         # Set up initial caches environment and agent task indices
         self.network_range = torch.arange(0, self.network_config.num_nodes, dtype=torch.int32, device=self.device)
         self.environment_task_indices = self.network_range.unsqueeze(0).expand(self.parallel_envs, -1)
-        self.agent_task_indices = {
-            agent: torch.nested.nested_tensor([torch.tensor([]) for _ in range(self.parallel_envs)])
-            for agent in self.agents
-        }
+        self.agent_task_indices = {agent: None for agent in self.agents}
 
         self.environment_range = torch.arange(0, self.parallel_envs, dtype=torch.int32, device=self.device)
 
@@ -214,19 +211,18 @@ class raw_env(BatchedAECEnv):
         terminations = {agent: torch.zeros(self.parallel_envs, dtype=torch.bool, device=self.device) for agent in self.agents}
         infos = {agent: {} for agent in self.agents}
 
-        network_randomness, self.generator_states = random_generator.generate_network_randomness(
-            parallel_envs=self.parallel_envs,
-            generator_states=self.generator_states,
+        # Generate randomness
+        network_randomness = self.generator.generate(
+            self.parallel_envs,
             events=1,
-            num_subnetworks=self.network_config.num_nodes,
-            device=self.device,
+            shape=(self.network_config.num_nodes, ),
+            key='network',
         )
-        agent_randomness, self.generator_states = random_generator.generate_agent_randomness(
-            parallel_envs=self.parallel_envs,
-            generator_states=self.generator_states,
+        agent_randomness = self.generator.generate(
+            self.parallel_envs,
             events=1,
-            num_agents=self.config.num_agents,
-            device=self.device,
+            shape=(self.config.num_agents, ),
+            key='agent',
         )
 
         patches = torch.zeros((self.parallel_envs, self.network_config.num_nodes), dtype=torch.float32, device=self.device)
@@ -443,6 +439,7 @@ class raw_env(BatchedAECEnv):
         )
 
     @torch.no_grad()
+    @functools.lru_cache(maxsize=4)  # Observation space never changes size
     def observation_space(self, agent: str) -> List[gymnasium.Space]:
         """
         Return the observation space for the given agent.

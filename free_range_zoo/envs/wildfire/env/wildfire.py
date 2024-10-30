@@ -1,22 +1,18 @@
 """
-
 # Wildfire
 
-| Import             | `from free_range_zoo.envs import wildfire_v0` |
-|--------------------|------------------------------------|
-| Actions            | Discrete & Stochastic                            |
-| Observations | Discrete and fully Observed with private observations [^1]
-| Parallel API       | Yes                                |
-| Manual Control     | No                                 
-|
-| Agent Names             | [$firefighter$_0, ..., $firefighter$_n] |
-| #Agents             |    $[0,n]$                                  |
-| 
-Action Shape       | (envs, 2)              |
-| Action Values      |  [-1, $\|tasks\|$], [0] [^2]             
-|
-| Observation Shape | TensorDict: { <br> &emsp; **Agent's self obs**, <ins>'self'</ins>: 4 `<ypos, xpos, fire power, suppressant>`, <br> &emsp; **Other agent obs**, <ins>'others'</ins>: ($\|Ag\| \times 4$) `<ypos,xpos,fire power, suppressant>`, <br> &emsp; **Fire/Task obs**, <ins>'tasks'</ins>: ($\|X\| \times 4$) `<y, x, fire level, intensity>` <br> **batch_size: `num_envs`** <br>}|
-| Observation Values   | <ins>Self</ins> <br> **ypos**: [0,grid_height], <br> **xpos**: [0, grid_width], <br> *fire_reduction_power*: [0, initial_fire_power_reduction], <br> **suppressant**: [0,suppressant_states) <br> <br> <ins>Other Agents</ins> <br> **ypos**: [0,grid_height], <br> **xpos**: [0, grid_width], <br> *fire_reduction_power*: [0, initial_fire_power_reduction], <br> **suppressant**: [0,suppressant_states)  <br> <br> <ins>Task</ins> <br> **ypos**: [0,grid_height], <br> **xpos**: [0, grid_width], <br> **fire level**: [initial_fire_level] <br> **intensity**: [0,num_fire_states) |
+| Import             | `from free_range_zoo.envs import wildfire_v0`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Actions            | Discrete & Stochastic                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| Observations       | Discrete and fully Observed with private observations                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| Parallel API       | Yes                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| Manual Control     | No                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| Agent Names        | [$firefighter$_0, ..., $firefighter$_n]                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| # Agents           | [0, $n_firefighters$]                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| Action Shape       | ($envs$, 2)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| Action Values      | [$fight_0$, ..., $fight_{tasks}$, $noop$ (-1)]                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| Observation Shape  | TensorDict: { <br>&emsp;**self**: $<ypos, xpos, fire power, suppressant>$<br>&emsp;**others**: $<ypos,xpos,fire power, suppressant>$<br>&emsp;**tasks**: $<y, x, fire level, intensity>$ <br> **batch_size**: $num\_envs$ }                                                                                                                                                                                                                                                                                                                                                                      |
+| Observation Values | <u>**self**</u>:<br>&emsp;$ypos$: $[0, max_y]$<br>&emsp;$xpos$: $[0, max_x]$<br>&emsp;$fire\_power\_reduction$: $[0, max_{fire\_power\_reduction}]$<br>&emsp;$suppressant$: $[0, max_{suppressant}]$<br><u>**others**</u>:<br>&emsp;$ypos$: $[0, max_y]$<br>&emsp;$xpos$: $[0, max_x]$<br>&emsp;$fire\_power\_reduction$: $[0, max_{fire\_power\_reduction}]$<br>&emsp;$suppressant$: $[0, max_{suppressant}]$<br> <u>**tasks**</u><br>&emsp;$ypos$: $[0, max_y]$<br>&emsp;$xpos$: $[0, max_x]$<br>&emsp;$fire\_level$: $[0, max_{fire\_level}]$<br>&emsp;$intensity$: $[0, num_{fire\_states}]$ |
 
 ## Description
 
@@ -40,7 +36,7 @@ from free_range_zoo.wrappers.planning import planning_wrapper_v0
 from free_range_zoo.utils.conversions import batched_aec_to_batched_parallel
 
 from free_range_zoo.envs.wildfire.env import transitions
-from free_range_zoo.envs.wildfire.env.utils import in_range_check, random_generator
+from free_range_zoo.envs.wildfire.env.utils import in_range_check
 from free_range_zoo.envs.wildfire.env.spaces import actions, observations
 from free_range_zoo.envs.wildfire.env.structures.state import WildfireState
 
@@ -273,12 +269,8 @@ class raw_env(BatchedAECEnv):
         self.num_burnouts = torch.zeros(self.parallel_envs, dtype=torch.int32, device=self.device)
 
         # Intialize the mapping of the tasks "in" the environment, used to map actions
-        self.environment_task_indices = torch.nested.nested_tensor([torch.tensor([]) for _ in range(self.parallel_envs)],
-                                                                   dtype=torch.int32)
-        self.agent_task_indices = {
-            agent: torch.nested.nested_tensor([torch.tensor([]) for _ in range(self.parallel_envs)], dtype=torch.int32)
-            for agent in self.agents
-        }
+        self.environment_task_indices = None
+        self.agent_task_indices = {agent: None for agent in self.agents}
 
         # Set the observations and action space
         if not options or not options.get('skip_observations', False):
@@ -321,22 +313,8 @@ class raw_env(BatchedAECEnv):
         infos = {agent: {'task-action-index-map': [None for _ in range(self.parallel_envs)]} for agent in self.agents}
 
         # For simplification purposes, one randomness generation is done per step, then taken piecewise
-        field_randomness, self.generator_states = random_generator.generate_field_randomness(
-            generator_states=self.generator_states,
-            parallel_envs=self.parallel_envs,
-            events=3,
-            max_y=self.max_y,
-            max_x=self.max_x,
-            device=self.device,
-        )
-
-        agent_randomness, self.generator_states = random_generator.generate_agent_randomness(
-            generator_states=self.generator_states,
-            parallel_envs=self.parallel_envs,
-            events=5,
-            num_agents=self.agent_config.num_agents,
-            device=self.device,
-        )
+        field_randomness = self.generator.generate(self.parallel_envs, 3, (self.max_y, self.max_x), key='field')
+        agent_randomness = self.generator.generate(self.parallel_envs, 5, (self.agent_config.num_agents, ), key='agent')
 
         shape = (self.agent_config.num_agents, self.parallel_envs)
         refills = torch.zeros(shape, dtype=torch.bool, device=self.device)

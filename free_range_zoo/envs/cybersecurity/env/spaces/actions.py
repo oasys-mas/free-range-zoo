@@ -21,9 +21,11 @@ def build_action_space(agent_type: Union[Literal['attacker'], Literal['defender'
     Returns:
         List[gymnasium.Space] - The action spaces for the environments
     """
+    environment_task_counts = environment_task_counts.tolist()
+
     match agent_type:
         case 'defender':
-            info = zip(environment_task_counts, current_location)
+            info = zip(environment_task_counts, current_location.tolist())
             space = [build_single_defender_action_space(count, loc, show_bad_actions) for count, loc in info]
         case 'attacker':
             space = [build_single_attacker_action_space(task_count) for task_count in environment_task_counts]
