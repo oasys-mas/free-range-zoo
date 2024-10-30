@@ -92,6 +92,7 @@ class RandomGenerator:
             parallel_envs: int - the number of parallel environments
             events: int - the number of events that require randomness
             shape: Tuple[int] - the shape of the random tensors
+            key: str - the key to use for the buffer
         """
         if not self.has_been_seeded:
             raise ValueError("The environment must be seeded before generating randomness")
