@@ -214,8 +214,18 @@ class raw_env(BatchedAECEnv):
         infos = {agent: {} for agent in self.agents}
 
         # Generate randomness
-        network_randomness = self.generator.generate(self.parallel_envs, events=1, shape=(self.network_config.num_nodes, ))
-        agent_randomness = self.generator.generate(self.parallel_envs, events=1, shape=(self.config.num_agents, ))
+        network_randomness = self.generator.generate(
+            self.parallel_envs,
+            events=1,
+            shape=(self.network_config.num_nodes, ),
+            key='network',
+        )
+        agent_randomness = self.generator.generate(
+            self.parallel_envs,
+            events=1,
+            shape=(self.config.num_agents, ),
+            key='agent',
+        )
 
         patches = torch.zeros((self.parallel_envs, self.network_config.num_nodes), dtype=torch.float32, device=self.device)
         attacks = torch.zeros((self.parallel_envs, self.network_config.num_nodes), dtype=torch.float32, device=self.device)

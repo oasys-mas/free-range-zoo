@@ -317,8 +317,8 @@ class raw_env(BatchedAECEnv):
         infos = {agent: {'task-action-index-map': [None for _ in range(self.parallel_envs)]} for agent in self.agents}
 
         # For simplification purposes, one randomness generation is done per step, then taken piecewise
-        field_randomness = self.generator.generate(self.parallel_envs, 3, (self.max_y, self.max_x))
-        agent_randomness = self.generator.generate(self.parallel_envs, 5, (self.agent_config.num_agents, ))
+        field_randomness = self.generator.generate(self.parallel_envs, 3, (self.max_y, self.max_x), key='field')
+        agent_randomness = self.generator.generate(self.parallel_envs, 5, (self.agent_config.num_agents, ), key='agent')
 
         shape = (self.agent_config.num_agents, self.parallel_envs)
         refills = torch.zeros(shape, dtype=torch.bool, device=self.device)
