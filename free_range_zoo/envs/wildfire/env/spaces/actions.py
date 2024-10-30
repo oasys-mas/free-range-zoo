@@ -16,6 +16,7 @@ def build_action_space(environment_task_counts: torch.Tensor) -> List[gymnasium.
     Returns:
         List[gymnasium.Space] - The action spaces for the environments
     """
+    environment_task_counts = environment_task_counts.tolist()
     return [build_single_action_space(task_count) for task_count in environment_task_counts]
 
 
