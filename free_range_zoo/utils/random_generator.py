@@ -97,7 +97,7 @@ class RandomGenerator:
             raise ValueError("The environment must be seeded before generating randomness")
 
         # If we are choosing not to use a buffered generation, then just return the raw tensor
-        if key is None:
+        if key is None or self.buffer_size == 0:
             if self.single_seeding:
                 self.generator.set_state(self.generator_states[0])
                 output = torch.rand((parallel_envs, events, *shape), device=self.device, generator=self.generator)
@@ -134,8 +134,6 @@ class RandomGenerator:
                     self.generator_states[index] = self.generator.get_state()
                 output = output.transpose(0, 1)
                 output = output.transpose(1, 2)
-
-            print(output.shape)
 
             self.buffers[buffer_key] = output
             self.buffer_count[buffer_key] = 0
