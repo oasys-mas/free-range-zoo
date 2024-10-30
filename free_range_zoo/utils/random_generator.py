@@ -41,7 +41,7 @@ class RandomGenerator:
             self.seeds = torch.empty((self.parallel_envs), dtype=torch.int32, device=self.device)
             self.generator_states = torch.empty((self.parallel_envs, state_size), dtype=torch.uint8, device=torch.device('cpu'))
 
-        self.shape_registers = {}
+        self.buffer_count = {}
         self.buffers = {}
 
         self.has_been_seeded = False
@@ -84,9 +84,9 @@ class RandomGenerator:
         self.has_been_seeded = True
 
     @torch.no_grad()
-    def generate(self, parallel_envs: int, events: int, shape: Tuple[int]) -> torch.FloatTensor:
+    def generate(self, parallel_envs: int, events: int, shape: Tuple[int], key: str = None) -> torch.FloatTensor:
         """
-        Generates random tensors for the environment.
+        Generate random tensors for the environment.
 
         Args:
             parallel_envs: int - the number of parallel environments
@@ -96,16 +96,51 @@ class RandomGenerator:
         if not self.has_been_seeded:
             raise ValueError("The environment must be seeded before generating randomness")
 
-        if self.single_seeding:
-            self.generator.set_state(self.generator_states[0])
-            output = torch.rand((parallel_envs, events, *shape), device=self.device, generator=self.generator)
-            self.generator_states[0] = self.generator.get_state()
-        else:
-            output = torch.empty((self.generator_states.shape[0], events, *shape), device=self.device)
-            for index in range(self.generator_states.shape[0]):
-                self.generator.set_state(self.generator_states[index])
-                output[index] = torch.rand((events, *shape), device=self.device, generator=self.generator)
-                self.generator_states[index] = self.generator.get_state()
+        # If we are choosing not to use a buffered generation, then just return the raw tensor
+        if key is None:
+            if self.single_seeding:
+                self.generator.set_state(self.generator_states[0])
+                output = torch.rand((parallel_envs, events, *shape), device=self.device, generator=self.generator)
+                self.generator_states[0] = self.generator.get_state()
+            else:
+                output = torch.empty((parallel_envs, events, *shape), device=self.device)
+                for index in range(parallel_envs):
+                    self.generator.set_state(self.generator_states[index])
+                    output[index] = torch.rand((events, *shape), device=self.device, generator=self.generator)
+                    self.generator_states[index] = self.generator.get_state()
 
-        output = output.transpose(1, 0)
+            output = output.transpose(1, 0)
+            return output
+
+        # If the buffer does not exist or the buffer is exhausted, create / refresh it
+        buffer_key = (key, (parallel_envs, events, *shape))
+        if buffer_key not in self.buffers or self.buffer_count[buffer_key] >= self.buffer_size:
+            if self.single_seeding:
+                self.generator.set_state(self.generator_states[0])
+                output = torch.rand(
+                    (self.buffer_size, parallel_envs, events, *shape),
+                    device=self.device,
+                    generator=self.generator,
+                )
+                self.generator_states[0] = self.generator.get_state()
+            else:
+                output = torch.empty(
+                    (self.generator_states.shape[0], self.buffer_size, events, *shape),
+                    device=self.device,
+                )
+                for index in range(self.generator_states.shape[0]):
+                    self.generator.set_state(self.generator_states[index])
+                    output[index] = torch.rand((self.buffer_size, events, *shape), device=self.device, generator=self.generator)
+                    self.generator_states[index] = self.generator.get_state()
+                output = output.transpose(0, 1)
+                output = output.transpose(1, 2)
+
+            print(output.shape)
+
+            self.buffers[buffer_key] = output
+            self.buffer_count[buffer_key] = 0
+
+        # Get the buffer and increment
+        output = self.buffers[buffer_key][self.buffer_count[buffer_key]]
+        self.buffer_count[buffer_key] += 1
         return output
