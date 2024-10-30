@@ -102,7 +102,7 @@ def parse_args() -> argparse.Namespace:
                         choices=['calls', 'cumtime', 'file', 'ncalls', 'pcalls', 'line', 'name', 'nfl', 'stdname', 'tottime'],
                         default=['tottime'],
                         help='The way to sort the results')
-    parser.add_argument('--amount', type=float, default=0.2, help='The amount of data to display')
+    parser.add_argument('--amount', type=float, default=10, help='The amount of data to display')
     parser.add_argument('--string_filter', type=str, default=None, help='Filter the results by a string')
     parser.add_argument('--output', type=str, default=None, help='The output file to write the stats to')
 
