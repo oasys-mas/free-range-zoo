@@ -4,6 +4,7 @@ from unittest.mock import MagicMock, Mock, PropertyMock, patch
 import torch
 
 from free_range_zoo.utils.env import BatchedAECEnv
+from free_range_zoo.utils.random_generator import RandomGenerator
 
 
 class MockedBatchedAECEnv(BatchedAECEnv):
@@ -49,61 +50,6 @@ class TestInitialization(unittest.TestCase):
         self.assertEqual(env.value, 123, 'Config values should be correctly unpacked')
 
 
-class TestSeeding(unittest.TestCase):
-
-    def setUp(self) -> None:
-        self.device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
-
-        self.env = MockedBatchedAECEnv()
-        self.env.parallel_envs = 3
-        self.env.device = self.device
-
-        self.env.seeds = torch.empty(3, dtype=torch.int64, device=self.device)
-
-        match str(self.device):
-            case device if device.startswith('cuda'):
-                state_size = 16
-            case 'cpu':
-                state_size = 5056
-            case _:
-                state_size = 0
-
-        self.env.generator_states = torch.empty((self.env.parallel_envs, state_size),
-                                                dtype=torch.uint8,
-                                                device=torch.device('cpu'))
-
-    def test_seeding_with_provided_seed(self) -> None:
-        seed = torch.tensor([12345, 67890, 54321], dtype=torch.int64, device=self.device)
-        self.env._seed(seed=seed)
-
-        self.assertTrue(torch.equal(self.env.seeds, seed), "Seeds should be set to the provided values")
-
-        for index, gen_state in enumerate(self.env.generator_states):
-            self.assertIsNotNone(gen_state, f"Generator state for environment {index} should not be None")
-
-    def test_seeding_with_partial_seeding(self) -> None:
-        seed = torch.tensor([12345, 67890], dtype=torch.int64, device=self.device)
-        partial_seeding = torch.tensor([0, 2], dtype=torch.int32, device=self.device)
-
-        self.env._seed(seed=seed, partial_seeding=partial_seeding)
-
-        expected_seeds = torch.tensor([12345, 0, 67890], dtype=torch.int64, device=self.device)
-        expected_seeds[1] = self.env.seeds[1]
-
-        self.assertTrue(
-            torch.equal(self.env.seeds, expected_seeds), f"""
-            \rSeeds should be set to the provided values
-                \rExpected:\n{expected_seeds}
-                \rActual:\n{self.env.seeds}""")
-
-    def test_seeding_with_random_seed(self) -> None:
-        self.env._seed()
-
-        self.assertFalse(torch.equal(self.env.seeds, torch.zeros_like(self.env.seeds)), f"""
-            \rSeeds should be set to random values
-                \rActual:\n{self.env.seeds} """)
-
-
 class TestReset(unittest.TestCase):
 
     def setUp(self) -> None:
@@ -114,7 +60,7 @@ class TestReset(unittest.TestCase):
         self.env.possible_agents = ['agent_1', 'agent_2']
 
     def test_reset_seeds_environment(self) -> None:
-        with patch.object(MockedBatchedAECEnv, '_seed') as mock_reset:
+        with patch.object(RandomGenerator, 'seed') as mock_reset:
             self.env.reset()
 
         mock_reset.assert_called_once()

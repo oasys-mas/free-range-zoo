@@ -10,6 +10,7 @@ from tensordict import TensorDict
 
 from free_range_zoo.utils.configuration import Configuration
 from free_range_zoo.utils.state import State
+from free_range_zoo.utils.random_generator import RandomGenerator
 
 
 class BatchedAECEnv(ABC, AECEnv):
@@ -24,6 +25,7 @@ class BatchedAECEnv(ABC, AECEnv):
                  render_mode: str | None = None,
                  log_dir: str = None,
                  single_seeding: bool = False,
+                 buffer_size: int = 0,
                  **kwargs):
         """
         Initialize the environment.
@@ -37,6 +39,7 @@ class BatchedAECEnv(ABC, AECEnv):
             log: bool - whether to log the environment
             log_dir: str - the directory to log the environment to
             single_seeding: bool - whether to seed all parallel environments with the same seed
+            buffer_size: int - the size of the buffer for random number generation
         """
         super().__init__(*args, **kwargs)
         self.parallel_envs = parallel_envs
@@ -56,42 +59,17 @@ class BatchedAECEnv(ABC, AECEnv):
 
         # Checks if any environments reset for logging purposes
         self._any_reset = None
-        #default logging param
+
+        # Default logging param
         self.constant_observations = []
         self.log_exclusions = []
 
-    @torch.no_grad()
-    def _seed(self, seed: torch.Tensor = None, partial_seeding: torch.Tensor = None) -> None:
-        """
-        Seeds the environment, or randomly generates a seed if none is provided.
-
-        Args:
-            seed: torch.Tensor - the seed to use for the environment
-            partial_seeding: torch.Tensor - the environment indices to seed
-        """
-        if seed is None:
-            seed_shape = self.seeds.shape if partial_seeding is None else partial_seeding.shape
-            seed = torch.randint(100000000, seed_shape, device=self.device)
-
-        if self.single_seeding:
-            self.seeds[:] = seed
-            generator = torch.Generator(device=self.device)
-            self.generator_states[0] = generator.get_state()
-            return
-
-        match partial_seeding:
-            case None:
-                self.seeds[:] = seed
-            case _:
-                self.seeds[partial_seeding] = seed
-
-        generator = torch.Generator(device=self.device)
-        for index, seed in enumerate(self.seeds):
-            if partial_seeding is not None and not torch.isin(index, partial_seeding):
-                continue
-
-            generator.manual_seed(seed.item())
-            self.generator_states[index] = generator.get_state()
+        self.generator = RandomGenerator(
+            parallel_envs=parallel_envs,
+            buffer_size=buffer_size,
+            single_seeding=single_seeding,
+            device=device,
+        )
 
     @torch.no_grad()
     def reset(self, seed: Optional[List[int]] = None, options: Optional[Dict[str, Any]] = None) -> None:
@@ -109,26 +87,14 @@ class BatchedAECEnv(ABC, AECEnv):
         # Set seeding if given (prepares for the next random number generation i.e. self._make_randoms())
         self.seeds = torch.zeros((self.parallel_envs), dtype=torch.int32, device=self.device)
 
+        # Make sure that generator has been initialized if we're calling skip seeding
         if options and options.get('skip_seeding', False):
             if not hasattr(self, 'seeds') or not hasattr(self, 'generator_states'):
                 raise ValueError("Seed must be set before skipping seeding is possible")
 
-        match str(self.device):
-            case device if device.startswith('cuda'):
-                state_size = 16
-            case 'cpu':
-                state_size = 5056
-            case _:
-                raise ValueError(f"Device {self.device} not supported")
-
-        if self.single_seeding:
-            self.seeds = torch.empty((1, ), dtype=torch.int32, device=self.device)
-            self.generator_states = torch.empty((1, state_size), dtype=torch.uint8, device=torch.device('cpu'))
-        else:
-            self.seeds = torch.empty((self.parallel_envs), dtype=torch.int32, device=self.device)
-            self.generator_states = torch.empty((self.parallel_envs, state_size), dtype=torch.uint8, device=torch.device('cpu'))
-
-        self._seed(seed)
+        # Seed the environment if we aren't skipping seeding
+        if not options or not options.get('skip_seeding', False):
+            self.generator.seed(seed, partial_seeding=None)
 
         # Initial environment AEC attributes
         self.agents = self.possible_agents
@@ -140,9 +106,7 @@ class BatchedAECEnv(ABC, AECEnv):
         }
         self.truncations = {agent: torch.zeros(self.parallel_envs, dtype=torch.bool, device=self.device) for agent in self.agents}
 
-        #task-action-index-map identifies the global<->local task indices for environments
-        #this is used when the availability of actions/tasks is not uniform across agents & environments for logging
-        # Task-action-index-map identifies the global<->local task indices for environments
+        # Task-action-index-map identifies the global <-> local task indices for environments
         # This is used when the availability of actions/tasks is not uniform across agents & environments for logging
         self.infos = {agent: {'task-action-index-map': [None for _ in range(self.parallel_envs)]} for agent in self.agents}
 
@@ -177,7 +141,7 @@ class BatchedAECEnv(ABC, AECEnv):
             seed: Optional[List[int]] - the seeds to use for the reset
             options: Optional[Dict[str, Any]] - the options for the reset
         """
-        self._seed(seed, partial_seeding=batch_indices)
+        self.generator.seed(seed, partial_seeding=batch_indices)
 
         for agent in self.agents:
             self.rewards[agent][batch_indices] = 0
