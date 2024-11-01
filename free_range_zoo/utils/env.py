@@ -89,12 +89,12 @@ class BatchedAECEnv(ABC, AECEnv):
         self.seeds = torch.zeros((self.parallel_envs), dtype=torch.int32, device=self.device)
 
         # Make sure that generator has been initialized if we're calling skip seeding
-        if options and options.get('skip_seeding', False):
-            if not hasattr(self, 'seeds') or not hasattr(self, 'generator_states'):
+        if options and options.get('skip_seeding'):
+            if not hasattr(self.generator, 'seeds') or not hasattr(self.generator, 'generator_states'):
                 raise ValueError("Seed must be set before skipping seeding is possible")
 
         # Seed the environment if we aren't skipping seeding
-        if not options or not options.get('skip_seeding', False):
+        if not options or not options.get('skip_seeding'):
             self.generator.seed(seed, partial_seeding=None)
 
         # Initial environment AEC attributes
