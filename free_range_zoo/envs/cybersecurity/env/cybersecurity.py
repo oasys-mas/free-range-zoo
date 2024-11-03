@@ -170,7 +170,7 @@ class raw_env(BatchedAECEnv):
 
         # Set up initial caches environment and agent task indices
         self.network_range = torch.arange(0, self.network_config.num_nodes, dtype=torch.int32, device=self.device)
-        self.environment_task_indices = self.network_range.unsqueeze(0).expand(self.parallel_envs, -1)
+        self.environment_task_indices = self.network_range.unsqueeze(0).expand(self.parallel_envs, -1).unsqueeze(2)
         self.agent_task_indices = {agent: None for agent in self.agents}
 
         self.environment_range = torch.arange(0, self.parallel_envs, dtype=torch.int32, device=self.device)
@@ -344,8 +344,8 @@ class raw_env(BatchedAECEnv):
             presence_state = self._state.presence[:, agent_number].unsqueeze(1)
             presence_state = presence_state.expand(-1, self.network_config.num_nodes)
 
-            tasks = self.network_range.unsqueeze(0).expand(self.parallel_envs, -1)
-            tasks = tasks[presence_state].flatten()
+            tasks = self.network_range.unsqueeze(0).expand(self.parallel_envs, -1).unsqueeze(2)
+            tasks = tasks[presence_state].flatten(end_dim=0)
 
             task_counts = self.agent_task_count[agent_number]
             self.agent_task_indices[agent] = torch.nested.as_nested_tensor(tasks.split(task_counts.tolist(), dim=0))
@@ -389,7 +389,7 @@ class raw_env(BatchedAECEnv):
                         {
                             'self': defender_observation[:, agent_index],
                             'others': defender_observation[:, agent_mask][:, :, self.defender_observation_mask],
-                            'tasks': self._state.network_state,
+                            'tasks': self._state.network_state.unsqueeze(1),
                         },
                         batch_size=[self.parallel_envs],
                         device=self.device,
@@ -405,7 +405,7 @@ class raw_env(BatchedAECEnv):
                         {
                             'self': attacker_observation[:, agent_index],
                             'others': attacker_observation[:, agent_mask][:, :, self.attacker_observation_mask],
-                            'tasks': self._state.network_state,
+                            'tasks': self._state.network_state.unsqueeze(1),
                         },
                         batch_size=[self.parallel_envs],
                         device=self.device,
