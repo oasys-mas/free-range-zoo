@@ -2751,13 +2751,13 @@ files = [
 
 [[package]]
 name = "networkx"
-version = "3.4"
+version = "3.4.2"
 description = "Python package for creating and manipulating graphs and networks"
 optional = false
 python-versions = ">=3.10"
 files = [
-    {file = "networkx-3.4-py3-none-any.whl", hash = "sha256:46dad0ec74a825a968e2b36c37ef5b91faa3868f017b2283d9cbff33112222ce"},
-    {file = "networkx-3.4.tar.gz", hash = "sha256:1269b90f8f0d3a4095f016f49650f35ac169729f49b69d0572b2bb142748162b"},
+    {file = "networkx-3.4.2-py3-none-any.whl", hash = "sha256:df5d4365b724cf81b8c6a7312509d0c22386097011ad1abe274afd5e9d3bbc5f"},
+    {file = "networkx-3.4.2.tar.gz", hash = "sha256:307c3669428c5362aab27c8a1260aa8f47c4e91d3891f48be0141738d8d053e1"},
 ]
 
 [package.extras]
@@ -5909,4 +5909,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.12"
-content-hash = "b4f96dbc5832e2303db73bac3988445cfc15f8a4b9133e346b93796fc213252b"
+content-hash = "368a89fb17f0f3e4a883aa04fb58160934b544988c82326d8417dcd0b84d4054"
