@@ -25,40 +25,57 @@ from pettingzoo.utils import wrappers
 
 from free_range_zoo.utils.env import BatchedAECEnv
 from free_range_zoo.wrappers.planning import planning_wrapper_v0
+from free_range_zoo.wrappers.heterograph import heterograph_wrapper_v0
 from free_range_zoo.utils.conversions import batched_aec_to_batched_parallel
 from free_range_zoo.envs.cybersecurity.env.spaces import actions, observations
 from free_range_zoo.envs.cybersecurity.env.structures.state import CybersecurityState
 
 
-def parallel_env(planning: bool = False, **kwargs):
+def parallel_env(
+    planning: bool = False,
+    heterograph: bool = False,
+    **kwargs,
+):
     """
     Paralellized version of the cybersecurity environment.
 
     Args:
         planning: bool - whether to use the planning wrapper
+        heterograph: bool - whether to use the heterograph wrapper
     """
     env = raw_env(**kwargs)
     env = wrappers.OrderEnforcingWrapper(env)
 
     if planning:
         env = planning_wrapper_v0(env)
+
+    if heterograph:
+        env = heterograph_wrapper_v0(env)
 
     env = batched_aec_to_batched_parallel(env)
     return env
 
 
-def env(planning: bool = False, **kwargs):
+def env(
+    planning: bool = False,
+    heterograph: bool = False,
+    **kwargs,
+):
     """
     AEC wrapped version of the cybersecurity environment.
 
     Args:
         planning: bool - whether to use the planning wrapper
+        heterograph: bool - whether to use the heterograph wrapper
     """
     env = raw_env(**kwargs)
     env = wrappers.OrderEnforcingWrapper(env)
 
     if planning:
         env = planning_wrapper_v0(env)
+
+    if heterograph:
+        env = heterograph_wrapper_v0(env)
 
     return env
 
