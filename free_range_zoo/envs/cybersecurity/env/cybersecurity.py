@@ -138,7 +138,7 @@ class raw_env(BatchedAECEnv):
         agent_ids = torch.arange(0, self.defender_config.num_defenders, device=self.device)
         for attacker_name, agent_idx in self.attacker_name_mapping.items():
             other_agents = agent_ids[agent_ids != agent_idx]
-            self.observation_ordering[defender_name] = other_agents
+            self.observation_ordering[attacker_name] = other_agents
 
         self.attacker_observation_mask = torch.ones(2, dtype=torch.bool, device=self.device)
         self.defender_observation_mask = torch.ones(3, dtype=torch.bool, device=self.device)
