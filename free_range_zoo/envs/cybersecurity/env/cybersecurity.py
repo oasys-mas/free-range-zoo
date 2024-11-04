@@ -406,14 +406,14 @@ class raw_env(BatchedAECEnv):
                         {
                             'self': defender_observation[:, agent_index],
                             'others': defender_observation[:, agent_mask][:, :, self.defender_observation_mask],
-                            'tasks': self._state.network_state.unsqueeze(1),
+                            'tasks': self._state.network_state.unsqueeze(2).clone(),
                         },
                         batch_size=[self.parallel_envs],
                         device=self.device,
                     )
 
                     if self.partially_obserable:
-                        observation['tasks'][not_monitor] = observation['tasks'][not_monitor].clone().fill_(-100)
+                        observation['tasks'][not_monitor] = observation['tasks'][not_monitor].fill_(-100)
 
                 case 'attacker':
                     agent_mask = torch.ones(self.attacker_config.num_attackers, dtype=torch.bool, device=self.device)
@@ -422,7 +422,7 @@ class raw_env(BatchedAECEnv):
                         {
                             'self': attacker_observation[:, agent_index],
                             'others': attacker_observation[:, agent_mask][:, :, self.attacker_observation_mask],
-                            'tasks': self._state.network_state.unsqueeze(1),
+                            'tasks': self._state.network_state.unsqueeze(2).clone(),
                         },
                         batch_size=[self.parallel_envs],
                         device=self.device,
