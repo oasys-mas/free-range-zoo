@@ -15,67 +15,49 @@
 | Observation Values | Attackers: <br>&emsp;<u>**self**</u><br>&emsp;&emsp;$power$: [$0$, $max\_power_{attacker}$]<br>&emsp;&emsp;$presence$: [$0$, $1$]<br>&emsp;<u>**others**</u><br>&emsp;&emsp;$power$: [$0$, $max\_power_{attacker}$]<br>&emsp;&emsp;$presence$: [$0$, $1$]<br>&emsp;<u>**tasks**</u><br>&emsp;&emsp;$state$: [$0$, $n_{network\_states}$] <br><br> Defenders: <br>&emsp;<u>**self**</u><br>&emsp;&emsp;$power$: [$0$, $max\_power_{defender}$]<br>&emsp;&emsp;$presence$: [$0$, $1$]<br>&emsp;&emsp;$location$: [$0$, $n_{subnetworks}$]<br>&emsp;<u>**others**</u><br>&emsp;&emsp;$power$: [$0$, $max\_power_{defender}$]<br>&emsp;&emsp;$presence$: [$0$, $1$]<br>&emsp;&emsp;$location$: [$0$, $n_{subnetworks}$]</u><br>&emsp;<u>**tasks**</u><br>&emsp;&emsp;$state$: [$0$, $n_{network\_states}$] |
 """
 
-from typing import Tuple, Dict, Any, Union, List, Optional
+from typing import Tuple, Dict, Any, Union, List, Optional, Callable
 
 import functools
 import torch
 from tensordict.tensordict import TensorDict
 import gymnasium
-from pettingzoo.utils import wrappers
+from pettingzoo.utils.wrappers import OrderEnforcingWrapper
 
 from free_range_zoo.utils.env import BatchedAECEnv
-from free_range_zoo.wrappers.planning import planning_wrapper_v0
-from free_range_zoo.wrappers.heterograph import heterograph_wrapper_v0
 from free_range_zoo.utils.conversions import batched_aec_to_batched_parallel
 from free_range_zoo.envs.cybersecurity.env.spaces import actions, observations
 from free_range_zoo.envs.cybersecurity.env.structures.state import CybersecurityState
 
 
-def parallel_env(
-    planning: bool = False,
-    heterograph: bool = False,
-    **kwargs,
-):
+def parallel_env(wrappers: List[Callable] = [], **kwargs):
     """
     Paralellized version of the cybersecurity environment.
 
     Args:
-        planning: bool - whether to use the planning wrapper
-        heterograph: bool - whether to use the heterograph wrapper
+        wrappers: List[Callable] - the wrappers to apply to the environment
     """
     env = raw_env(**kwargs)
-    env = wrappers.OrderEnforcingWrapper(env)
+    env = OrderEnforcingWrapper(env)
 
-    if planning:
-        env = planning_wrapper_v0(env)
-
-    if heterograph:
-        env = heterograph_wrapper_v0(env)
+    for wrapper in wrappers:
+        env = wrapper(env)
 
     env = batched_aec_to_batched_parallel(env)
     return env
 
 
-def env(
-    planning: bool = False,
-    heterograph: bool = False,
-    **kwargs,
-):
+def env(wrappers: List[Callable] = [], **kwargs):
     """
     AEC wrapped version of the cybersecurity environment.
 
     Args:
-        planning: bool - whether to use the planning wrapper
-        heterograph: bool - whether to use the heterograph wrapper
+        wrappers: List[Callable] - the wrappers to apply to the environment
     """
     env = raw_env(**kwargs)
-    env = wrappers.OrderEnforcingWrapper(env)
+    env = OrderEnforcingWrapper(env)
 
-    if planning:
-        env = planning_wrapper_v0(env)
-
-    if heterograph:
-        env = heterograph_wrapper_v0(env)
+    for wrapper in wrappers:
+        env = wrapper(env)
 
     return env
 

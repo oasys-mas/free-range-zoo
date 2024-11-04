@@ -23,70 +23,50 @@ Task openness is present as fires which ignite and spread according to a realist
 
 """
 
-from typing import Tuple, Dict, Any, Union, List, Optional
+from typing import Tuple, Dict, Any, Union, List, Optional, Callable
 
 import torch
 from tensordict.tensordict import TensorDict
 import gymnasium
-
-from pettingzoo.utils import wrappers
+from pettingzoo.utils.wrappers import OrderEnforcingWrapper
 
 from free_range_zoo.utils.env import BatchedAECEnv
-from free_range_zoo.wrappers.planning import planning_wrapper_v0
-from free_range_zoo.wrappers.heterograph import heterograph_wrapper_v0
 from free_range_zoo.utils.conversions import batched_aec_to_batched_parallel
-
 from free_range_zoo.envs.wildfire.env import transitions
 from free_range_zoo.envs.wildfire.env.utils import in_range_check
 from free_range_zoo.envs.wildfire.env.spaces import actions, observations
 from free_range_zoo.envs.wildfire.env.structures.state import WildfireState
 
 
-def parallel_env(
-    planning: bool = False,
-    heterograph: bool = False,
-    **kwargs,
-):
+def parallel_env(wrappers: List[Callable] = [], **kwargs):
     """
     Paralellized version of the wildfire environment.
 
     Args:
-        planning: bool - whether to use the planning wrapper
-        heterograph: bool - whether to use the heterograph wrapper
+        wrappers: List[Callable] - the wrappers to apply to the environment
     """
     env = raw_env(**kwargs)
-    env = wrappers.OrderEnforcingWrapper(env)
+    env = OrderEnforcingWrapper(env)
 
-    if planning:
-        env = planning_wrapper_v0(env)
-
-    if heterograph:
-        env = heterograph_wrapper_v0(env)
+    for wrapper in wrappers:
+        env = wrapper(env)
 
     env = batched_aec_to_batched_parallel(env)
     return env
 
 
-def env(
-    planning: bool = False,
-    heterograph: bool = False,
-    **kwargs,
-):
+def env(wrappers: List[Callable], **kwargs):
     """
     AEC wrapped version of the wildfire environment.
 
     Args:
-        planning: bool - whether to use the planning wrapper
-        heterograph: bool - whether to use the heterograph wrapper
+        wrappers: List[Callable] - the wrappers to apply to the environment
     """
     env = raw_env(**kwargs)
-    env = wrappers.OrderEnforcingWrapper(env)
+    env = OrderEnforcingWrapper(env)
 
-    if planning:
-        env = planning_wrapper_v0(env)
-
-    if heterograph:
-        env = heterograph_wrapper_v0(env)
+    for wrapper in wrappers:
+        env = wrapper(env)
 
     return env
 
