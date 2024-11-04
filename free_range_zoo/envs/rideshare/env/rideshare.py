@@ -280,7 +280,10 @@ class raw_env(BatchedAECEnv):
 
         # clear dictionary storing actions for each agent
         self.actions = {agent: torch.empty(self.parallel_envs, 2) for agent in self.agents}
-        self.agent_task_indices: Dict[str, List[torch.IntTensor]] = {}
+        
+        self.agent_task_indices: Dict[str, torch.nested.nested_tensor] = {}
+        self.environment_task_indices: torch.nested.nested_tensor = None
+        self.agent_action_indices: Dict[str, List[torch.IntTensor]] = {}
 
         self._state = RideshareState(agents=torch.empty((self.parallel_envs * self.num_agents, 4), device=self.device),
                                      locations=torch.empty((self.parallel_envs * self.per_batch_buffer_allocation_size, 3),
@@ -476,7 +479,7 @@ class raw_env(BatchedAECEnv):
                 #switch to global indices
                 #! this handles cases where we accidentally duplicate actions across batches (as ref rather than copies)
                 action = action.clone()
-                action[0] = self.agent_task_indices[agent_name][batch_index][action[0]][0]
+                action[0] = self.agent_task_indices[agent_name].unbind()[batch_index][action[0]][0]
 
                 #accept #?(handle conflicts later)
                 if action[1] == 0:
@@ -616,11 +619,24 @@ class raw_env(BatchedAECEnv):
 
         # masked_batch_index = self._state.associations[self._state.used_space][:, 0]
         self.agent_task_indices = {}
+        
+        index_array = torch.arange(self._state.used_space.shape[0], device=self.device)
+        
+        #find global indices for all present passengers irrespective of agent
+        environment_task_indices = []
+        for batch_index in range(self.parallel_envs):
+            batch_mask = torch.logical_and(self._state.associations[:, 0] == batch_index, self._state.used_space)
+            environment_task_indices.append(index_array[batch_mask].unsqueeze(1))
+
+        self.environment_task_indices = torch.nested.nested_tensor(environment_task_indices)
+
 
         for agent, agent_idx in self.agent_name_mapping.items():
 
             #TODO this will be switched to a nested_tensor when I update step_environment to be vectorized. For now having it as a list doesn't change anything.
             self.agent_task_indices[agent] = []
+            self.agent_action_indices[agent] = []
+
             self.infos[agent]['task-action-index-map'] = []
 
             #driver related passengers
@@ -651,9 +667,7 @@ class raw_env(BatchedAECEnv):
             action_tensor = action_tensor.to(torch.int)
 
             #?find global indices (batch, global index, action type, masked_index [used only in logging])
-            index_array = torch.arange(self._state.used_space.shape[0], device=self.device)
-
-            index_array = torch.cat([
+            _index_array = torch.cat([
                 index_array.unsqueeze(1)[self._state.used_space], self._state.locations[:, [0]][self._state.used_space],
                 action_tensor.unsqueeze(1),
                 torch.arange(index_array[self._state.used_space].shape[0], device=self.device).unsqueeze(1)
@@ -661,14 +675,15 @@ class raw_env(BatchedAECEnv):
                                     dim=1).to(torch.int)
 
             #construct task lists
+            agent_task_indices = []
             for batch_index in range(self.parallel_envs):
 
                 #construct global index <--> task index mapping
-                driver_batch_mask = torch.logical_and(driver_related_mask, index_array[:, 1] == batch_index)
-                riding_or_accepted_passengers = index_array[driver_batch_mask][:, [0, 2, 3]]
+                driver_batch_mask = torch.logical_and(driver_related_mask, _index_array[:, 1] == batch_index)
+                riding_or_accepted_passengers = _index_array[driver_batch_mask][:, [0, 2, 3]]
 
-                unaccepted_batch_mask = torch.logical_and(unaccepted_passengers, index_array[:, 1] == batch_index)
-                unaccepted_passengers_batch = index_array[unaccepted_batch_mask][:, [0, 2, 3]]
+                unaccepted_batch_mask = torch.logical_and(unaccepted_passengers, _index_array[:, 1] == batch_index)
+                unaccepted_passengers_batch = _index_array[unaccepted_batch_mask][:, [0, 2, 3]]
 
                 passenger_list = torch.cat([
                     torch.tensor([-1, -1, -1], device=self.device).unsqueeze(0), riding_or_accepted_passengers,
@@ -676,10 +691,16 @@ class raw_env(BatchedAECEnv):
                 ],
                                            dim=0)
 
-                self.agent_task_indices[agent].append(passenger_list[:, [0, 1]])  #use global index
+                agent_task_indices.append(passenger_list[:, [0]])  #use global index
+                self.agent_action_indices[agent].append(passenger_list[:, [1]])  #just show actions
+
                 self.infos[agent]['task-action-index-map'].append(
                     passenger_list
                 )  #use global index to uniquely identify tasks, use local index to find them in the masked state
+
+            #convert agent_task_indices to nested tensor
+            self.agent_task_indices[agent] = torch.nested.nested_tensor(agent_task_indices)
+                
 
     @torch.no_grad()
     def view_state(self):
@@ -862,11 +883,11 @@ class raw_env(BatchedAECEnv):
             List[gymnasium.Space] - the action spaces for the agent batchwise listed
         """
 
-        agent_task_actions = self.agent_task_indices[agent]
+        agent_task_actions = self.agent_action_indices[agent]
         spaces = []
 
         for batch in range(self.parallel_envs):
-            space = gymnasium.spaces.OneOf([action_choice[task_action[1]] for task_action in agent_task_actions[batch].tolist()])
+            space = gymnasium.spaces.OneOf([action_choice[task_action[0]] for task_action in agent_task_actions[batch].tolist()])
             spaces.append(space)
 
         return spaces
