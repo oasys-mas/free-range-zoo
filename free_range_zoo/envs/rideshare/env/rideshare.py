@@ -46,12 +46,14 @@ dropoff = gymnasium.spaces.Discrete(1, start=2)
 action_choice = {-1: noop, 0: accept, 1: pickup, 2: dropoff}
 
 
-def parallel_env(wrappers: List[Callable] = [], **kwargs):
+def parallel_env(wrappers: List[Callable] = [], **kwargs) -> BatchedAECEnv:
     """
-    Paralellized version of the wildfire environment.
+    Paralellized version of the rideshare environment.
 
     Args:
-        wrappers: List[Callable] - the wrappers to apply to the environment
+        wrappers: List[Callable[[BatchedAECEnv], BatchedAECEnv]] - the wrappers to apply to the environment
+    Returns:
+        BatchedAECEnv: the parallelized rideshare environment
     """
     env = raw_env(**kwargs)
     env = OrderEnforcingWrapper(env)
@@ -63,12 +65,14 @@ def parallel_env(wrappers: List[Callable] = [], **kwargs):
     return env
 
 
-def env(wrappers: List[Callable] = [], **kwargs):
+def env(wrappers: List[Callable] = [], **kwargs) -> BatchedAECEnv:
     """
-    AEC wrapped version of the wildfire environment.
+    AEC wrapped version of the rideshare environment.
 
     Args:
-        wrappers: List[Callable] - the wrappers to apply to the environment
+        wrappers: List[Callable[[BatchedAECEnv], BatchedAECEnv]] - the wrappers to apply to the environment
+    Returns:
+        BatchedAECEnv: the rideshare environment
     """
     env = raw_env(**kwargs)
     env = OrderEnforcingWrapper(env)

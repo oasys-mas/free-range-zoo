@@ -29,12 +29,14 @@ from free_range_zoo.envs.cybersecurity.env.spaces import actions, observations
 from free_range_zoo.envs.cybersecurity.env.structures.state import CybersecurityState
 
 
-def parallel_env(wrappers: List[Callable] = [], **kwargs):
+def parallel_env(wrappers: List[Callable] = [], **kwargs) -> BatchedAECEnv:
     """
     Paralellized version of the cybersecurity environment.
 
     Args:
-        wrappers: List[Callable] - the wrappers to apply to the environment
+        wrappers: List[Callable[[BatchedAECEnv], BatchedAECEnv]] - the wrappers to apply to the environment
+    Returns:
+        BatchedAECEnv: the parallelized cybersecurity environment
     """
     env = raw_env(**kwargs)
     env = OrderEnforcingWrapper(env)
@@ -46,12 +48,14 @@ def parallel_env(wrappers: List[Callable] = [], **kwargs):
     return env
 
 
-def env(wrappers: List[Callable] = [], **kwargs):
+def env(wrappers: List[Callable] = [], **kwargs) -> BatchedAECEnv:
     """
     AEC wrapped version of the cybersecurity environment.
 
     Args:
-        wrappers: List[Callable] - the wrappers to apply to the environment
+        wrappers: List[Callable[[BatchedAECEnv], BatchedAECEnv]] - the wrappers to apply to the environment
+    Returns:
+        BatchedAECEnv: the cybersecurity environment
     """
     env = raw_env(**kwargs)
     env = OrderEnforcingWrapper(env)
