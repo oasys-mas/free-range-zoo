@@ -19,7 +19,7 @@
 
 """
 
-from typing import Tuple, Dict, Any, Union, List, Optional, Tuple
+from typing import Tuple, Dict, Any, Union, List, Optional, Tuple, Callable
 from collections import defaultdict
 import warnings
 
@@ -30,16 +30,15 @@ import torch.nn.functional as F
 from tensordict.tensordict import TensorDict
 import gymnasium
 
-from pettingzoo.utils import wrappers
+from pettingzoo.utils.wrappers import OrderEnforcingWrapper
 
 from free_range_zoo.utils.env import BatchedAECEnv
-from free_range_zoo.wrappers.planning import planning_wrapper_v0
 from free_range_zoo.utils.conversions import batched_aec_to_batched_parallel
 from free_range_zoo.envs.rideshare.env.structures.state import RideshareState
 from free_range_zoo.envs.rideshare.env.utils.direct_distance import DirectPath
 from free_range_zoo.envs.rideshare.env.utils.action_space_modifier import action_space_OneOf_adjuster
 
-#?spaces used in action_space(agent)
+# ?spaces used in action_space(agent)
 noop = gymnasium.spaces.Discrete(1, start=-1)
 accept = gymnasium.spaces.Discrete(1)
 pickup = gymnasium.spaces.Discrete(1, start=1)
@@ -47,23 +46,39 @@ dropoff = gymnasium.spaces.Discrete(1, start=2)
 action_choice = {-1: noop, 0: accept, 1: pickup, 2: dropoff}
 
 
-def parallel_env(planning: bool = False, **kwargs):
-    env = raw_env(**kwargs)
-    env = wrappers.OrderEnforcingWrapper(env)
+def parallel_env(wrappers: List[Callable] = [], **kwargs) -> BatchedAECEnv:
+    """
+    Paralellized version of the rideshare environment.
 
-    if planning:
-        env = planning_wrapper_v0(env)
+    Args:
+        wrappers: List[Callable[[BatchedAECEnv], BatchedAECEnv]] - the wrappers to apply to the environment
+    Returns:
+        BatchedAECEnv: the parallelized rideshare environment
+    """
+    env = raw_env(**kwargs)
+    env = OrderEnforcingWrapper(env)
+
+    for wrapper in wrappers:
+        env = wrapper(env)
 
     env = batched_aec_to_batched_parallel(env)
     return env
 
 
-def env(planning: bool = False, **kwargs):
-    env = raw_env(**kwargs)
-    env = wrappers.OrderEnforcingWrapper(env)
+def env(wrappers: List[Callable] = [], **kwargs) -> BatchedAECEnv:
+    """
+    AEC wrapped version of the rideshare environment.
 
-    if planning:
-        env = planning_wrapper_v0(env)
+    Args:
+        wrappers: List[Callable[[BatchedAECEnv], BatchedAECEnv]] - the wrappers to apply to the environment
+    Returns:
+        BatchedAECEnv: the rideshare environment
+    """
+    env = raw_env(**kwargs)
+    env = OrderEnforcingWrapper(env)
+
+    for wrapper in wrappers:
+        env = wrapper(env)
 
     return env
 

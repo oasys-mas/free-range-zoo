@@ -15,50 +15,53 @@
 | Observation Values | Attackers: <br>&emsp;<u>**self**</u><br>&emsp;&emsp;$power$: [$0$, $max\_power_{attacker}$]<br>&emsp;&emsp;$presence$: [$0$, $1$]<br>&emsp;<u>**others**</u><br>&emsp;&emsp;$power$: [$0$, $max\_power_{attacker}$]<br>&emsp;&emsp;$presence$: [$0$, $1$]<br>&emsp;<u>**tasks**</u><br>&emsp;&emsp;$state$: [$0$, $n_{network\_states}$] <br><br> Defenders: <br>&emsp;<u>**self**</u><br>&emsp;&emsp;$power$: [$0$, $max\_power_{defender}$]<br>&emsp;&emsp;$presence$: [$0$, $1$]<br>&emsp;&emsp;$location$: [$0$, $n_{subnetworks}$]<br>&emsp;<u>**others**</u><br>&emsp;&emsp;$power$: [$0$, $max\_power_{defender}$]<br>&emsp;&emsp;$presence$: [$0$, $1$]<br>&emsp;&emsp;$location$: [$0$, $n_{subnetworks}$]</u><br>&emsp;<u>**tasks**</u><br>&emsp;&emsp;$state$: [$0$, $n_{network\_states}$] |
 """
 
-from typing import Tuple, Dict, Any, Union, List, Optional
+from typing import Tuple, Dict, Any, Union, List, Optional, Callable
 
 import functools
 import torch
 from tensordict.tensordict import TensorDict
 import gymnasium
-from pettingzoo.utils import wrappers
+from pettingzoo.utils.wrappers import OrderEnforcingWrapper
 
 from free_range_zoo.utils.env import BatchedAECEnv
-from free_range_zoo.wrappers.planning import planning_wrapper_v0
 from free_range_zoo.utils.conversions import batched_aec_to_batched_parallel
 from free_range_zoo.envs.cybersecurity.env.spaces import actions, observations
 from free_range_zoo.envs.cybersecurity.env.structures.state import CybersecurityState
 
 
-def parallel_env(planning: bool = False, **kwargs):
+def parallel_env(wrappers: List[Callable] = [], **kwargs) -> BatchedAECEnv:
     """
     Paralellized version of the cybersecurity environment.
 
     Args:
-        planning: bool - whether to use the planning wrapper
+        wrappers: List[Callable[[BatchedAECEnv], BatchedAECEnv]] - the wrappers to apply to the environment
+    Returns:
+        BatchedAECEnv: the parallelized cybersecurity environment
     """
     env = raw_env(**kwargs)
-    env = wrappers.OrderEnforcingWrapper(env)
+    env = OrderEnforcingWrapper(env)
 
-    if planning:
-        env = planning_wrapper_v0(env)
+    for wrapper in wrappers:
+        env = wrapper(env)
 
     env = batched_aec_to_batched_parallel(env)
     return env
 
 
-def env(planning: bool = False, **kwargs):
+def env(wrappers: List[Callable] = [], **kwargs) -> BatchedAECEnv:
     """
     AEC wrapped version of the cybersecurity environment.
 
     Args:
-        planning: bool - whether to use the planning wrapper
+        wrappers: List[Callable[[BatchedAECEnv], BatchedAECEnv]] - the wrappers to apply to the environment
+    Returns:
+        BatchedAECEnv: the cybersecurity environment
     """
     env = raw_env(**kwargs)
-    env = wrappers.OrderEnforcingWrapper(env)
+    env = OrderEnforcingWrapper(env)
 
-    if planning:
-        env = planning_wrapper_v0(env)
+    for wrapper in wrappers:
+        env = wrapper(env)
 
     return env
 
@@ -121,7 +124,7 @@ class raw_env(BatchedAECEnv):
         agent_ids = torch.arange(0, self.defender_config.num_defenders, device=self.device)
         for attacker_name, agent_idx in self.attacker_name_mapping.items():
             other_agents = agent_ids[agent_ids != agent_idx]
-            self.observation_ordering[defender_name] = other_agents
+            self.observation_ordering[attacker_name] = other_agents
 
         self.attacker_observation_mask = torch.ones(2, dtype=torch.bool, device=self.device)
         self.defender_observation_mask = torch.ones(3, dtype=torch.bool, device=self.device)
@@ -170,7 +173,7 @@ class raw_env(BatchedAECEnv):
 
         # Set up initial caches environment and agent task indices
         self.network_range = torch.arange(0, self.network_config.num_nodes, dtype=torch.int32, device=self.device)
-        self.environment_task_indices = self.network_range.unsqueeze(0).expand(self.parallel_envs, -1)
+        self.environment_task_indices = self.network_range.unsqueeze(0).expand(self.parallel_envs, -1).unsqueeze(2)
         self.agent_task_indices = {agent: None for agent in self.agents}
 
         self.environment_range = torch.arange(0, self.parallel_envs, dtype=torch.int32, device=self.device)
@@ -344,8 +347,8 @@ class raw_env(BatchedAECEnv):
             presence_state = self._state.presence[:, agent_number].unsqueeze(1)
             presence_state = presence_state.expand(-1, self.network_config.num_nodes)
 
-            tasks = self.network_range.unsqueeze(0).expand(self.parallel_envs, -1)
-            tasks = tasks[presence_state].flatten()
+            tasks = self.network_range.unsqueeze(0).expand(self.parallel_envs, -1).unsqueeze(2)
+            tasks = tasks[presence_state].flatten(end_dim=0)
 
             task_counts = self.agent_task_count[agent_number]
             self.agent_task_indices[agent] = torch.nested.as_nested_tensor(tasks.split(task_counts.tolist(), dim=0))
@@ -389,14 +392,14 @@ class raw_env(BatchedAECEnv):
                         {
                             'self': defender_observation[:, agent_index],
                             'others': defender_observation[:, agent_mask][:, :, self.defender_observation_mask],
-                            'tasks': self._state.network_state,
+                            'tasks': self._state.network_state.unsqueeze(2).clone(),
                         },
                         batch_size=[self.parallel_envs],
                         device=self.device,
                     )
 
                     if self.partially_obserable:
-                        observation['tasks'][not_monitor] = observation['tasks'][not_monitor].clone().fill_(-100)
+                        observation['tasks'][not_monitor] = observation['tasks'][not_monitor].fill_(-100)
 
                 case 'attacker':
                     agent_mask = torch.ones(self.attacker_config.num_attackers, dtype=torch.bool, device=self.device)
@@ -405,7 +408,7 @@ class raw_env(BatchedAECEnv):
                         {
                             'self': attacker_observation[:, agent_index],
                             'others': attacker_observation[:, agent_mask][:, :, self.attacker_observation_mask],
-                            'tasks': self._state.network_state,
+                            'tasks': self._state.network_state.unsqueeze(2).clone(),
                         },
                         batch_size=[self.parallel_envs],
                         device=self.device,

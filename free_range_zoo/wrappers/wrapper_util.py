@@ -12,13 +12,15 @@ import torch
 
 class shared_wrapper_aec(BaseWrapper):
 
-    def __init__(self, env, modifier_class):
+    def __init__(self, env, modifier_class, **kwargs):
         super().__init__(env)
 
         self.modifier_class = modifier_class
         self.modifiers = {}
         self._cur_seed = None
         self._cur_options = None
+
+        self.modifier_args = kwargs
 
         self.reset()
 
@@ -57,7 +59,14 @@ class shared_wrapper_aec(BaseWrapper):
         for agent in agents_list:
             if agent not in self.modifiers:
                 # Polpulate all of the modifier spaces
-                self.modifiers[agent] = self.modifier_class()
+                args = []
+                if hasattr(self.modifier_class, 'env') and self.modifier_class.env:
+                    args.append(self.env)
+                if hasattr(self.modifier_class, 'subject_agent') and self.modifier_class.subject_agent:
+                    args.append(agent)
+
+                self.modifiers[agent] = self.modifier_class(*args, **self.modifier_args)
+
                 self.observation_space(agent)
                 self.action_space(agent)
                 self.modifiers[agent].modify_obs(self.env.observe(agent))
