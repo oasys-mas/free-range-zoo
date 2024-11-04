@@ -280,7 +280,7 @@ class raw_env(BatchedAECEnv):
 
         # clear dictionary storing actions for each agent
         self.actions = {agent: torch.empty(self.parallel_envs, 2) for agent in self.agents}
-        
+
         self.agent_task_indices: Dict[str, torch.nested.nested_tensor] = {}
         self.environment_task_indices: torch.nested.nested_tensor = None
         self.agent_action_indices: Dict[str, List[torch.IntTensor]] = {}
@@ -619,9 +619,9 @@ class raw_env(BatchedAECEnv):
 
         # masked_batch_index = self._state.associations[self._state.used_space][:, 0]
         self.agent_task_indices = {}
-        
+
         index_array = torch.arange(self._state.used_space.shape[0], device=self.device)
-        
+
         #find global indices for all present passengers irrespective of agent
         environment_task_indices = []
         for batch_index in range(self.parallel_envs):
@@ -629,7 +629,6 @@ class raw_env(BatchedAECEnv):
             environment_task_indices.append(index_array[batch_mask].unsqueeze(1))
 
         self.environment_task_indices = torch.nested.nested_tensor(environment_task_indices)
-
 
         for agent, agent_idx in self.agent_name_mapping.items():
 
@@ -672,7 +671,7 @@ class raw_env(BatchedAECEnv):
                 action_tensor.unsqueeze(1),
                 torch.arange(index_array[self._state.used_space].shape[0], device=self.device).unsqueeze(1)
             ],
-                                    dim=1).to(torch.int)
+                                     dim=1).to(torch.int)
 
             #construct task lists
             agent_task_indices = []
@@ -700,7 +699,6 @@ class raw_env(BatchedAECEnv):
 
             #convert agent_task_indices to nested tensor
             self.agent_task_indices[agent] = torch.nested.nested_tensor(agent_task_indices)
-                
 
     @torch.no_grad()
     def view_state(self):
