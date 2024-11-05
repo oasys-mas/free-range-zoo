@@ -1,18 +1,28 @@
+"""Wrapper utilities for applying wrapper classes for environment output modification."""
 from typing import List, Union, Dict, Any, Tuple
 
 import gymnasium
 from pettingzoo.utils import BaseParallelWrapper
 from pettingzoo.utils.wrappers import OrderEnforcingWrapper as BaseWrapper
 from pettingzoo.utils.env import ActionType
-
 from supersuit.utils.wrapper_chooser import WrapperChooser
+
+from free_range_zoo.utils.env import BatchedAECEnv
 
 import torch
 
 
 class shared_wrapper_aec(BaseWrapper):
+    """Wrapper application utility for AEC environments."""
 
-    def __init__(self, env, modifier_class, **kwargs):
+    def __init__(self, env: BatchedAECEnv, modifier_class: BaseWrapper, **kwargs):
+        """
+        Initialize the wrapper.
+
+        Args:
+            env: BatchedAECEnv - The environment to wrap
+            modifier_class: BaseWrapper - The modifier class to use for modifying the environment output
+        """
         super().__init__(env)
 
         self.modifier_class = modifier_class
@@ -29,7 +39,7 @@ class shared_wrapper_aec(BaseWrapper):
 
     def observation_space(self, agent: str) -> gymnasium.Space:
         """
-        Returns the modified observation space for the agent
+        Return the modified observation space for the agent.
 
         Args:
             agent: str - the agent for which the observation space is required
@@ -40,7 +50,7 @@ class shared_wrapper_aec(BaseWrapper):
 
     def action_space(self, agent: str) -> gymnasium.Space:
         """
-        Returns the modified action space for the agent
+        Return the modified action space for the agent.
 
         Args:
             agent: str - the agent for which the action space is required
@@ -51,14 +61,13 @@ class shared_wrapper_aec(BaseWrapper):
 
     def add_modifiers(self, agents_list: List[str]) -> None:
         """
-        Adds the modifiers for the agents
+        Add the modifiers for the agents.
 
         Args:
             agents_list: List[str] - the list of agents for which the modifiers need to be added
         """
         for agent in agents_list:
             if agent not in self.modifiers:
-                # Polpulate all of the modifier spaces
                 args = []
                 if hasattr(self.modifier_class, 'env') and self.modifier_class.env:
                     args.append(self.env)
@@ -78,7 +87,7 @@ class shared_wrapper_aec(BaseWrapper):
 
     def reset(self, seed: Union[List[int], int] = None, options: Dict[str, Any] = None) -> None:
         """
-        Resets the environment
+        Reset the environment.
 
         Args:
             seed: Union[List[int], int] - the seed for the environment
@@ -99,7 +108,7 @@ class shared_wrapper_aec(BaseWrapper):
 
     def step(self, action: ActionType) -> None:
         """
-        Steps the environment for each individual agent
+        Step the environment for each individual agent.
 
         Args:
             action: ActionType - the action for the agent
@@ -117,68 +126,82 @@ class shared_wrapper_aec(BaseWrapper):
 
     def observe(self, agent: str) -> torch.Tensor:
         """
-        Returns the last observation for the agent
+        Return the last observation for the agent.
 
         Args:
             agent: str - the agent for which the observation is required
         Returns:
             torch.Tensor: the last observation for the agent
         """
-
         return self.modifiers[agent].get_last_obs()
 
 
 class shared_wrapper_parr(BaseParallelWrapper):
+    """Wrapper application utility for parallel environments."""
 
-    def __init__(self, env, modifier_class):
+    def __init__(self, env: BatchedAECEnv, modifier_class: BaseWrapper, **kwargs):
+        """
+        Initialize the wrapper.
+
+        Args:
+            env: BatchedAECEnv - The environment to wrap
+            modifier_class: BaseWrapper - The modifier class to use for modifying the environment output
+        """
         super().__init__(env)
+        self.env.reset()
 
         self.modifier_class = modifier_class
         self.modifiers = {}
         self._cur_seed = None
         self._cur_options = None
 
+        self.modifier_args = kwargs
+
         if hasattr(self.env, "possible_agents"):
             self.add_modifiers(self.env.possible_agents)
 
     def observation_space(self, agent: str) -> Dict[str, List[gymnasium.Space]]:
         """
-        Returns the modified observation space for the agent
+        Return the modified observation space for the agent.
 
         Args:
             agent: str - the agent for which the observation space is required
         Returns:
             Dict[str, List[gymnasium.Space]]: the modified observation space for the agent
         """
-
         return self.modifiers[agent].modify_obs_space(self.env.observation_space(agent))
 
     def action_space(self, agent: str) -> List[gymnasium.Space]:
         """
-        Returns the modified action space for the agent
+        Return the modified action space for the agent.
 
         Args:
             agent: str - the agent for which the action space is required
         Returns:
             List[gymnasium.Space]: the modified action space for the agent
         """
-
         return self.modifiers[agent].modify_action_space(self.env.action_space(agent))
 
     def add_modifiers(self, agents_list: List[str]) -> None:
         """
-        Adds the modifiers for the agents
+        Add the modifiers for the agents.
 
         Args:
             agents_list: List[str] - the list of agents for which the modifiers need to be added
         """
         for agent in agents_list:
             if agent not in self.modifiers:
-                # populate modifier spaces
-                self.modifiers[agent] = self.modifier_class()
+                args = []
+                if hasattr(self.modifier_class, 'env') and self.modifier_class.env:
+                    args.append(self.env)
+                if hasattr(self.modifier_class, 'subject_agent') and self.modifier_class.subject_agent:
+                    args.append(agent)
+
+                self.modifiers[agent] = self.modifier_class(*args, **self.modifier_args)
+
                 self.observation_space(agent)
                 self.action_space(agent)
-                self.modifiers[agent].modify_obs(self.env.observe(agent))
+                self.modifiers[agent].modify_obs(self.env.aec_env.observe(agent))
                 self.modifiers[agent].reset(seed=self._cur_seed, options=self._cur_options)
 
                 # modifiers for each agent has a different seed
@@ -189,7 +212,7 @@ class shared_wrapper_parr(BaseParallelWrapper):
               seed: Union[int, List[int]] = None,
               options: Dict[str, Any] = None) -> Tuple[Dict[str, torch.Tensor], Dict[str, Any]]:
         """
-        Resets the environment and returns the initial observations
+        Reset the environment and returns the initial observations.
 
         Args:
             seed: Union[int, List[int]] - The seed for the environment
@@ -212,7 +235,7 @@ class shared_wrapper_parr(BaseParallelWrapper):
     ) -> Tuple[Dict[str, torch.Tensor], Dict[str, torch.Tensor], Dict[str, torch.Tensor], Dict[str, torch.Tensor], Dict[str,
                                                                                                                         Any]]:
         """
-        Steps the environment for all agents
+        Step the environment for all agents.
 
         Args:
             actions: Dict[str, ActionType] - The actions for each agent
@@ -228,16 +251,26 @@ class shared_wrapper_parr(BaseParallelWrapper):
 
 
 class shared_wrapper_gym(gymnasium.Wrapper):
+    """Wrapper application utility for gym environments."""
 
-    def __init__(self, env, modifier_class):
+    def __init__(self, env: gymnasium.Env, modifier_class: BaseWrapper):
+        """
+        Initialize the wrapper.
+
+        Args:
+            env: gymnasium.Env - The environment to wrap
+            modifier_class: BaseWrapper - The modifier class to use for modifying the environment output
+        """
         super().__init__(env)
+
         self.modifier = modifier_class()
+
         self.observation_space = self.modifier.modify_obs_space(self.observation_space)
         self.action_space = self.modifier.modify_action_space(self.action_space)
 
     def reset(self, seed=None, options=None) -> Tuple[Dict[str, torch.Tensor], Dict[str, Any]]:
         """
-        Resets the environment and returns the initial observations
+        Reset the environment and returns the initial observations.
 
         Args:
             seed: int - The seed for the environment
@@ -255,7 +288,7 @@ class shared_wrapper_gym(gymnasium.Wrapper):
     ) -> Tuple[Dict[str, torch.Tensor], Dict[str, torch.Tensor], Dict[str, torch.Tensor], Dict[str, torch.Tensor], Dict[str,
                                                                                                                         Any]]:
         """
-        Steps the environment
+        Step the environment.
 
         Args:
             action: Dict[str, ActionType] - The action for the agent
@@ -263,7 +296,6 @@ class shared_wrapper_gym(gymnasium.Wrapper):
             Tuple[Dict[str, torch.Tensor], Dict[str, torch.Tensor], Dict[str, torch.Tensor], Dict[str, torch.Tensor],
                   Dict[str, Any]] - The observations, rewards, terminations, truncations, and infos
         """
-
         obs, rew, term, trunc, info = super().step(self.modifier.modify_action(action))
         obs = self.modifier.modify_obs(obs)
         return obs, rew, term, trunc, info
