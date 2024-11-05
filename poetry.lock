@@ -1070,7 +1070,7 @@ files = [
 [[package]]
 name = "free-range-zoo-docs"
 version = "0.1.0"
-description = ""
+description = "Sphinx documentation package for free-range-zoo"
 optional = false
 python-versions = "^3.10"
 files = []
@@ -1079,6 +1079,8 @@ develop = true
 [package.dependencies]
 furo = {git = "https://github.com/oasys-mas/Celshast#egg=furo"}
 myst-parser = "^4.0.0"
+pytest = "^8.3.3"
+pytest-markdown-docs = "^0.6.0"
 sphinx = "^7.4.7"
 sphinx-autobuild = "^2024.10.3"
 sphinx-github-changelog = "^1.4.0"
@@ -1405,6 +1407,25 @@ files = [
 ]
 
 [[package]]
+name = "heterographs"
+version = "0.1.0"
+description = ""
+optional = false
+python-versions = "^3.12"
+files = []
+develop = true
+
+[package.dependencies]
+gymnasium = "1.0.0a2"
+torchaudio = "^2.4.0"
+torchvision = "^0.19.0"
+yapf = "^0.40.2"
+
+[package.source]
+type = "directory"
+url = "models/heterographs"
+
+[[package]]
 name = "httpcore"
 version = "1.0.6"
 description = "A minimal low-level HTTP client."
@@ -1516,6 +1537,17 @@ doc = ["furo", "jaraco.packaging (>=9.3)", "jaraco.tidelift (>=1.4)", "rst.linke
 enabler = ["pytest-enabler (>=2.2)"]
 test = ["jaraco.test (>=5.4)", "pytest (>=6,!=8.1.*)", "zipp (>=3.17)"]
 type = ["pytest-mypy"]
+
+[[package]]
+name = "iniconfig"
+version = "2.0.0"
+description = "brain-dead simple config-ini parsing"
+optional = false
+python-versions = ">=3.7"
+files = [
+    {file = "iniconfig-2.0.0-py3-none-any.whl", hash = "sha256:b6a85871a79d2e3b22d2d1b94ac2824226a63c6b741c88f7ae975f18b6778374"},
+    {file = "iniconfig-2.0.0.tar.gz", hash = "sha256:2d91e135bf72d31a410b17c16da610a82cb55f6b0477d1a902134b24a455b8b3"},
+]
 
 [[package]]
 name = "ipykernel"
@@ -3397,6 +3429,7 @@ bigtree = "^0.21.1"
 gymnasium = "1.0.0a2"
 torchaudio = "^2.4.0"
 torchvision = "^0.19.0"
+yapf = "^0.40.2"
 
 [package.source]
 type = "directory"
@@ -3432,6 +3465,21 @@ files = [
 [package.dependencies]
 packaging = "*"
 tenacity = ">=6.2.0"
+
+[[package]]
+name = "pluggy"
+version = "1.5.0"
+description = "plugin and hook calling mechanisms for python"
+optional = false
+python-versions = ">=3.8"
+files = [
+    {file = "pluggy-1.5.0-py3-none-any.whl", hash = "sha256:44e1ad92c8ca002de6377e165f3e0f1be63266ab4d554740532335b9d75ea669"},
+    {file = "pluggy-1.5.0.tar.gz", hash = "sha256:2cffa88e94fdc978c4c574f15f9e59b7f4201d439195c3715ca9e2486f1d0cf1"},
+]
+
+[package.extras]
+dev = ["pre-commit", "tox"]
+testing = ["pytest", "pytest-benchmark"]
 
 [[package]]
 name = "prometheus-client"
@@ -3746,6 +3794,41 @@ files = [
 
 [package.extras]
 diagrams = ["jinja2", "railroad-diagrams"]
+
+[[package]]
+name = "pytest"
+version = "8.3.3"
+description = "pytest: simple powerful testing with Python"
+optional = false
+python-versions = ">=3.8"
+files = [
+    {file = "pytest-8.3.3-py3-none-any.whl", hash = "sha256:a6853c7375b2663155079443d2e45de913a911a11d669df02a50814944db57b2"},
+    {file = "pytest-8.3.3.tar.gz", hash = "sha256:70b98107bd648308a7952b06e6ca9a50bc660be218d53c257cc1fc94fda10181"},
+]
+
+[package.dependencies]
+colorama = {version = "*", markers = "sys_platform == \"win32\""}
+iniconfig = "*"
+packaging = "*"
+pluggy = ">=1.5,<2"
+
+[package.extras]
+dev = ["argcomplete", "attrs (>=19.2)", "hypothesis (>=3.56)", "mock", "pygments (>=2.7.2)", "requests", "setuptools", "xmlschema"]
+
+[[package]]
+name = "pytest-markdown-docs"
+version = "0.6.0"
+description = "Run markdown code fences through pytest"
+optional = false
+python-versions = ">=3.8"
+files = [
+    {file = "pytest_markdown_docs-0.6.0-py3-none-any.whl", hash = "sha256:c9cf1cf7ef9ea53eb9a4e5d20f766e876f8fa73820974f7192c089f3ab0046c5"},
+    {file = "pytest_markdown_docs-0.6.0.tar.gz", hash = "sha256:a749a4afaa5132455c75f8fd3efec856bc61d9de43baf2961504eefaca93593c"},
+]
+
+[package.dependencies]
+markdown-it-py = ">=2.2.0,<4.0"
+pytest = ">=7.0.0"
 
 [[package]]
 name = "python-dateutil"
@@ -5920,4 +6003,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.12"
-content-hash = "efd101c0b16f2925976cda27a4a9af6ad48937fcc6be22fed1fceea1fa4c95c1"
+content-hash = "689b113949d42abef3951c1fcd6e244a734ce01877c302869641d73c631555cd"

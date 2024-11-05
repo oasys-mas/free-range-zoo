@@ -38,6 +38,7 @@ optional = true
 
 [tool.poetry.group.models.dependencies]
 planning = { path = "models/planning", develop = true }
+heterographs = { path = "models/heterographs", develop = true }
 
 [tool.pycodestyle]
 max-line-length = 130
