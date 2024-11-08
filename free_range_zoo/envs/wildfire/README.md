@@ -1,29 +1,97 @@
 # Wildfire
 
-<!-- Observations are always implemented with a **Tuple** space containing: a single `np.int` **Box** space for task-global observations, and multiple `np.int` **Box** spaces for task observations. **The exception** to this is if one of the observations is not a integer, in which case the observations spaces listed here are what is actually implemented. <ins>**This environment uses Box**</ins>. We show the observation spaces not as **Box**es because it is easier to interprete that way. Please look at the `observation_space` function in each environment before using it.  -->
+| Import             | `from free_range_zoo.envs import wildfire_v0`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Actions            | Discrete & Stochastic                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| Observations       | Discrete and fully Observed with private observations                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| Parallel API       | Yes                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| Manual Control     | No                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| Agent Names        | [$firefighter$_0, ..., $firefighter$_n]                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| # Agents           | [0, $n_firefighters$]                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| Action Shape       | ($envs$, 2)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| Action Values      | [$fight_0$, ..., $fight_{tasks}$, $noop$ (-1)]                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| Observation Shape  | TensorDict: { <br>&emsp;**self**: $<ypos, xpos, fire power, suppressant>$<br>&emsp;**others**: $<ypos,xpos,fire power, suppressant>$<br>&emsp;**tasks**: $<y, x, fire level, intensity>$ <br> **batch_size**: $num\_envs$ }                                                                                                                                                                                                                                                                                                                                                                      |
+| Observation Values | <u>**self**</u>:<br>&emsp;$ypos$: $[0, max_y]$<br>&emsp;$xpos$: $[0, max_x]$<br>&emsp;$fire\_power\_reduction$: $[0, max_{fire\_power\_reduction}]$<br>&emsp;$suppressant$: $[0, max_{suppressant}]$<br><u>**others**</u>:<br>&emsp;$ypos$: $[0, max_y]$<br>&emsp;$xpos$: $[0, max_x]$<br>&emsp;$fire\_power\_reduction$: $[0, max_{fire\_power\_reduction}]$<br>&emsp;$suppressant$: $[0, max_{suppressant}]$<br> <u>**tasks**</u><br>&emsp;$ypos$: $[0, max_y]$<br>&emsp;$xpos$: $[0, max_x]$<br>&emsp;$fire\_level$: $[0, max_{fire\_level}]$<br>&emsp;$intensity$: $[0, num_{fire\_states}]$ |
 
-----
+## Description
 
-| Import             | `from free_range_zoo.envs import wildfire_v0` |
-|--------------------|------------------------------------|
-| Actions            | Discrete \& Stochastic                            |
-| Observations | Discrete \& Fully Observed with private observations [^1]
-| Parallel API       | Yes                                |
-| Manual Control     | No                                 
-|
-| Agent Names             | ['$`firefighter\_0`$', ..., '$`firefighter\_n`$']` |
-| #Agents             |    $`n`$                                  |
-| 
-Action Shape       | (envs, 2)              |
-| Action Values      |  [-1, '$`\|X\|`$'], \[0\][^2]              
-|
-| Observation Shape | TensorDict: { <br> &emsp; <bf>Agent's self obs, 'self'</bf>: 4 `<y, x, fire power, suppressant\>`, <br> &emsp; <bf>Other agent obs, 'others'</bf>: ('$`\|Ag\| \times 4`$') <y,x,fire power, suppressant\>, <br> &emsp; <bf>Fire/Task obs, 'fire'</bf>: ('$`\|X\| \times 4`$') <y, x, fire level, intensity> <br> <bf>batch\_size: `num\_envs`</bf> <br>}|
-| Observation Values   | <ins>Self</ins> <br> <bf>y</bf>: [0,grid\_height], <br> <bf>x</bf>: [0, grid\_width], <br> *fire_reduction_power*: [0, initial\_fire\_power\_reduction], <br> <bf>suppressant</bf>: [0,suppressant\_states) <br> <br> <ins>Other Agents</ins> <br> <bf>y</bf>: [0,grid\_height], <br> <bf>x</bf>: [0, grid\_width], <br> *fire_reduction_power*: [0, initial\_fire\_power\_reduction], <br> <bf>suppressant</bf>: [0,suppressant\_states)  <br> <br> <ins>Task</ins> <br> <bf>y</bf>: [0,grid\_height], <br> <bf>x</bf>: [0, grid\_width], <br> <bf>fire level</bf>: [initial_fire_level] <br> *intensity*: [0,$`num\_fire\_states`$) |
-|
+A cooperative **agent open** and **task open** domain where agents coordinate to extinguish fires before they burn out.
+Agents do not move, and they choose to either *suppress* (0) a fire they can reach, or *NOOP* (-1) to refill their suppressant.
 
-[^1]:If `observable_suppressant` is true than observations include other agent's suppressant levels
-
-[^2]: The second action value indicates the action taken for a specific task. Here there is only one action available for each task, but we include this to maintain a consistent form between environments. This is implemented with a **OneOf** space. 
+Task openness is present as fires which ignite and spread according to a realistic wildfire spreading model used in prior implementations of this environment <cite wildfire papers>. Agents are not present in the environment when out of suppressant as they can only NOOP.
 
 
-[^2]: The second action value indicates the action taken for a specific task. Here there is only one action available for each task, but we include this to maintain a consistent form between environments. This is implemented with a **OneOf** space. 
+
+
+
+## Usage
+
+### Parallel API
+```python
+from free_range_zoo.envs import space_invaders_v2
+
+main_logger = logging.getLogger(__name__)
+
+# Initialize and reset environment to initial state
+env = space_invaders_v2.parallel_env(render_mode="human")
+observations, infos = env.reset()
+
+# Initialize agents and give initial observations
+agents = []
+
+cumulative_rewards = {agent: 0 for agent in env.agents}
+
+current_step = 0
+while not torch.all(env.finished):
+    agent_actions = {
+        agent_name: torch.stack([agents[agent_name].act()])
+        for agent_name in env.agents
+    }  # Policy action determination here
+
+    observations, rewards, terminations, truncations, infos = env.step(agent_actions)
+    rewards = {agent_name: rewards[agent_name].item() for agent_name in env.agents}
+
+    for agent_name, agent in agents.items():
+        agent.observe(observations[agent_name][0])  # Policy observation processing here
+        cumulative_rewards[agent_name] += rewards[agent_name]
+
+    main_logger.info(f"Step {current_step}: {rewards}")
+    current_step += 1
+
+env.close()
+```
+
+### AEC API
+```python
+from free_range_zoo.envs import wildfire_v0
+
+main_logger = logging.getLogger(__name__)
+
+# Initialize and reset environment to initial state
+env = wildfire_v0.parallel_env(render_mode="human")
+observations, infos = env.reset()
+
+# Initialize agents and give initial observations
+agents = []
+
+cumulative_rewards = {agent: 0 for agent in env.agents}
+
+current_step = 0
+while not torch.all(env.finished):
+    for agent in env.agent_iter():
+        observations, rewards, terminations, truncations, infos = env.last()
+
+        # Policy action determination here
+        action = env.action_space(agent).sample()
+
+        env.step(action)
+
+    rewards = {agent: rewards[agent].item() for agent in env.agents}
+    cumulative_rewards[agent] += rewards[agent]
+
+    current_step += 1
+    main_logger.info(f"Step {current_step}: {rewards}")
+
+env.close()
+```
+

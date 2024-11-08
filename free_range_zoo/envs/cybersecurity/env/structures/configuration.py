@@ -17,7 +17,7 @@ class CybersecurityConfiguration(Configuration):
     """
     Configuration for the cybersecurity environment.
 
-    Configuration Attributes:
+    Attributes:
         attacker_config: AttackerConfiguration - Configuration for the attacker agent properties
         defender_config: DefenderConfiguration - Configuration for the defender agent properties
         network_config: NetworkConfiguration - Configuration for the network nodes

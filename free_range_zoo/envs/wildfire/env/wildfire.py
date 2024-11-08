@@ -16,11 +16,10 @@
 
 ## Description
 
-A cooperative **agent open** and **task open** domain where agents coordinate to extinguish fires before they burn out. 
-Agents do not move, and they choose to either *suppress* (0) a fire they can reach, or *NOOP* (-1) to refill their suppressant. 
+A cooperative **agent open** and **task open** domain where agents coordinate to extinguish fires before they burn out.
+Agents do not move, and they choose to either *suppress* (0) a fire they can reach, or *NOOP* (-1) to refill their suppressant.
 
 Task openness is present as fires which ignite and spread according to a realistic wildfire spreading model used in prior implementations of this environment <cite wildfire papers>. Agents are not present in the environment when out of suppressant as they can only NOOP.
-
 """
 
 from typing import Tuple, Dict, Any, Union, List, Optional, Callable
