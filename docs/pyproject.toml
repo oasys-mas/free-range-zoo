@@ -7,6 +7,7 @@ license = "GPL-3.0-or-later"
 
 [tool.poetry.scripts]
 gen = "free_range_zoo_docs:gen"
+sync = "free_range_zoo_docs:sync"
 build = "free_range_zoo_docs:build"
 watch = "free_range_zoo_docs:watch"
 test = "free_range_zoo_docs:test"

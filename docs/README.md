@@ -12,11 +12,18 @@ poetry install
 Note that if you have already installed the dependencies for `free-range-zoo` then the dependencies are already available.
 
 ## Scripts
-### 1. Generating Environment Documentation Files
+### 1a. Generating Environment Documentation Files
 
-Generate the pages for each environment you need to execute the following command.
+Generate the pages for each environment from environment docstrings you need to execute the following command.
 ```sh
 poetry run gen
+```
+
+### 1b. Modifying Existing Environment Documentation Files
+
+You can also make changes directly to the environment markdown files. From there, you can resync them with environment docstrings with the following.
+```sh
+poetry run sync
 ```
 
 From here you have two options available:
