@@ -16,7 +16,9 @@ def sync():
 
 def build():
     """Build the documentation."""
-    subprocess.run(["make", "html"])
+    process = subprocess.run(["make", "html"])
+    if process.returncode != 0:
+        raise RuntimeError("Failed to build the documentation.")
 
 
 def watch():
