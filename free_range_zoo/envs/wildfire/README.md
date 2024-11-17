@@ -20,10 +20,6 @@ Agents do not move, and they choose to either *suppress* (0) a fire they can rea
 
 Task openness is present as fires which ignite and spread according to a realistic wildfire spreading model used in prior implementations of this environment <cite wildfire papers>. Agents are not present in the environment when out of suppressant as they can only NOOP.
 
-
-
-
-
 ## Usage
 
 ### Parallel API

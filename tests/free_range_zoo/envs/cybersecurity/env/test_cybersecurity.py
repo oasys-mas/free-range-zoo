@@ -31,9 +31,7 @@ class TestCybersecurityEnvironmentRuntime(unittest.TestCase):
 
             for agent in self.env.agents:
                 self.env.observation_space(agent)
-                actions = []
-                for action_space in self.env.action_space(agent):
-                    actions.append(action_space.sample())
+                actions = self.env.action_space(agent).sample_nested()
                 actions = torch.tensor(actions, device=self.device, dtype=torch.int32)
                 action[agent] = actions
 

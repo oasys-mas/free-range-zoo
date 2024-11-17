@@ -33,12 +33,13 @@ from free_range_zoo.utils.conversions import batched_aec_to_batched_parallel
 from free_range_zoo.envs.rideshare.env.structures.state import RideshareState
 from free_range_zoo.envs.rideshare.env.utils.direct_distance import DirectPath
 from free_range_zoo.envs.rideshare.env.utils.action_space_modifier import action_space_OneOf_adjuster
+from free_range_rust import Space
 
 # ?spaces used in action_space(agent)
-noop = gymnasium.spaces.Discrete(1, start=-1)
-accept = gymnasium.spaces.Discrete(1)
-pickup = gymnasium.spaces.Discrete(1, start=1)
-dropoff = gymnasium.spaces.Discrete(1, start=2)
+accept = Space.Discrete(1, start=0)
+noop = Space.Discrete(1, start=-1)
+pickup = Space.Discrete(1, start=1)
+dropoff = Space.Discrete(1, start=2)
 action_choice = {-1: noop, 0: accept, 1: pickup, 2: dropoff}
 
 
@@ -236,13 +237,13 @@ class raw_env(BatchedAECEnv):
         timings[:, 1] = self._step_count
         timings[:, 2:] = -42
 
-        #?apply to state
+        # ?Apply to state
 
-        #check if space is available
+        # Check if space is available
         needed_space = new_passengers.shape[0]
         free_space = ~self._state.used_space.clone()
 
-        #?expand statespace if needed
+        # ?Expand statespace if needed
         # if self._state.used_space.sum()+needed_space > 3 * self.per_batch_buffer_allocation_size / 4:
         #     if self.expand_as_neeeded:
         #         self._expand_state()
@@ -250,14 +251,14 @@ class raw_env(BatchedAECEnv):
         #     else:
         #         raise RuntimeError("Not enough space in state to add new passengers")
 
-        #get unused space
+        # Get unused space
         masked_loc, masked_dest, masked_assoc, masked_timing = \
             self._state.locations[free_space],\
             self._state.destinations[free_space],\
             self._state.associations[free_space],\
             self._state.timing[free_space]
 
-        #apply to masked region
+        # Apply to masked region
         masked_loc[:needed_space] = locations
         masked_dest[:needed_space] = destinations
         masked_assoc[:needed_space] = associations
@@ -265,13 +266,13 @@ class raw_env(BatchedAECEnv):
         masked_timing[:needed_space] = timings
         masked_timing[:needed_space, [2, 3, 4]] = torch.nan
 
-        #update state
+        # Update state
         self._state.locations[free_space] = masked_loc
         self._state.destinations[free_space] = masked_dest
         self._state.associations[free_space] = masked_assoc
         self._state.timing[free_space] = masked_timing
 
-        #mark space as used
+        # Mark space as used
         free_space[:needed_space + torch.sum(self._state.used_space)] = False
 
         self._state.used_space = torch.logical_not(free_space)
@@ -289,42 +290,63 @@ class raw_env(BatchedAECEnv):
 
         self._step_count = 0
 
-        # clear dictionary storing actions for each agent
+        # Clear dictionary storing actions for each agent
         self.actions = {agent: torch.empty(self.parallel_envs, 2) for agent in self.agents}
 
         self.agent_task_indices: Dict[str, torch.nested.nested_tensor] = {}
         self.environment_task_indices: torch.nested.nested_tensor = None
         self.agent_action_indices: Dict[str, List[torch.IntTensor]] = {}
 
-        self._state = RideshareState(agents=torch.empty((self.parallel_envs * self.num_agents, 4), device=self.device),
-                                     locations=torch.empty((self.parallel_envs * self.per_batch_buffer_allocation_size, 3),
-                                                           device=self.device),
-                                     destinations=torch.empty((self.parallel_envs * self.per_batch_buffer_allocation_size, 3),
-                                                              device=self.device),
-                                     associations=torch.empty((self.parallel_envs * self.per_batch_buffer_allocation_size, 4),
-                                                              device=self.device),
-                                     timing=torch.empty((self.parallel_envs * self.per_batch_buffer_allocation_size, 5),
-                                                        device=self.device,
-                                                        dtype=torch.float),
-                                     used_space=torch.zeros(self.parallel_envs * self.per_batch_buffer_allocation_size,
-                                                            device=self.device,
-                                                            dtype=torch.bool))
+        self._state = RideshareState(
+            agents=torch.empty(
+                (self.parallel_envs * self.num_agents, 4),
+                device=self.device,
+            ),
+            locations=torch.empty(
+                (self.parallel_envs * self.per_batch_buffer_allocation_size, 3),
+                device=self.device,
+            ),
+            destinations=torch.empty(
+                (self.parallel_envs * self.per_batch_buffer_allocation_size, 3),
+                device=self.device,
+            ),
+            associations=torch.empty(
+                (self.parallel_envs * self.per_batch_buffer_allocation_size, 4),
+                device=self.device,
+            ),
+            timing=torch.empty(
+                (self.parallel_envs * self.per_batch_buffer_allocation_size, 5),
+                device=self.device,
+                dtype=torch.float,
+            ),
+            used_space=torch.zeros(
+                self.parallel_envs * self.per_batch_buffer_allocation_size,
+                device=self.device,
+                dtype=torch.bool,
+            ),
+        )
 
-        #define agent batch indices
+        # Define agent batch indices
         self._state.agents[:, 0] = torch.arange(0, self.parallel_envs, device=self.device).repeat_interleave(self.num_agents)
         self._state.agents[:, 1] = torch.arange(0, self.num_agents, device=self.device).repeat(self.parallel_envs)
 
-        #build passengers
+        # Build passengers
         self._apply_schedule(list(range(self.parallel_envs)))
 
-        #set agent positions
+        # Set agent positions
         if self.fixed_start_positions is None:
-            self._state.agents[:, 2] = torch.randint(0,
-                                                     self.grid_height, (self.parallel_envs * self.num_agents, ),
-                                                     device=self.device)
-            self._state.agents[:, 3] = torch.randint(0,
-                                                     self.grid_width, (self.parallel_envs * self.num_agents, ),
-                                                     device=self.device)
+            self._state.agents[:, 2] = torch.randint(
+                0,
+                self.grid_height,
+                (self.parallel_envs * self.num_agents, ),
+                device=self.device,
+            )
+            self._state.agents[:, 3] = torch.randint(
+                0,
+                self.grid_width,
+                (self.parallel_envs * self.num_agents, ),
+                device=self.device,
+            )
 
         else:
             self._state.agents[:, 2] = self.fixed_start_positions[:, 0].repeat_interleave(self.parallel_envs)
@@ -896,10 +918,10 @@ class raw_env(BatchedAECEnv):
         spaces = []
 
         for batch in range(self.parallel_envs):
-            space = gymnasium.spaces.OneOf([action_choice[task_action[0]] for task_action in agent_task_actions[batch].tolist()])
+            space = Space.OneOf([action_choice[task_action[0]] for task_action in agent_task_actions[batch].tolist()])
             spaces.append(space)
 
-        return spaces
+        return Space.Vector(spaces)
 
     @torch.no_grad()
     def observation_space(self, agent: str) -> List[gymnasium.Space]:
