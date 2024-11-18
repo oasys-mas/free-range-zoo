@@ -1,8 +1,8 @@
 import unittest
 from abc import ABC
 
-from gymnasium.spaces import Discrete, OneOf
 import torch
+from free_range_rust import Space
 
 from free_range_zoo.envs.cybersecurity.env.spaces.actions import (
     build_single_attacker_action_space,
@@ -54,7 +54,7 @@ class TestBuildActionSpace(unittest.TestCase):
 
         result = build_action_space('attacker', False, torch.arange(1, 11), torch.arange(1, 11))
 
-        expected = [build_single_attacker_action_space(num_tasks) for num_tasks in num_tasks_list]
+        expected = Space.Vector([build_single_attacker_action_space(num_tasks) for num_tasks in num_tasks_list])
 
         self.assertEqual(result, expected, 'Action spaces should match expected')
 
@@ -63,7 +63,7 @@ class TestBuildActionSpace(unittest.TestCase):
 
         result = build_action_space('defender', False, torch.arange(1, 11), torch.arange(1, 11))
 
-        expected = [build_single_defender_action_space(num_tasks, 1, False) for num_tasks in num_tasks_list]
+        expected = Space.Vector([build_single_defender_action_space(num_tasks, 1, False) for num_tasks in num_tasks_list])
 
         self.assertEqual(result, expected, 'Action spaces should match expected')
 
@@ -89,7 +89,7 @@ class TestBuildSingleAttackerActionSpace(TestCaching, unittest.TestCase):
     def test_noop_element_included(self) -> None:
         result = build_single_attacker_action_space(0)
 
-        expected = OneOf([Discrete(1, start=-1)])
+        expected = Space.OneOf([Space.Discrete(1, start=-1)])
 
         self.assertEqual(result, expected, 'Action space should match expected')
 
@@ -99,7 +99,7 @@ class TestBuildSingleAttackerActionSpace(TestCaching, unittest.TestCase):
         for num_tasks in test_larger_action_spaces:
             result = build_single_attacker_action_space(num_tasks)
 
-            expected = OneOf([*[Discrete(1) for _ in range(num_tasks)], Discrete(1, start=-1)])
+            expected = Space.OneOf([*[Space.Discrete(1, start=0) for _ in range(num_tasks)], Space.Discrete(1, start=-1)])
 
             self.assertEqual(result, expected, 'Action space should match expected')
 
@@ -125,17 +125,17 @@ class TestBuildSingleDefenderActionSpace(TestCaching, unittest.TestCase):
     def test_action_space_where_agent_is_not_present_only_has_noop(self) -> None:
         result = build_single_defender_action_space(0, -1, True)
 
-        expected = OneOf([Discrete(1, start=-1)])
+        expected = Space.OneOf([Space.Discrete(1, start=-1)])
 
         self.assertEqual(result, expected, 'Action space should match expected')
 
     def test_action_space_does_not_include_patch_when_at_home_node_if_no_bad_actions(self) -> None:
         result = build_single_defender_action_space(1, -1, False)
 
-        expected = OneOf([
-            Discrete(1),  # move to connected node
-            Discrete(1, start=-1),  # noop
-            Discrete(1, start=-3),  # monitor
+        expected = Space.OneOf([
+            Space.Discrete(1, start=0),  # move to connected node
+            Space.Discrete(1, start=-1),  # noop
+            Space.Discrete(1, start=-3),  # monitor
         ])
 
         self.assertEqual(result, expected, 'Action space should match expected')
@@ -143,25 +143,23 @@ class TestBuildSingleDefenderActionSpace(TestCaching, unittest.TestCase):
     def test_action_space_does_not_include_patch_when_at_home_node_if_bad_actions(self) -> None:
         result = build_single_defender_action_space(1, -1, True)
 
-        expected = OneOf([
-            Discrete(1),  # move to connected node
-            Discrete(1, start=-1),  # noop
-            Discrete(1, start=-2),  # patch
-            Discrete(1, start=-3),  # monitor
+        expected = Space.OneOf([
+            Space.Discrete(1, start=0),  # move to connected node
+            Space.Discrete(1, start=-1),  # noop
+            Space.Discrete(1, start=-2),  # patch
+            Space.Discrete(1, start=-3),  # monitor
         ])
-
-        print(result)
 
         self.assertEqual(result, expected, 'Action space should match expected')
 
     def test_action_space_structure(self) -> None:
         result = build_single_defender_action_space(2, 1, False)
 
-        expected = OneOf([
-            Discrete(1),  # move to connected node
-            Discrete(1, start=-1),  # noop
-            Discrete(1, start=-2),  # patch
-            Discrete(1, start=-3),  # monitor
+        expected = Space.OneOf([
+            Space.Discrete(1, start=0),  # move to connected node
+            Space.Discrete(1, start=-1),  # noop
+            Space.Discrete(1, start=-2),  # patch
+            Space.Discrete(1, start=-3),  # monitor
         ])
 
         self.assertEqual(result, expected, 'Action space should match expected')

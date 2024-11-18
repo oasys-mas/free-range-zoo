@@ -3,25 +3,25 @@ from typing import List
 import functools
 
 import torch
-from gymnasium.spaces import Discrete, OneOf
-import gymnasium
+import free_range_rust
+from free_range_rust import Space
 
 
-def build_action_space(environment_task_counts: torch.Tensor) -> List[gymnasium.Space]:
+def build_action_space(environment_task_counts: torch.Tensor) -> List[free_range_rust.Space]:
     """
     Build the action space for all environments in a batched environment.
 
     Args:
         environment_task_counts: torch.Tensor - The number of tasks in each environment
     Returns:
-        List[gymnasium.Space] - The action spaces for the environments
+        List[free_range_rust.Space] - The action spaces for the environments
     """
     environment_task_counts = environment_task_counts.tolist()
-    return [build_single_action_space(task_count) for task_count in environment_task_counts]
+    return Space.Vector([build_single_action_space(task_count) for task_count in environment_task_counts])
 
 
 @functools.lru_cache(maxsize=100)
-def build_single_action_space(num_tasks_in_environment: int) -> gymnasium.Space:
+def build_single_action_space(num_tasks_in_environment: int) -> free_range_rust.Space:
     """
     Build the action space for a single environment.
 
@@ -33,9 +33,9 @@ def build_single_action_space(num_tasks_in_environment: int) -> gymnasium.Space:
     Args:
         num_tasks_in_environment: int - The number of tasks in the environment
     Returns:
-        gymnasium.Space - The action space for the environment
+        free_range_rust.Space - The action space for the environment
     """
     if num_tasks_in_environment == 0:
-        return OneOf([Discrete(1, start=-1)])
+        return Space.OneOf([Space.Discrete(1, start=-1)])
 
-    return OneOf([*[Discrete(1) for _ in range(num_tasks_in_environment)], Discrete(1, start=-1)])
+    return Space.OneOf([*[Space.Discrete(1, start=0) for _ in range(num_tasks_in_environment)], Space.Discrete(1, start=-1)])

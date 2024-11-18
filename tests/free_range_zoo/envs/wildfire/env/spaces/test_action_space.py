@@ -1,9 +1,9 @@
 import unittest
 from abc import ABC
 
-from gymnasium.spaces import Discrete, OneOf
 import torch
 
+from free_range_rust import Space
 from free_range_zoo.envs.wildfire.env.spaces.actions import build_single_action_space, build_action_space
 
 
@@ -50,7 +50,7 @@ class TestBuildActionSpace(unittest.TestCase):
 
         result = build_action_space(num_tasks_list)
 
-        expected = [build_single_action_space(num_tasks) for num_tasks in num_tasks_list]
+        expected = Space.Vector([build_single_action_space(num_tasks) for num_tasks in num_tasks_list])
 
         self.assertEqual(result, expected, 'Action spaces should match expected')
 
@@ -76,7 +76,7 @@ class TestBuildSingleActionSpace(TestCaching, unittest.TestCase):
     def test_noop_element_included(self) -> None:
         result = build_single_action_space(0)
 
-        expected = OneOf([Discrete(1, start=-1)])
+        expected = Space.OneOf([Space.Discrete(1, start=-1)])
 
         self.assertEqual(result, expected, 'Action space should match expected')
 
@@ -86,7 +86,7 @@ class TestBuildSingleActionSpace(TestCaching, unittest.TestCase):
         for num_tasks in test_larger_action_spaces:
             result = build_single_action_space(num_tasks)
 
-            expected = OneOf([*[Discrete(1) for _ in range(num_tasks)], Discrete(1, start=-1)])
+            expected = Space.OneOf([*[Space.Discrete(1, start=0) for _ in range(num_tasks)], Space.Discrete(1, start=-1)])
 
             self.assertEqual(result, expected, 'Action space should match expected')
 
