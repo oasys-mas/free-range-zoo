@@ -35,7 +35,7 @@ A description of repository and domain structures are given below. For more comp
 
 The structure of each domain definition is described below and is mostly consistent across domains:
 
-```python
+```
 envs
 ├── <environment>               #   <Environment implementation>
 │   ├── configs                 #       Benchmark configurations
@@ -52,7 +52,7 @@ envs
 
 The structure of the repository described below:
 
-```python
+```
 free_range_zoo
 ├── experiments                         # Experimental code
 ├── free_range_zoo
@@ -97,6 +97,25 @@ while not torch.all(env.finished):
         cum_rewards[agent_name] += rewards[agent_name]
 
     main_logger.info(f"Step {current_step}: {rewards}")
+```
+
+## Installation
+
+Prerequisites:
+- python=^3.12
+- cargo=^1.82.0
+
+```sh
+# Pull down the repository
+git clone git@github.com:oasys-mas/free-range-zoo.git
+cd free-range-zoo
+
+# Install dependency packages
+poetry install --with models
+
+# Verify that CUDA drivers are present and working
+# Note: Only necessary if you are expecting to run on CUDA / GPU 
+python -c "import torch; print(torch.cuda.is_available())"
 ```
 
 ## Roadmap
