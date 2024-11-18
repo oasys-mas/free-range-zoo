@@ -45,7 +45,6 @@ def main():
                 configuration=configuration,
                 device=device,
             )
-
     env.reset()
 
     profiler = cProfile.Profile()
@@ -57,13 +56,10 @@ def main():
         for agent in env.agents:
             profiler.enable()
             env.observation_space(agent)
-            action_spaces = env.action_space(agent)
             profiler.disable()
 
-            actions = []
-            for action_space in action_spaces:
-                actions.append(action_space.sample())
-            actions = torch.tensor(actions, dtype=torch.int32, device=device)
+            actions = env.action_space(agent).sample_nested()
+            actions = torch.tensor(actions, device=device, dtype=torch.int32)
             action[agent] = actions
 
         profiler.enable()
@@ -86,20 +82,24 @@ def parse_args() -> argparse.Namespace:
     """Parse the command line arguments."""
     parser = argparse.ArgumentParser('Profile a free-range-zoo environment')
 
-    parser.add_argument('environment',
-                        type=str,
-                        choices=['wildfire', 'cybersecurity', 'rideshare'],
-                        help='The environment to profile')
+    parser.add_argument(
+        'environment',
+        type=str,
+        choices=['wildfire', 'cybersecurity', 'rideshare'],
+        help='The environment to profile',
+    )
     parser.add_argument('--parallel_envs', type=int, default=10, help='The number of parallel environments')
     parser.add_argument('--steps', type=int, default=15, help='The number of steps to run')
     parser.add_argument('--buffer_size', type=int, default=0, help='The size of the random buffer to use')
 
-    parser.add_argument('--sort_by',
-                        type=str,
-                        nargs='*',
-                        choices=['calls', 'cumtime', 'file', 'ncalls', 'pcalls', 'line', 'name', 'nfl', 'stdname', 'tottime'],
-                        default=['tottime'],
-                        help='The way to sort the results')
+    parser.add_argument(
+        '--sort_by',
+        type=str,
+        nargs='*',
+        choices=['calls', 'cumtime', 'file', 'ncalls', 'pcalls', 'line', 'name', 'nfl', 'stdname', 'tottime'],
+        default=['tottime'],
+        help='The way to sort the results',
+    )
     parser.add_argument('--amount', type=float, default=10, help='The amount of data to display')
     parser.add_argument('--string_filter', type=str, default=None, help='Filter the results by a string')
     parser.add_argument('--output', type=str, default=None, help='The output file to write the stats to')
