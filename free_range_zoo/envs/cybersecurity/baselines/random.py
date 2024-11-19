@@ -7,7 +7,7 @@ from free_range_zoo.utils.agent import Agent
 class RandomBaseline(Agent):
     """Agent that samples actions avaialable to it in a uniform distribution."""
 
-    def act(self, action_space: free_range_rust.Space) -> List[List[int, int]]:
+    def act(self, action_space: free_range_rust.Space) -> List[List[int]]:
         """
         Return a list of actions, one for each parallel environment.
 

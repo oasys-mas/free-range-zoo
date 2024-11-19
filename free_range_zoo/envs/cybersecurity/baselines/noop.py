@@ -7,14 +7,14 @@ from free_range_zoo.utils.agent import Agent
 class NoopBaseline(Agent):
     """Agent that always performs a no-op action."""
 
-    def act(self, action_space: free_range_rust.Space) -> List[List[int, int]]:
+    def act(self, action_space: free_range_rust.Space) -> List[List[int]]:
         """
         Return a list of actions, one for each parallel environment.
 
         Args:
             action_space: free_range_rust.Space - Current action space available to the agent.
         Returns:
-            List[List[int, int]] - List of actions, one for each parallel environment.
+            List[List[int]] - List of actions, one for each parallel environment.
         """
         actions = []
         for space in action_space.spaces:

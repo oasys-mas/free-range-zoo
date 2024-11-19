@@ -6,7 +6,7 @@ import free_range_rust
 
 class Agent(ABC):
 
-    def act(self, action_space: free_range_rust.Space) -> List[List[int, int]]:
+    def act(self, action_space: free_range_rust.Space) -> List[List[int]]:
         """
         Return a list of actions, one for each parallel environment.
 
