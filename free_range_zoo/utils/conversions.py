@@ -1,17 +1,18 @@
+"""Utility for converting between different environment types."""
 from typing import Dict, Tuple, Any, List, Union
 
 from pettingzoo.utils.conversions import aec_to_parallel_wrapper
 from pettingzoo.utils.env import ParallelEnv, AgentID, ObsType, ActionType
 from pettingzoo.utils.wrappers import OrderEnforcingWrapper
-
 import torch
+from tensordict import TensorDict
 
 from free_range_zoo.utils.env import BatchedAECEnv
 
 
 def batched_aec_to_batched_parallel(aec_env: BatchedAECEnv) -> ParallelEnv[AgentID, ObsType, ActionType]:
     """
-    Converts a batched AEC environment to a batched parallel environment
+    Convert a batched AEC environment to a batched parallel environment.
 
     In the case of an existing batched parallel environment wrapped using a `parallel_to_aec_wrapper`,
     this function will return the original environment Otherwise, it will apply the `aec_to_paralel_wrapper`
@@ -29,18 +30,17 @@ def batched_aec_to_batched_parallel(aec_env: BatchedAECEnv) -> ParallelEnv[Agent
 
 
 class batched_aec_to_batched_parallel_wrapper(aec_to_parallel_wrapper):
-    """
-    Converts a single agent environment to a parallel environment
-    """
+    """Convert a single agent environment to a parallel environment."""
 
     def reset_batches(self, *args, **kwargs):
+        """Reset specific batches of the environment."""
         self.aec_env.reset_batches(*args, **kwargs)
 
     def reset(self,
               seed: Union[int, List[int]] = None,
               options: Dict[str, Any] = None) -> Tuple[Dict[str, torch.Tensor], Dict[str, Any]]:
         """
-        Resets the environment and returns the initial observations
+        Reset the environment and returns the initial observations.
 
         Args:
             seed: Union[int, List[int]] -  The seed for the environment
@@ -61,7 +61,7 @@ class batched_aec_to_batched_parallel_wrapper(aec_to_parallel_wrapper):
     ) -> Tuple[Dict[str, torch.Tensor], Dict[str, torch.Tensor], Dict[str, torch.Tensor], Dict[str, torch.Tensor], Dict[str,
                                                                                                                         Dict]]:
         """
-        Modified step function to handle parallel environments
+        Modify step function to handle parallel environments.
 
         Args:
             actions: dict - The actions for each agent
@@ -101,7 +101,7 @@ class batched_aec_to_batched_parallel_wrapper(aec_to_parallel_wrapper):
     @property
     def finished(self) -> torch.Tensor:
         """
-        Returns a boolean tensor indicating which environments have finished
+        Return a boolean tensor indicating which environments have finished.
 
         Returns:
             torch.Tensor - The tensor indicating which environments have finished
