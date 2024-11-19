@@ -1,10 +1,12 @@
-from abc import ABC, abstractmethod
+"""Generic interface for agents."""
+from abc import ABC
 
 from typing import List, Dict, Any
 import free_range_rust
 
 
 class Agent(ABC):
+    """Generic interface for agents."""
 
     def act(self, action_space: free_range_rust.Space) -> List[List[int]]:
         """
