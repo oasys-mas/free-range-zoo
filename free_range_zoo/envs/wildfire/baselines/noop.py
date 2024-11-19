@@ -18,6 +18,6 @@ class NoopBaseline(Agent):
         """
         actions = []
         for space in action_space.spaces:
-            actions.append([-1, -1])
+            actions.append([0, -1])
 
         return actions

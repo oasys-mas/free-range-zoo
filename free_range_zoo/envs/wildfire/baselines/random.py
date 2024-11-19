@@ -1,4 +1,4 @@
-"""Random baseline policy for the wildfire environment."""
+"""Agent the samples actions available to it in a uniform distribution."""
 from typing import List
 import free_range_rust
 from free_range_zoo.utils.agent import Agent
