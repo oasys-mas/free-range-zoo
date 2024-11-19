@@ -89,7 +89,6 @@ class TestGeneratorRandomGeneration(unittest.TestCase):
         buffer_length = len(list(self.generator.buffers.values()))
         buffer_shape = list(self.generator.buffers.values())[0].shape
         buffer_index = list(self.generator.buffer_count.values())[0]
-        print(buffer_shape, buffer_length)
 
         self.assertEqual(
             buffer_length, 1, f"""
@@ -99,8 +98,8 @@ class TestGeneratorRandomGeneration(unittest.TestCase):
         self.assertEqual(
             buffer_shape, expected_shape, f"""
             \rBuffer shape should be correct
-            \rExpected:\n{expected_shape}
-            \rActual:\n{buffer_shape}""")
+                \rExpected:\n{expected_shape}
+                \rActual:\n{buffer_shape}""")
 
         self.assertEqual(
             buffer_index, 1, f"""
