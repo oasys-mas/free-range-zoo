@@ -7,6 +7,10 @@ from free_range_zoo.utils.agent import Agent
 class StrongestBaseline(Agent):
     """Agent that picks the strongest available fire and focuses on it until its out."""
 
+    def __init__(self) -> None:
+        """Initialize the agent."""
+        self.strongest_fire_position = None
+
     def act(self, action_space: free_range_rust.Space) -> List[List[int]]:
         """
         Return a list of actions, one for each parallel environment.
@@ -25,4 +29,4 @@ class StrongestBaseline(Agent):
         Args:
             observation: Dict[str, Any] - Current observation from the environment.
         """
-        pass
+        self.strongest_fire_position = observation['tasks']
