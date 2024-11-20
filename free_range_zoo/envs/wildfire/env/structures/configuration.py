@@ -148,8 +148,7 @@ class FireConfiguration(Configuration):
 
         if not (self.lit.shape == self.fire_types.shape == self.ignition_temp.shape):
             raise ValueError("lit, fire_types, and ignition_temp must have the same shape")
-        if self.base_spread_rate > self.max_spread_rate:
-            raise ValueError('base_spread_rate should be less than max_spread_rate')
+
         return True
 
 
