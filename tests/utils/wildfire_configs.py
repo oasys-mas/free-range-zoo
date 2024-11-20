@@ -18,7 +18,7 @@ def non_stochastic() -> WildfireConfiguration:
         fire_rewards=torch.tensor([[0, 0, 0], [20.0, 50.0, 20.0]], dtype=torch.float32),
         bad_attack_penalty=-100.0,
         burnout_penalty=-1.0,
-        termination_reward=1000.0,
+        termination_reward=0.0,
     )
 
     fire_configuration = FireConfiguration(
