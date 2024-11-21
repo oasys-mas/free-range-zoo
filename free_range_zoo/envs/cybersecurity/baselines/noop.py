@@ -1,11 +1,19 @@
 """Agent that always performs a no-op action."""
 from typing import List
+import torch
+
 import free_range_rust
 from free_range_zoo.utils.agent import Agent
 
 
 class NoopBaseline(Agent):
     """Agent that always performs a no-op action."""
+
+    def __init__(self, *args, **kwargs) -> None:
+        """Initialize the agent."""
+        super().__init__(*args, **kwargs)
+
+        self.actions = torch.zeros((self.parallel_envs, 2), dtype=torch.int32)
 
     def act(self, action_space: free_range_rust.Space) -> List[List[int]]:
         """
@@ -16,8 +24,5 @@ class NoopBaseline(Agent):
         Returns:
             List[List[int]] - List of actions, one for each parallel environment.
         """
-        actions = []
-        for space in action_space.spaces:
-            actions.append([-1, -1])
-
-        return actions
+        self.actions[:, 1] = -1
+        return self.actions

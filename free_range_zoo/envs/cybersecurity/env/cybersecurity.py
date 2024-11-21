@@ -273,7 +273,7 @@ class raw_env(BatchedAECEnv):
                         raise ValueError('Invalid movement target')
 
                     # Check that agents are not taking actions while not present in the environment
-                    if not self.show_bad_actions and torch.any(agent_actions[:, 0][~presence] != -3):
+                    if not self.show_bad_actions and torch.any(agent_actions[:, 0][~presence] != -1):
                         raise ValueError('Invalid action for non-present agent')
 
                     # Process agent movements
