@@ -61,7 +61,7 @@ class TestBuildActionSpace(unittest.TestCase):
     def test_build_defender_action_spaces(self) -> None:
         num_tasks_list = torch.arange(1, 11)
 
-        result = build_action_space('defender', False, torch.arange(1, 11), torch.arange(1, 11))
+        result = build_action_space('defender', False, torch.arange(1, 11), torch.ones((10, ), dtype=torch.int32))
 
         expected = Space.Vector([build_single_defender_action_space(num_tasks, 1, False) for num_tasks in num_tasks_list])
 
@@ -153,14 +153,20 @@ class TestBuildSingleDefenderActionSpace(TestCaching, unittest.TestCase):
         self.assertEqual(result, expected, 'Action space should match expected')
 
     def test_action_space_structure(self) -> None:
-        result = build_single_defender_action_space(2, 1, False)
+        result = build_single_defender_action_space(3, 1, False)
 
         expected = Space.OneOf([
+            Space.Discrete(1, start=0),  # move to connected node
+            Space.Discrete(0, start=0),  # move to connected node
             Space.Discrete(1, start=0),  # move to connected node
             Space.Discrete(1, start=-1),  # noop
             Space.Discrete(1, start=-2),  # patch
             Space.Discrete(1, start=-3),  # monitor
         ])
+
+        print(result)
+
+        print(expected)
 
         self.assertEqual(result, expected, 'Action space should match expected')
 

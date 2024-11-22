@@ -4,12 +4,12 @@ import functools
 
 import numpy as np
 
-from gymnasium.spaces import Box, Dict, Tuple as TupleSpace
-import gymnasium
+import free_range_rust
+from free_range_rust import Space
 
 
 def build_observation_space(environment_task_counts, num_agents: int, agent_high: Tuple[int], fire_high: Tuple[int],
-                            include_suppressant: bool, include_power: bool) -> List[gymnasium.Space]:
+                            include_suppressant: bool, include_power: bool) -> List[free_range_rust.Space]:
     """
     Build the observation space for all environments in a batched environment.
 
@@ -21,7 +21,7 @@ def build_observation_space(environment_task_counts, num_agents: int, agent_high
         include_suppressant: bool - Whether to include the suppressant in the observation space
         include_power: bool - Whether to include the power in the observation space
     Returns:
-        List[gymnasium.Space] - The observation spaces for the environments
+        List[free_range_rust.Space] - The observation spaces for the environments
     """
     return [
         build_single_observation_space(agent_high, fire_high, task_count, num_agents, include_suppressant, include_power)
@@ -35,7 +35,7 @@ def build_single_observation_space(agent_high: Tuple[int],
                                    num_tasks: int,
                                    num_agents: int,
                                    include_power: bool = True,
-                                   include_suppressant: bool = True) -> gymnasium.Space:
+                                   include_suppressant: bool = True) -> free_range_rust.Space:
     """
     Build the observation space for a single environment.
 
@@ -58,9 +58,9 @@ def build_single_observation_space(agent_high: Tuple[int],
     else:
         other_high = agent_high
 
-    return Dict({
+    return Space.Dict({
         'self': build_single_agent_observation_space(agent_high),
-        'others': TupleSpace([*[build_single_agent_observation_space(other_high) for _ in range(num_agents - 1)]]),
+        'others': Space.Tuple([*[build_single_agent_observation_space(other_high) for _ in range(num_agents - 1)]]),
         'tasks': build_single_fire_observation_space(fire_high, num_tasks),
     })
 
@@ -81,7 +81,7 @@ def build_single_agent_observation_space(high: Tuple[int]):
     Returns:
         gymnasium.Space - The observation space for the agent
     """
-    return Box(low=np.array([0] * len(high)), high=np.array(high), dtype=np.float32)
+    return Space.Box(low=[0] * len(high), high=high)
 
 
 @functools.lru_cache(maxsize=100)
@@ -98,4 +98,4 @@ def build_single_fire_observation_space(high: Tuple[int], num_tasks: int):
     Returns:
         gymnasium.Space - The observation space for the fire
     """
-    return TupleSpace([Box(low=np.array([0] * len(high)), high=np.array(high), dtype=np.float32) for _ in range(num_tasks)])
+    return Space.Tuple([Space.Box([0] * len(high), high=high) for _ in range(num_tasks)])
