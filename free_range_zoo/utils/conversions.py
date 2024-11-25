@@ -98,6 +98,15 @@ class batched_aec_to_batched_parallel_wrapper(aec_to_parallel_wrapper):
 
         return observations, rewards, terminations, truncations, infos
 
+    def observe(self) -> Dict[str, TensorDict]:
+        """
+        Observe the environment.
+
+        Returns:
+            Dict[str, TensorDict] - The observations for each agent
+        """
+        return {agent: self.aec_env.observe(agent) for agent in self.aec_env.agents}
+
     @property
     def finished(self) -> torch.Tensor:
         """
