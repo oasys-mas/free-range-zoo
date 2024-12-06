@@ -138,9 +138,10 @@ class raw_env(BatchedAECEnv):
             self.fire_config.num_fire_states,
         ])
 
-        self.observation_mask = torch.ones(4, dtype=torch.bool, device=self.device)
-        self.observation_mask[2] = self.observe_other_power
-        self.observation_mask[3] = self.observe_other_suppressant
+        observation_mask = torch.ones(4, dtype=torch.bool, device=self.device)
+        observation_mask[2] = self.observe_other_power
+        observation_mask[3] = self.observe_other_suppressant
+        self.agent_observation_mask = lambda agent_name: observation_mask
 
         # Initialize all of the transition layers based on the environment configurations
         self.capacity_transition = transitions.CapacityTransition(
@@ -496,7 +497,10 @@ class raw_env(BatchedAECEnv):
 
         task_range = torch.arange(0, num_tasks, device=self.device)
         task_indices = (task_range - index_shifts[fire_positions[:, 0]].flatten())
-        task_indices_nested = torch.nested.as_nested_tensor(task_indices.split(num_tasks_per_environment.tolist(), dim=0))
+        task_indices_nested = torch.nested.as_nested_tensor(
+            task_indices.split(num_tasks_per_environment.tolist(), dim=0),
+            device=self.device,
+        )
 
         # Aggregate the indices of all tasks to agent mapping
         for agent, agent_number in self.agent_name_mapping.items():
@@ -505,10 +509,13 @@ class raw_env(BatchedAECEnv):
             bad_task_count = num_tasks_per_environment - task_count
 
             tasks = task_indices[checks[agent_number]]
-            batchwise_indices = torch.nested.as_nested_tensor(tasks.split(task_count.tolist(), dim=0))
+            batchwise_indices = torch.nested.as_nested_tensor(tasks.split(task_count.tolist(), dim=0), device=self.device)
 
             bad_tasks = task_indices[~checks[agent_number]]
-            bad_batchwise_indices = torch.nested.as_nested_tensor(bad_tasks.split(bad_task_count.tolist(), dim=0))
+            bad_batchwise_indices = torch.nested.as_nested_tensor(
+                bad_tasks.split(bad_task_count.tolist(), dim=0),
+                device=self.device,
+            )
 
             self.agent_task_count[agent_number] = task_count
 
@@ -552,6 +559,7 @@ class raw_env(BatchedAECEnv):
         # Aggregate the full observation space
         self.observations = {}
         for agent in self.agents:
+            observation_mask = self.agent_observation_mask(agent)
             agent_index = self.agent_name_mapping[agent]
             agent_mask = torch.ones(self.agent_config.num_agents, dtype=torch.bool, device=self.device)
             agent_mask[agent_index] = False
@@ -559,7 +567,7 @@ class raw_env(BatchedAECEnv):
             self.observations[agent] = TensorDict(
                 {
                     'self': agent_observations[:, agent_index],
-                    'others': agent_observations[:, agent_mask][:, :, self.observation_mask],
+                    'others': agent_observations[:, agent_mask][:, :, observation_mask],
                     'tasks': fire_observations
                 },
                 batch_size=[self.parallel_envs],
