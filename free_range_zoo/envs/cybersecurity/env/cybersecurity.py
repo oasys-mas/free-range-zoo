@@ -171,10 +171,13 @@ class raw_env(BatchedAECEnv):
 
         self._state.save_initial()
 
-        # Set up initial caches environment and agent task indices
+        # Initialize range for network indexing
         self.network_range = torch.arange(0, self.network_config.num_nodes, dtype=torch.int32, device=self.device)
-        self.environment_task_indices = self.network_range.unsqueeze(0).expand(self.parallel_envs, -1).unsqueeze(2)
-        self.agent_task_indices = {agent: None for agent in self.agents}
+
+        # Intialize the mapping of the tasks "in" the environment, used to map actions
+        self.agent_action_mapping = {agent: None for agent in self.agents}
+        self.agent_observation_mapping = {agent: None for agent in self.agents}
+        self.agent_bad_actions = {agent: None for agent in self.agents}
 
         self.environment_range = torch.arange(0, self.parallel_envs, dtype=torch.int32, device=self.device)
 
@@ -351,7 +354,8 @@ class raw_env(BatchedAECEnv):
             tasks = tasks[presence_state].flatten(end_dim=0)
 
             task_counts = self.agent_task_count[agent_number]
-            self.agent_task_indices[agent] = torch.nested.as_nested_tensor(tasks.split(task_counts.tolist(), dim=0))
+            self.agent_observation_mapping[agent] = torch.nested.as_nested_tensor(tasks.split(task_counts.tolist(), dim=0))
+            self.agent_action_mapping[agent] = torch.nested.as_nested_tensor(tasks.split(task_counts.tolist(), dim=0))
 
     @torch.no_grad()
     def update_observations(self) -> None:
