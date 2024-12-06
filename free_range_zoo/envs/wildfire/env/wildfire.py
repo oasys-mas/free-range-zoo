@@ -556,6 +556,8 @@ class raw_env(BatchedAECEnv):
         fire_observations = torch.cat([lit_fire_indices[:, 1:], fires, intensities], dim=1)
         fire_observations = torch.nested.as_nested_tensor(fire_observations.split(task_count.tolist(), dim=0))
 
+        self.task_store = fire_observations
+
         # Aggregate the full observation space
         self.observations = {}
         for agent in self.agents:

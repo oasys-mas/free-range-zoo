@@ -119,13 +119,12 @@ class raw_env(BatchedAECEnv):
 
         self.observation_ordering = {}
         agent_ids = torch.arange(0, self.attacker_config.num_attackers, device=self.device)
-        for defender_name, agent_idx in self.defender_name_mapping.items():
-            other_agents = agent_ids[agent_ids != agent_idx]
-            self.observation_ordering[defender_name] = other_agents
-        agent_ids = torch.arange(0, self.defender_config.num_defenders, device=self.device)
         for attacker_name, agent_idx in self.attacker_name_mapping.items():
             other_agents = agent_ids[agent_ids != agent_idx]
             self.observation_ordering[attacker_name] = other_agents
+        for defender_name, agent_idx in self.defender_name_mapping.items():
+            other_agents = agent_ids[agent_ids != agent_idx]
+            self.observation_ordering[defender_name] = other_agents + self.attacker_config.num_attackers
 
         self.agent_observation_mask = lambda agent_name: masking.mask_observation(
             agent_name=agent_name,
@@ -322,7 +321,6 @@ class raw_env(BatchedAECEnv):
                     rewards[agent_name] += network_rewards * -1
                 case 'defender':
                     rewards[agent_name] += network_rewards
-                    pass
                 case _:
                     raise ValueError(f'Invalid agent type: {agent_type}')
 
@@ -358,8 +356,6 @@ class raw_env(BatchedAECEnv):
             self.agent_observation_mapping[agent] = torch.nested.as_nested_tensor(tasks.split(task_counts.tolist(), dim=0))
             self.agent_action_mapping[agent] = torch.nested.as_nested_tensor(tasks.split(task_counts.tolist(), dim=0))
 
-            print(self.agent_observation_mapping[agent])
-
     @torch.no_grad()
     def update_observations(self) -> None:
         """
@@ -386,6 +382,8 @@ class raw_env(BatchedAECEnv):
         attacker_presence = self._state.presence[:, :self.attacker_config.num_attackers].unsqueeze(2)
         attacker_observation = torch.cat([attacker_threat, attacker_presence], dim=2)
 
+        self.task_store = self._state.network_state.unsqueeze(2)
+
         self.observations = {}
         for agent in self.agents:
             agent_index = self.agent_name_mapping[agent]
@@ -400,7 +398,7 @@ class raw_env(BatchedAECEnv):
                         {
                             'self': defender_observation[:, agent_index],
                             'others': defender_observation[:, agent_mask][:, :, observation_mask],
-                            'tasks': self._state.network_state.unsqueeze(2).clone(),
+                            'tasks': self.task_store.clone(),
                         },
                         batch_size=[self.parallel_envs],
                         device=self.device,
@@ -416,7 +414,7 @@ class raw_env(BatchedAECEnv):
                         {
                             'self': attacker_observation[:, agent_index],
                             'others': attacker_observation[:, agent_mask][:, :, observation_mask],
-                            'tasks': self._state.network_state.unsqueeze(2).clone(),
+                            'tasks': self.task_store.clone(),
                         },
                         batch_size=[self.parallel_envs],
                         device=self.device,
@@ -450,7 +448,7 @@ class raw_env(BatchedAECEnv):
         )
 
     @torch.no_grad()
-    @functools.lru_cache(maxsize=4)  # Observation space never changes size
+    @functools.lru_cache(maxsize=100)  # Observation space never changes size
     def observation_space(self, agent: str) -> List[gymnasium.Space]:
         """
         Return the observation space for the given agent.
