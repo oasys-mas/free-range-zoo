@@ -1,4 +1,5 @@
 # Cybersecurity
+<hr>
 
 | Import             | `from free_range_zoo.envs import cybersecurity_v0`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
 | ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
@@ -20,57 +21,59 @@ respond to exploited nodes, while attackers aim to increase the exploited state 
 between attackers and defenders creates an evolving cybersecurity landscape where agents must adapt to the changing
 system state.
 
-- Environment Dynamics
-    - Nodes: The network consists of multiple nodes, each of which can be in one of several states, ranging from
-      unexploited to fully exploited. Exploited nodes represent compromised parts of the system that attackers have
-      successfully infiltrated, while unexploited nodes are safe and intact.
-    - Exploited State: Nodes can be attacked by malicious agents to increase their exploited state, making them
-      vulnerable to further exploitation. As nodes become more exploited, they pose a greater risk to the overall
-      system.
-    - Patching and Exploiting: Nodes can be patched by defenders to reduce their exploited state, while attackers
-      attempt to exploit unpatched or partially patched nodes to further their objectives. The environment is
-      partially observable, meaning that defenders do not always know the state of all nodes, requiring them to
-      take actions based on limited information.
+<u>**Dynamics**</u><br>
+- Nodes: The network consists of multiple nodes, each of which can be in one of several states, ranging from
+  unexploited to fully exploited. Exploited nodes represent compromised parts of the system that attackers have
+  successfully infiltrated, while unexploited nodes are safe and intact.
+- Exploited State: Nodes can be attacked by malicious agents to increase their exploited state, making them
+  vulnerable to further exploitation. As nodes become more exploited, they pose a greater risk to the overall
+  system.
+- Patching and Exploiting: Nodes can be patched by defenders to reduce their exploited state, while attackers
+  attempt to exploit unpatched or partially patched nodes to further their objectives. The environment is
+  partially observable, meaning that defenders do not always know the state of all nodes, requiring them to
+  take actions based on limited information.
 
-- Environment Openness
-    - **agent openness**: Environments where agents can dynamically enter and leave, enabling ad-hoc teamwork and
-      multi-agent scenarios with evolving participants.
-            - `cybersecurity`: Agents can lose access to the network, disallowing them from taking actions within the
-              environment for a period of time. Agents must reason about how many collaborators are within the
-              environment with them, and whether they are able to sufficiently fight opposing agents.
+<u>**Environment Openness**</u><br>
+- **agent openness**: Environments where agents can dynamically enter and leave, enabling ad-hoc teamwork and
+  multi-agent scenarios with evolving participants.
+    - `cybersecurity`: Agents can lose access to the network, disallowing them from taking actions within the
+      environment for a period of time. Agents must reason about how many collaborators are within the
+      environment with them, and whether they are able to sufficiently fight opposing agents.
+
+<hr>
 
 ## Baseline Policies
 
 ### noop
-#### Behavior
+<u>**Behavior**</u><br>
 The agent takes no action in all states, effectively leaving the environment unchanged where possible. If the
 environment naturally evolves regardless of the agent's actions, the no-op policy simply observes without intervention.
 
-#### Reasoning
+<u>**Reasoning**</u><br>
 The no-op policy serves as a baseline for understanding the impact of inaction in the environment. It highlights the
 natural dynamics of the environment without any agent interference, providing a benchmark to compare active policies.
 This policy is particularly useful in identifying whether external factors (e.g., environmental dynamics or other agents)
 play a significant role in achieving rewards or whether deliberate actions are necessary for success.
 
 ### random
-#### Behavior
+<u>**Behavior**</u><br>
 The agent selects actions uniformly at random from the available action space, with no regard for the state, goals, or
 consequences of the actions.
 
-#### Reasoning
+<u>**Reasoning**</u><br>
 The random policy establishes a baseline for performance in the absence of any learning or strategy. It demonstrates the
 environment's inherent difficulty by showing how likely success is when actions are chosen arbitrarily. This helps
 evaluate the performance improvement of learned or more sophisticated policies over pure chance. It is especially valuable
 in stochastic environments where outcomes may vary widely even with random actions.
 
 ### camp (defenders only)
-#### Behavior
+<u>**Behavior**</u><br>
 The defender agent moves to a node determined by the modulo of its agent index, ensuring an even distribution of agents
 across all nodes in the environment. The defender continuously patches the nodes it is assigned to, reducing the
 exploited state of those nodes. If the defender is disconnected from the environment (i.e., pulled out), it proceeds
 to the node it was assigned, resuming its patching action upon reentry.
 
-#### Reasoning
+<u>**Reasoning**</u><br>
 The defenders only policy focuses on minimizing the exploited state of the environment by spreading defenders evenly
 across all nodes, ensuring that no single node becomes overly vulnerable. By continuously patching the nodes, the
 defender prevents attackers from exploiting weaknesses and maintains the overall security of the system.
@@ -88,14 +91,14 @@ even when facing attacks that may target different nodes. It can be used as a re
 reactive strategies that adapt to the evolving attack patterns in the environment.
 
 ### patched (defender - greedy defensive)
-#### Behavior
+<u>**Behavior**</u><br>
 The defender agents following the patched policy prioritize fully patching the nodes closest to being fully patched.
 Because the environment is partially observable, the defender may not always have full knowledge of the current patch
 status of each node, so they reevaluate the status of the nodes every three timesteps. If the defender is disconnected
 and returned to the home node, the target node is reset, and they immediately select a new target to patch before moving
 to it.
 
-#### Reasoning
+<u>**Reasoning**</u><br>
 The defender’s greedy defensive approach focuses on maximizing the impact of their actions by prioritizing nodes that
 are nearest to full patching, as fully patched nodes are less likely to be exploited by attackers. The partial
 observability of the environment means that defenders must periodically reevaluate their target nodes to ensure they
@@ -111,13 +114,13 @@ understanding the efficiency of defenders who are not reactive to attack actions
 assumption that patching nodes near completion will reduce vulnerabilities.
 
 ### patched (attacker - greedy offensive)
-#### Behavior
+<u>**Behavior**</u><br>
 The attacker agents following the patched policy prioritize attacking the most patched node. This is a greedy offensive
 approach aimed at exploiting the defender’s tendency to focus on nodes that are close to being fully patched. Attackers
 reevaluate their attack targets every three timesteps, using their full visibility of the environment (since they always
 receive an observation of the state of all nodes) to adapt their strategy.
 
-#### Reasoning
+<u>**Reasoning**</u><br>
 By attacking the most patched node, attackers exploit the defender's focus on partially patched nodes. These nodes are
 often the most vulnerable because the defenders are expending significant resources on them, potentially leaving them
 exposed to further attacks. This strategy capitalizes on the defender’s attention bias and can lead to significant
@@ -133,14 +136,14 @@ This policy is useful for testing how well an attacker can exploit the defender'
 focusing on high-value targets yields better results than a more randomized or spread-out attack strategy.
 
 ### exploited (defender - greedy offensive)
-#### Behavior
+<u>**Behavior**</u><br>
 The defender agents following the exploited policy prioritize patching the nodes that are the most exploited, meaning
 they focus on nodes that have the highest exploited state. As with the patched policy, the defenders must periodically
 reevaluate their target nodes every three timesteps due to the partial observability of the environment. If the defender
 is disconnected and returned to the home node, the target is reset, and the defender immediately selects a new target
 before moving to it.
 
-#### Reasoning
+<u>**Reasoning**</u><br>
 The exploited policy emphasizes repairing the most vulnerable nodes, or those with the highest exploited state. This
 approach aims to minimize the risk of attackers exploiting the most compromised nodes and stabilizing the environment
 by addressing the most critical issues first. By patching the most exploited nodes, defenders can reduce the immediate
@@ -154,13 +157,13 @@ more responsive to immediate threats but still requires periodic assessment to h
 environment.
 
 ### exploited (attacker - greedy defensive)
-#### Behavior
+<u>**Behavior**</u><br>
 The attacker agents following the exploited policy prioritize attacking the least exploited node, aiming to exploit
 nodes that are the least targeted or have the lowest exploited state. Similar to the defenders, the attackers
 reevaluate their target every three timesteps and continuously adapt their strategy. They do not need a monitor action
 and can observe the environment fully, enabling them to track which nodes are being less actively defended.
 
-#### Reasoning
+<u>**Reasoning**</u><br>
 The exploited policy for attackers is the reverse of the greedy offensive strategy in the patched policy. Instead of
 attacking the most patched node, the attacker focuses on exploiting nodes that are less targeted, or those with the
 lowest exploited state. This strategy aims to take advantage of any gaps in the defenders’ patching coverage. While
@@ -171,6 +174,8 @@ advantage of the defender's limited resources and strategic focus.
 The three-timestep reevaluation ensures that attackers can continuously adapt their strategies based on the changing
 state of the environment. Without needing a monitor action, attackers can swiftly shift their attention to new nodes
 that become vulnerable, making it difficult for defenders to maintain a consistent focus on all nodes.
+
+<hr>
 
 ## Usage
 
@@ -242,4 +247,6 @@ while not torch.all(env.finished):
 
 env.close()
 ```
+
+<hr>
 

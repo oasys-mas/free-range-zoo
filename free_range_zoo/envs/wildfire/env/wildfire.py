@@ -1,5 +1,6 @@
 """
 # Wildfire
+<hr>
 
 | Import             | `from free_range_zoo.envs import wildfire_v0`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
 | ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
@@ -14,39 +15,44 @@
 | Observation Shape  | TensorDict: { <br>&emsp;**self**: $<ypos, xpos, fire power, suppressant>$<br>&emsp;**others**: $<ypos,xpos,fire power, suppressant>$<br>&emsp;**tasks**: $<y, x, fire level, intensity>$ <br> **batch_size**: $num\_envs$ }                                                                                                                                                                                                                                                                                                                                                                      |
 | Observation Values | <u>**self**</u>:<br>&emsp;$ypos$: $[0, max_y]$<br>&emsp;$xpos$: $[0, max_x]$<br>&emsp;$fire\_power\_reduction$: $[0, max_{fire\_power\_reduction}]$<br>&emsp;$suppressant$: $[0, max_{suppressant}]$<br><u>**others**</u>:<br>&emsp;$ypos$: $[0, max_y]$<br>&emsp;$xpos$: $[0, max_x]$<br>&emsp;$fire\_power\_reduction$: $[0, max_{fire\_power\_reduction}]$<br>&emsp;$suppressant$: $[0, max_{suppressant}]$<br> <u>**tasks**</u><br>&emsp;$ypos$: $[0, max_y]$<br>&emsp;$xpos$: $[0, max_x]$<br>&emsp;$fire\_level$: $[0, max_{fire\_level}]$<br>&emsp;$intensity$: $[0, num_{fire\_states}]$ |
 
+<hr>
+
 ## Description
 
 The wildfire domain simulates a grid-based environment where fires can spread and agents are tasked with extinguishing
 them by applying suppressant. The environment is dynamic and partially observable, with fires that can spread across
 adjacent tiles and vary in intensity. Fires can also burn out once they reach a certain intensity threshold.
 
-- Environment Dynamics
-    - Fire Spread: Fires start at designated locations and spread to neighboring tiles, increasing in intensity over
-      time. The intensity of the fire influences how much suppressant is needed to extinguish it. Fires will continue
-      to spread until they either burn out or are controlled by agents.
-    - Fire Intensity and Burnout: As fires spread, their intensity increases, making them harder to fight. Once a
-      fire reaches a critical intensity, it may burn out naturally, stopping its spread and extinguishing itself.
-      However, this is unpredictable, and timely intervention is often necessary to prevent further damage.
-    - Suppression Mechanism: Agents apply suppressant to the fire to reduce its intensity. However, suppressant is a
-      finite resource. When an agent runs out of suppressant, they must leave the environment to refill at a designated
-      station before returning to continue fighting fires.
+<u>**Environment Dynamics**</u><br>
+- Fire Spread: Fires start at designated locations and spread to neighboring tiles, increasing in intensity over
+  time. The intensity of the fire influences how much suppressant is needed to extinguish it. Fires will continue
+  to spread until they either burn out or are controlled by agents.
+- Fire Intensity and Burnout: As fires spread, their intensity increases, making them harder to fight. Once a
+  fire reaches a critical intensity, it may burn out naturally, stopping its spread and extinguishing itself.
+  However, this is unpredictable, and timely intervention is often necessary to prevent further damage.
+- Suppression Mechanism: Agents apply suppressant to the fire to reduce its intensity. However, suppressant is a
+  finite resource. When an agent runs out of suppressant, they must leave the environment to refill at a designated
+  station before returning to continue fighting fires.
 
-- Environment Openness
-    - **agent openness**: Environments where agents can dynamically enter and leave, enabling ad-hoc teamwork and
-      multi-agent scenarios with evolving participants.
-            - `wildfire`: Agents can run out of suppressant and leave the environment, removing their contributions
-              to existing fires. Agents must reason about their collaborators leaving, or new collaborators entering.
-    - **task openness**: Tasks can be introduced or removed from the environment, allowing for flexbile goal setting
-      and adaptable planning models
-            - `wildfire`: Fires can spread beyond their original starting point, requiring agents to reason about new
-              tasks possibly entering the environment as well as a changing action space: Fires can spread beyond
-              their original starting point, requiring agents to reason about new tasks possibly entering the
-              environment as well as a changing action space.
-    - **frame / type openness**: Different frames (e.g. agent abilities or skills) can be added, removed, or modified,
-      expending the environmental complexity and requiring agents to infer their neighbors changing abilities.
-            - `wildfire`: Agents can damage their equipment over time, and have their capabilities slowly degrade. On
-              the other hand, agents might also recieve different equipment upon leaving the environment to resupply.
+<u>**Environment Openness**</u><br>
+- **agent openness**: Environments where agents can dynamically enter and leave, enabling ad-hoc teamwork and
+  multi-agent scenarios with evolving participants.
+    - `wildfire`: Agents can run out of suppressant and leave the environment, removing their contributions
+      to existing fires. Agents must reason about their collaborators leaving, or new collaborators entering.
+- **task openness**: Tasks can be introduced or removed from the environment, allowing for flexbile goal setting
+  and adaptable planning models
+    - `wildfire`: Fires can spread beyond their original starting point, requiring agents to reason about new
+      tasks possibly entering the environment as well as a changing action space: Fires can spread beyond
+      their original starting point, requiring agents to reason about new tasks possibly entering the
+      environment as well as a changing action space.
+- **frame / type openness**: Different frames (e.g. agent abilities or skills) can be added, removed, or modified,
+  expending the environmental complexity and requiring agents to infer their neighbors changing abilities.
+    - `wildfire`: Agents can damage their equipment over time, and have their capabilities slowly degrade. On
+      the other hand, agents might also recieve different equipment upon leaving the environment to resupply.
+
+<hr>
 """
+
 
 
 
