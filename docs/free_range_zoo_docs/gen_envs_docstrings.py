@@ -18,25 +18,25 @@ def _get_python_file_name(env_type, env_name):
 
 
 def _insert_docstring_into_python_file(file_path, doc):
-    new_docstring = f'"""\n{doc.strip()}\n"""'
-    leading_docstring_pattern = re.compile(r'^\s*("""|\'\'\').*?\1', re.DOTALL)
+    new_docstring = f'"""\n{doc.strip()}\n"""\n'
+    leading_docstring_pattern = re.compile(r'^\s*(("""|\'\'\')([\s\S]*?)\2)', re.DOTALL)
 
-    with open(file_path, "r+", encoding="utf-8") as file:
+    with open(file_path, "r", encoding="utf-8") as file:
         file_text = file.read()
 
-        match = leading_docstring_pattern.search(file_text)
-        if match:
-            start, end = match.span()
-            file_text = file_text[:start] + new_docstring + file_text[end:]
-        else:
-            file_text = new_docstring + file_text
+    match = leading_docstring_pattern.search(file_text)
+    if match:
+        start, end = match.span()
+        file_text = file_text[:start] + new_docstring + file_text[end:]
+    else:
+        file_text = new_docstring + file_text
 
-        file.seek(0)
+    with open(file_path, "w", encoding="utf-8") as file:
         file.write(file_text)
 
 
 def _insert_docstring_into_markdown_file(file_path, doc):
-    with open(file_path, "r+", encoding="utf-8") as file:
+    with open(file_path, "w", encoding="utf-8") as file:
         file.write(doc)
 
 
@@ -61,9 +61,13 @@ def _parse_markdown(string):
     last_header = None
     in_code_block = False
 
+    parsed_content = []
+    section = ""
     for line in string.split('\n'):
         header = header_pattern.match(line)
         if header is not None and not in_code_block:
+            parsed_content.append((last_header, section))
+            section = ""
             last_header = header.group(2)
 
         is_start_code_block = start_block_pattern.match(line) is not None and not in_code_block
@@ -73,9 +77,9 @@ def _parse_markdown(string):
         elif is_end_code_block:
             in_code_block = False
 
-        parsed_content[last_header] += line + '\n'
+        section += line + '\n'
 
-    return dict(parsed_content)
+    return parsed_content
 
 
 def main():
@@ -100,20 +104,45 @@ def main():
         contents = _remove_front_matter(contents)
         contents = _parse_markdown(contents)
 
-        header_blacklist_python = ['Usage', 'Parallel API', 'AEC API', 'Configuration', 'API']
-        header_blacklist_markdown = ['Configuration', 'API']
+        header_blacklist_python = [
+            'Usage',
+            'Parallel API',
+            'AEC API',
+            'Configuration',
+            'API',
+            'Baseline Policies',
+            'Behavior',
+            'Reasoning',
+            'noop',
+            'random',
+
+            # Wildfire baseline policies
+            'strongest',
+            'weakest',
+
+            # Cybersecurity baseline policies
+            'camp (defenders only)',
+            'patched (defender - greedy defensive)',
+            'patched (attacker - greedy offensive)',
+            'exploited (defender - greedy offensive)',
+            'exploited (attacker - greedy defensive)',
+        ]
+        header_blacklist_markdown = [
+            'Configuration',
+            'API',
+        ]
 
         header_text = ''
-        for key in contents:
+        for key, section in contents:
             if key not in header_blacklist_python:
-                header_text += f'{contents[key]}'
+                header_text += f'{section}'
 
         _insert_docstring_into_python_file(environment_runtime_file, header_text)
 
         header_text = ''
-        for key in contents:
+        for key, section in contents:
             if key not in header_blacklist_markdown:
-                header_text += f'{contents[key]}'
+                header_text += f'{section}'
 
         _insert_docstring_into_markdown_file(environment_readme, header_text)
 

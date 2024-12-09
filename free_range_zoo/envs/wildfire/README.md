@@ -15,10 +15,97 @@
 
 ## Description
 
-A cooperative **agent open** and **task open** domain where agents coordinate to extinguish fires before they burn out.
-Agents do not move, and they choose to either *suppress* (0) a fire they can reach, or *NOOP* (-1) to refill their suppressant.
+The wildfire domain simulates a grid-based environment where fires can spread and agents are tasked with extinguishing
+them by applying suppressant. The environment is dynamic and partially observable, with fires that can spread across
+adjacent tiles and vary in intensity. Fires can also burn out once they reach a certain intensity threshold.
 
-Task openness is present as fires which ignite and spread according to a realistic wildfire spreading model used in prior implementations of this environment <cite wildfire papers>. Agents are not present in the environment when out of suppressant as they can only NOOP.
+- Environment Dynamics
+    - Fire Spread: Fires start at designated locations and spread to neighboring tiles, increasing in intensity over
+      time. The intensity of the fire influences how much suppressant is needed to extinguish it. Fires will continue
+      to spread until they either burn out or are controlled by agents.
+    - Fire Intensity and Burnout: As fires spread, their intensity increases, making them harder to fight. Once a
+      fire reaches a critical intensity, it may burn out naturally, stopping its spread and extinguishing itself.
+      However, this is unpredictable, and timely intervention is often necessary to prevent further damage.
+    - Suppression Mechanism: Agents apply suppressant to the fire to reduce its intensity. However, suppressant is a
+      finite resource. When an agent runs out of suppressant, they must leave the environment to refill at a designated
+      station before returning to continue fighting fires.
+
+- Environment Openness
+    - **agent openness**: Environments where agents can dynamically enter and leave, enabling ad-hoc teamwork and
+      multi-agent scenarios with evolving participants.
+            - `wildfire`: Agents can run out of suppressant and leave the environment, removing their contributions
+              to existing fires. Agents must reason about their collaborators leaving, or new collaborators entering.
+    - **task openness**: Tasks can be introduced or removed from the environment, allowing for flexbile goal setting
+      and adaptable planning models
+            - `wildfire`: Fires can spread beyond their original starting point, requiring agents to reason about new
+              tasks possibly entering the environment as well as a changing action space: Fires can spread beyond
+              their original starting point, requiring agents to reason about new tasks possibly entering the
+              environment as well as a changing action space.
+    - **frame / type openness**: Different frames (e.g. agent abilities or skills) can be added, removed, or modified,
+      expending the environmental complexity and requiring agents to infer their neighbors changing abilities.
+            - `wildfire`: Agents can damage their equipment over time, and have their capabilities slowly degrade. On
+              the other hand, agents might also recieve different equipment upon leaving the environment to resupply.
+
+## Baseline Policies
+
+### noop
+#### Behavior
+The agent takes no action in all states, effectively leaving the environment unchanged where possible. If the
+environment naturally evolves regardless of the agent's actions, the no-op policy simply observes without intervention.
+
+#### Reasoning
+The no-op policy serves as a baseline for understanding the impact of inaction in the environment. It highlights the
+natural dynamics of the environment without any agent interference, providing a benchmark to compare active policies.
+This policy is particularly useful in identifying whether external factors (e.g., environmental dynamics or other
+agents) play a significant role in achieving rewards or whether deliberate actions are necessary for success.
+
+### random
+#### Behavior
+The agent selects actions uniformly at random from the available action space, with no regard for the state, goals, or
+consequences of the actions.
+
+#### Reasoning
+The random policy establishes a baseline for performance in the absence of any learning or strategy. It demonstrates
+the environment's inherent difficulty by showing how likely success is when actions are chosen arbitrarily. This helps
+evaluate the performance improvement of learned or more sophisticated policies over pure chance. It is especially
+valuable in stochastic environments where outcomes may vary widely even with random actions.
+
+### strongest
+#### Behavior
+The agent prioritizes fighting fires that are closest to burning out by focusing on tiles where the fire intensity is
+highest. If the agent runs out of suppressant, it leaves the environment to refill its supply before returning to resume
+operations.
+
+#### Reasoning
+In the wildfire-fighting domain, fires with high intensity are closer to reaching a tipping point where they can either
+burn out naturally or intensify the spread to adjacent tiles. The strongest policy aims to strategically intervene by
+suppressing these critical fires before they can escalate or self-extinguish. By targeting fires on the brink of burning
+out, the agent maximizes its suppressant efficiency, potentially stabilizing the environment faster.
+
+The policy's refill mechanism ensures the agent is always operational and avoids remaining idle when suppressant is
+depleted. This behavior is crucial in scenarios where a delay in response could allow the fire to spread unchecked. The
+strongest policy provides a benchmark for evaluating whether focusing on critical fires (as opposed to uniformly
+suppressing all fires or prioritizing larger ones) is an effective strategy in mitigating the wildfire's overall impact.
+
+### weakest
+#### Behavior
+The agent prioritizes fighting fires with the lowest intensity, focusing on tiles where the fire is closest to being
+extinguished. If the agent runs out of suppressant, it leaves the environment to refill its supply before returning to
+continue firefighting operations.
+
+#### Reasoning
+In the wildfire-fighting domain, extinguishing fires provides rewards, making it advantageous to target fires that are
+closest to being put out. The weakest policy aims to harvest these rewards efficiently by allocating suppressant to
+low-intensity fires, which require fewer resources to extinguish.
+
+This strategy leverages the fact that fires close to extinguishment offer a high probability of success with minimal
+effort. By concentrating on these easier targets, the agent maximizes short-term rewards while avoiding the risk of
+wasting suppressant on more challenging, high-intensity fires. The refill mechanism ensures the agent remains
+operational and ready to capitalize on emerging opportunities.
+
+The weakest policy serves as a benchmark for evaluating reward-focused strategies, contrasting with other policies
+that might prioritize long-term stability or overall fire suppression. It highlights the trade-offs between immediate
+rewards and broader control of the environment.
 
 ## Usage
 
