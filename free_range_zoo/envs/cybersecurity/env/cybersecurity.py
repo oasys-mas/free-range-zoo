@@ -1,5 +1,6 @@
 """
 # Cybersecurity
+<hr>
 
 | Import             | `from free_range_zoo.envs import cybersecurity_v0`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
 | ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
@@ -13,6 +14,34 @@
 | Action Values      | Attackers: [$move_0$, ..., $move_{tasks}$, $noop$ (-1)]<br>Defenders: [$move_0$, ..., $move_{tasks}$, $noop$ (-1), $patch$ (-2), $monitor$ (-3)]                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
 | Observation Shape  | Attackers: TensorDict { <br>&emsp;**self**: $<power, presence>$ <br>&emsp;**others**: $<power, presence>$ <br>&emsp;**tasks**: $<state>$ <br> **batch_size**: $num\_envs$ } <br> Defenders: TensorDict { <br>&emsp;**self**: $<power, presence, location>$ <br>&emsp;**others**: $<power, presence, location>$ <br>&emsp;**tasks**: $<state>$<br> **batch_size**: $num\_envs$}                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
 | Observation Values | Attackers: <br>&emsp;<u>**self**</u><br>&emsp;&emsp;$power$: [$0$, $max\_power_{attacker}$]<br>&emsp;&emsp;$presence$: [$0$, $1$]<br>&emsp;<u>**others**</u><br>&emsp;&emsp;$power$: [$0$, $max\_power_{attacker}$]<br>&emsp;&emsp;$presence$: [$0$, $1$]<br>&emsp;<u>**tasks**</u><br>&emsp;&emsp;$state$: [$0$, $n_{network\_states}$] <br><br> Defenders: <br>&emsp;<u>**self**</u><br>&emsp;&emsp;$power$: [$0$, $max\_power_{defender}$]<br>&emsp;&emsp;$presence$: [$0$, $1$]<br>&emsp;&emsp;$location$: [$0$, $n_{subnetworks}$]<br>&emsp;<u>**others**</u><br>&emsp;&emsp;$power$: [$0$, $max\_power_{defender}$]<br>&emsp;&emsp;$presence$: [$0$, $1$]<br>&emsp;&emsp;$location$: [$0$, $n_{subnetworks}$]</u><br>&emsp;<u>**tasks**</u><br>&emsp;&emsp;$state$: [$0$, $n_{network\_states}$] |
+
+## Description
+The cybersecurity domain simulates a network environment where nodes are either attacked or patched by agents, with
+the goal of protecting or exploiting the system. The environment is partially observable, with defenders needing to
+respond to exploited nodes, while attackers aim to increase the exploited state of nodes. The dynamic interaction
+between attackers and defenders creates an evolving cybersecurity landscape where agents must adapt to the changing
+system state.
+
+<u>**Dynamics**</u><br>
+- Nodes: The network consists of multiple nodes, each of which can be in one of several states, ranging from
+  unexploited to fully exploited. Exploited nodes represent compromised parts of the system that attackers have
+  successfully infiltrated, while unexploited nodes are safe and intact.
+- Exploited State: Nodes can be attacked by malicious agents to increase their exploited state, making them
+  vulnerable to further exploitation. As nodes become more exploited, they pose a greater risk to the overall
+  system.
+- Patching and Exploiting: Nodes can be patched by defenders to reduce their exploited state, while attackers
+  attempt to exploit unpatched or partially patched nodes to further their objectives. The environment is
+  partially observable, meaning that defenders do not always know the state of all nodes, requiring them to
+  take actions based on limited information.
+
+<u>**Environment Openness**</u><br>
+- **agent openness**: Environments where agents can dynamically enter and leave, enabling ad-hoc teamwork and
+  multi-agent scenarios with evolving participants.
+    - `cybersecurity`: Agents can lose access to the network, disallowing them from taking actions within the
+      environment for a period of time. Agents must reason about how many collaborators are within the
+      environment with them, and whether they are able to sufficiently fight opposing agents.
+
+<hr>
 """
 
 from typing import Tuple, Dict, Any, Union, List, Optional, Callable
