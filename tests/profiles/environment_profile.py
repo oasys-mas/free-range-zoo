@@ -11,6 +11,9 @@ from pstats import Stats
 
 from free_range_zoo.envs import cybersecurity_v0, wildfire_v0, rideshare_v0
 from tests.utils import cybersecurity_configs, wildfire_configs, rideshare_configs
+from free_range_zoo.wrappers.heterograph import heterograph_wrapper_v0
+
+storage = {}
 
 
 def main():
@@ -27,6 +30,9 @@ def main():
                 configuration=configuration,
                 device=device,
                 buffer_size=args.buffer_size,
+                show_bad_actions=False,
+                observe_other_power=False,
+                observe_other_suppressant=False,
             )
         case 'cybersecurity':
             configuration = cybersecurity_configs.non_stochastic()
@@ -36,6 +42,7 @@ def main():
                 configuration=configuration,
                 device=device,
                 buffer_size=args.buffer_size,
+                show_bad_actions=False,
             )
         case 'rideshare':
             configuration = rideshare_configs.non_stochastic()
@@ -45,7 +52,10 @@ def main():
                 configuration=configuration,
                 device=device,
             )
-    env.reset()
+    env = heterograph_wrapper_v0(env, collapse=True)
+    observation, _ = env.reset()
+
+    storage['o'] = observation
 
     profiler = cProfile.Profile()
 
@@ -60,14 +70,24 @@ def main():
 
             actions = env.action_space(agent).sample_nested()
             actions = torch.tensor(actions, device=device, dtype=torch.int32)
+
             action[agent] = actions
+
+        storage['a'] = action
 
         profiler.enable()
         observation, reward, term, trunc, info = env.step(action)
         profiler.disable()
 
+        storage['r'] = reward
+        storage['o_prime'] = observation
+        storage['d'] = term | trunc
+
         print(f'Completed step {current_step}')
         current_step += 1
+
+    # import pickle
+    # pickle.dump(storage, open(f'{args.environment}.pkl', 'wb'))
 
     profiler.create_stats()
 
