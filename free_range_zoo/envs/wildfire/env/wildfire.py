@@ -53,9 +53,6 @@ adjacent tiles and vary in intensity. Fires can also burn out once they reach a 
 <hr>
 """
 
-
-
-
 from typing import Tuple, Dict, Any, Union, List, Optional, Callable
 
 import torch
