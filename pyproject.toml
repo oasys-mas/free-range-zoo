@@ -19,6 +19,8 @@ xxhash = "^3.5.0"
 yapf = "^0.40.2"
 networkx = "^3.4.2"
 free-range-rust = "^0.1.2"
+torchviz = "^0.0.3"
+graphviz = "^0.20.3"
 
 [tool.poetry.group.scripts.dependencies]
 jupyter = "^1.0.0"
