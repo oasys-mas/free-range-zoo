@@ -201,10 +201,10 @@ class shared_wrapper_parr(BaseParallelWrapper):
 
                 self.observation_space(agent)
                 self.action_space(agent)
-                self.modifiers[agent].modify_obs(self.env.aec_env.observe(agent))
+
                 self.modifiers[agent].reset(seed=self._cur_seed, options=self._cur_options)
 
-                # modifiers for each agent has a different seed
+                # Modifiers for each agent has a different seed
                 if self._cur_seed is not None:
                     self._cur_seed += 1
 
@@ -225,9 +225,12 @@ class shared_wrapper_parr(BaseParallelWrapper):
 
         observations, infos = super().reset(seed=seed, options=options)
         self.add_modifiers(self.agents)
+
+        observations = {agent: self.modifiers[agent].modify_obs(obs) for agent, obs in observations.items()}
+
         for agent, mod in self.modifiers.items():
             mod.reset(seed=seed, options=options)
-        observations = {agent: self.modifiers[agent].modify_obs(obs) for agent, obs in observations.items()}
+
         return observations, infos
 
     def step(
@@ -244,9 +247,12 @@ class shared_wrapper_parr(BaseParallelWrapper):
                   Dict[str, Dict]] - The observations, rewards, terminations, truncations, and infos
         """
         actions = {agent: self.modifiers[agent].modify_action(action) for agent, action in actions.items()}
+
         observations, rewards, terminations, truncations, infos = super().step(actions)
         self.add_modifiers(self.agents)
+
         observations = {agent: self.modifiers[agent].modify_obs(obs) for agent, obs in observations.items()}
+
         return observations, rewards, terminations, truncations, infos
 
 

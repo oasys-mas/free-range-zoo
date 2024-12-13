@@ -1,6 +1,10 @@
 import psutil
 import resource
 
+import logging
+
+logger = logging.getLogger('free_range_zoo')
+
 
 def limit_memory(memory_limit: float) -> None:
     """
@@ -14,7 +18,7 @@ def limit_memory(memory_limit: float) -> None:
     available_memory = virtual_memory.available
     memory_limit = int(available_memory * memory_limit)
 
-    print(f'{memory_limit} memory limit, available: {available_memory}')
+    logger.info(f'{memory_limit} memory limit, available: {available_memory}')
 
     resource.setrlimit(resource.RLIMIT_AS, (memory_limit, memory_limit))
 

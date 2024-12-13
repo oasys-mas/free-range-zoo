@@ -169,9 +169,10 @@ class raw_env(BatchedAECEnv):
             self.fire_config.num_fire_states,
         ])
 
-        self.observation_mask = torch.ones(4, dtype=torch.bool, device=self.device)
-        self.observation_mask[2] = self.observe_other_power
-        self.observation_mask[3] = self.observe_other_suppressant
+        observation_mask = torch.ones(4, dtype=torch.bool, device=self.device)
+        observation_mask[2] = self.observe_other_power
+        observation_mask[3] = self.observe_other_suppressant
+        self.agent_observation_mask = lambda agent_name: observation_mask
 
         # Initialize all of the transition layers based on the environment configurations
         self.capacity_transition = transitions.CapacityTransition(
@@ -300,8 +301,9 @@ class raw_env(BatchedAECEnv):
         self.num_burnouts = torch.zeros(self.parallel_envs, dtype=torch.int32, device=self.device)
 
         # Intialize the mapping of the tasks "in" the environment, used to map actions
-        self.environment_task_indices = None
-        self.agent_task_indices = {agent: None for agent in self.agents}
+        self.agent_action_mapping = {agent: None for agent in self.agents}
+        self.agent_observation_mapping = {agent: None for agent in self.agents}
+        self.agent_bad_actions = {agent: None for agent in self.agents}
 
         # Set the observations and action space
         if not options or not options.get('skip_observations', False):
@@ -352,7 +354,11 @@ class raw_env(BatchedAECEnv):
         users = torch.zeros(shape, dtype=torch.bool, device=self.device)
         attack_powers = torch.zeros_like(self._state.fires, dtype=torch.float32, device=self.device)
 
-        env_task_indices_pad = self.environment_task_indices.to_padded_tensor(padding=-100)
+        fire_positions = (self._state.fires > 0).nonzero(as_tuple=False)
+
+        index_shifts = torch.roll(torch.cumsum(self.environment_task_count, dim=0), 1, dims=0)
+        index_shifts[0] = 0
+        index_shifts = index_shifts[self.parallel_ranges.unsqueeze(1)]
 
         # Loop over each agent
         for agent_name, agent_actions in self.actions.items():
@@ -364,20 +370,15 @@ class raw_env(BatchedAECEnv):
             if self.agent_task_count[agent_index].sum() == 0:
                 continue
 
-            # Gather information from the environment
+            agent_action_mapping_pad = self.agent_action_mapping[agent_name].to_padded_tensor(padding=-100)
+
+            # Gather the indexes of all of the agent actions
             task_indices = torch.hstack([self.parallel_ranges.unsqueeze(1), agent_actions[:, 0].unsqueeze(1)])
-            fire_task_indices = task_indices[~refills[agent_index]]
+            task_indices = agent_action_mapping_pad[task_indices[~refills[agent_index]].split(1, dim=1)]
 
-            agent_task_indices_pad = self.agent_task_indices[agent_name].to_padded_tensor(padding=-100)
+            global_task_indices = (agent_actions[:, 0] + index_shifts.squeeze(1))[~refills[agent_index]]
 
-            # Get the coordinates for attacking agents
-            if self.show_bad_actions:
-                fire_coords = env_task_indices_pad[fire_task_indices.split(1, dim=1)]
-            else:
-                fire_coords = agent_task_indices_pad[fire_task_indices.split(1, dim=1)]
-            fire_coords = fire_coords.squeeze(1)
-
-            full_coords = torch.cat([fire_task_indices[:, 0].unsqueeze(1), fire_coords], dim=1)
+            fire_coords = fire_positions[global_task_indices]
 
             reduction_powers = self.fire_reduction_power[agent_index].expand(self.parallel_envs)
             equipment_bonuses = self.agent_config.equipment_states[self._state.equipment[:, agent_index].unsqueeze(0)][:, :, 1]
@@ -387,17 +388,19 @@ class raw_env(BatchedAECEnv):
             good_fight = torch.ones(self.parallel_envs, dtype=torch.bool, device=self.device)
             good_fight[refills[agent_index]] = False
 
-            if self.show_bad_actions:
-                repeated_attack = fire_coords.unsqueeze(1).expand_as(agent_task_indices_pad[~refills[agent_index]])
-                good_actions = (repeated_attack == agent_task_indices_pad[~refills[agent_index]]).all(dim=2).any(dim=1)
-                good_fight[~refills[agent_index]] = good_actions
-                attack_powers[full_coords[good_actions].split(1, dim=1)] += full_powers[good_fight].unsqueeze(1)
-            else:
-                attack_powers[full_coords.split(1, dim=1)] += full_powers[good_fight].unsqueeze(1)
+            if self.show_bad_actions and self.agent_bad_actions[agent_name].numel() > 0:
+                bad_actions = self.agent_bad_actions[agent_name].to_padded_tensor(-100)
+                attacks = agent_actions[:, 0].unsqueeze(1).expand_as(bad_actions)
+
+                bad_actions = (bad_actions == attacks).any(dim=1)
+
+                good_fight = good_fight & (~bad_actions & ~refills[agent_index])
+
+            attack_powers[fire_coords[good_fight[~refills[agent_index]]].split(1, dim=1)] += full_powers[good_fight].unsqueeze(1)
 
             # Aggregate the filtered information
             users[agent_index] = good_fight
-            bad_users = torch.logical_not(torch.logical_or(users[agent_index], refills[agent_index]))
+            bad_users = ~(users[agent_index] | refills[agent_index])
 
             # Give out rewards for bad actions
             rewards[agent_name][bad_users] = self.reward_config.bad_attack_penalty
@@ -446,7 +449,10 @@ class raw_env(BatchedAECEnv):
             randomness_source=field_randomness[1],
             return_put_out=True,
         )
-        self._state = self.fire_spread_transition(state=self._state, randomness_source=field_randomness[2])
+        self._state = self.fire_spread_transition(
+            state=self._state,
+            randomness_source=field_randomness[2],
+        )
 
         fire_rewards = torch.zeros_like(self._state.fires, device=self.device, dtype=torch.float)
         fire_rewards[just_put_out] = self.fire_rewards[just_put_out]
@@ -482,69 +488,77 @@ class raw_env(BatchedAECEnv):
     def update_actions(self) -> None:
         """Update the action space for all agents."""
         # Gather all the tasks in the environment
-        lit_fires = torch.where(self._state.fires > 0, 1, 0)
-        lit_fire_indices = lit_fires.nonzero(as_tuple=False)
+        fires = self._state.fires > 0
+        num_tasks_per_environment = fires.sum(dim=(1, 2))
+        num_tasks = num_tasks_per_environment.sum()
 
-        num_tasks = lit_fires.sum()
+        # Gather the positions of all of the fires
+        fire_positions = fires.nonzero(as_tuple=False)
+        fire_positions_expanded = fire_positions.expand(self.agent_config.num_agents, -1, -1)
+        fire_positions_expanded = fire_positions_expanded.flatten(end_dim=1)
 
-        task_positions = lit_fire_indices.expand(self.agent_config.num_agents, -1, -1)
-        task_positions = task_positions.flatten(end_dim=1)
-
-        agent_positions = self._state.agents.unsqueeze(1).expand(-1, num_tasks, -1)
-        agent_positions = agent_positions.flatten(end_dim=1)
-
-        # Get the indices of all agents within the environment
+        # Match up all of the agents with all of the tasks
         agent_indices = torch.arange(0, self.agent_config.num_agents, device=self.device).unsqueeze(1)
-        agent_indices = agent_indices.expand(-1, num_tasks).flatten()
-        agent_indices = torch.cat([task_positions[:, 0].unsqueeze(1), agent_indices.unsqueeze(1)], dim=1)
+        agent_indices_expanded = agent_indices.expand(-1, num_tasks).flatten().unsqueeze(1)
+        agent_indices_expanded = torch.cat([fire_positions_expanded[:, 0].unsqueeze(1), agent_indices_expanded], dim=1)
+        agent_positions = self._state.agents.unsqueeze(1).expand(-1, num_tasks, -1).flatten(end_dim=1)
 
-        # Gather the ranges for the respective agents
-        agent_ranges = self.agent_config.attack_range[agent_indices[:, 1]].flatten()
-
-        # Get the respective equipment states and range bonuses
-        equipment_states = self._state.equipment[agent_indices.split(1, dim=1)].squeeze(1)
+        # Calculate the true range for each of the agents in each environment
+        agent_ranges = self.agent_config.attack_range[agent_indices_expanded[:, 1]].flatten()
+        equipment_states = self._state.equipment[agent_indices_expanded.split(1, dim=1)].squeeze(1)
         range_bonuses = self.agent_config.equipment_states[equipment_states.unsqueeze(0)][:, :, 2].squeeze(0)
-
-        # Calculate the agent range after bonuses have been applied
         true_range = (agent_ranges + range_bonuses).flatten()
 
+        # Check which agents are in range of which tasks
         in_range = in_range_check.chebyshev(
             agent_position=agent_positions,
-            task_position=task_positions[:, 1:],
+            task_position=fire_positions_expanded[:, 1:],
             attack_range=true_range,
-        )
-        in_range = in_range.reshape(self.agent_config.num_agents, num_tasks)
+        ).reshape(self.agent_config.num_agents, num_tasks)
 
-        # Detemine which agents have suppressants
-        has_suppressants = self._state.suppressants[agent_indices.split(1, dim=1)].squeeze(1) > 0
+        # Check which agents have suppressants
+        has_suppressants = self._state.suppressants[agent_indices_expanded.split(1, dim=1)].squeeze(1) > 0
         has_suppressants = has_suppressants.reshape(self.agent_config.num_agents, num_tasks)
 
         # Combine the two checks to determine which agents can fight which fires
         checks = torch.logical_and(in_range, has_suppressants)
 
-        # Aggregate the indices of all tasks to agent mappingk
-        agent_tasks = {}
-        for agent, agent_number in self.agent_name_mapping.items():
-            #  Get all of the valid tasks for this agent
-            tasks = lit_fire_indices[checks[agent_number]]
+        index_shifts = torch.roll(torch.cumsum(num_tasks_per_environment, dim=0), 1, 0)
+        index_shifts[0] = 0
 
+        task_range = torch.arange(0, num_tasks, device=self.device)
+        task_indices = (task_range - index_shifts[fire_positions[:, 0]].flatten())
+        task_indices_nested = torch.nested.as_nested_tensor(
+            task_indices.split(num_tasks_per_environment.tolist(), dim=0),
+            device=self.device,
+        )
+
+        # Aggregate the indices of all tasks to agent mapping
+        for agent, agent_number in self.agent_name_mapping.items():
             # Count the number of tasks in each batch and aggregate the indices
-            task_count = torch.bincount(tasks[:, 0], minlength=self.parallel_envs)
-            batchwise_indices = torch.nested.as_nested_tensor(tasks[:, 1:].split(task_count.tolist(), dim=0))
+            task_count = torch.bincount(fire_positions[checks[agent_number]][:, 0], minlength=self.parallel_envs)
+            bad_task_count = num_tasks_per_environment - task_count
+
+            tasks = task_indices[checks[agent_number]]
+            batchwise_indices = torch.nested.as_nested_tensor(tasks.split(task_count.tolist(), dim=0), device=self.device)
+
+            bad_tasks = task_indices[~checks[agent_number]]
+            bad_batchwise_indices = torch.nested.as_nested_tensor(
+                bad_tasks.split(bad_task_count.tolist(), dim=0),
+                device=self.device,
+            )
 
             self.agent_task_count[agent_number] = task_count
-            agent_tasks[agent] = batchwise_indices
 
-        # Update the agent action to task mapping
-        self.agent_task_indices = agent_tasks
+            if self.show_bad_actions:
+                self.agent_action_mapping[agent] = task_indices_nested
+                self.agent_bad_actions[agent] = bad_batchwise_indices
+            else:
+                self.agent_action_mapping[agent] = batchwise_indices
 
-        # Aggregate the indices of all tasks in each environment
-        task_count = lit_fires.sum(dim=(1, 2))
-        batchwise_indices = torch.nested.as_nested_tensor(lit_fire_indices[:, 1:].split(task_count.tolist(), dim=0))
+            self.agent_observation_mapping[agent] = task_indices_nested
 
-        # Set the indices for all tasks in each environment
-        self.environment_task_count = task_count
-        self.environment_task_indices = batchwise_indices
+        self.environment_task_count = num_tasks_per_environment
 
     @torch.no_grad()
     def update_observations(self) -> None:
@@ -573,9 +587,12 @@ class raw_env(BatchedAECEnv):
         fire_observations = torch.cat([lit_fire_indices[:, 1:], fires, intensities], dim=1)
         fire_observations = torch.nested.as_nested_tensor(fire_observations.split(task_count.tolist(), dim=0))
 
+        self.task_store = fire_observations
+
         # Aggregate the full observation space
         self.observations = {}
         for agent in self.agents:
+            observation_mask = self.agent_observation_mask(agent)
             agent_index = self.agent_name_mapping[agent]
             agent_mask = torch.ones(self.agent_config.num_agents, dtype=torch.bool, device=self.device)
             agent_mask[agent_index] = False
@@ -583,7 +600,7 @@ class raw_env(BatchedAECEnv):
             self.observations[agent] = TensorDict(
                 {
                     'self': agent_observations[:, agent_index],
-                    'others': agent_observations[:, agent_mask][:, :, self.observation_mask],
+                    'others': agent_observations[:, agent_mask][:, :, observation_mask],
                     'tasks': fire_observations
                 },
                 batch_size=[self.parallel_envs],
@@ -617,9 +634,11 @@ class raw_env(BatchedAECEnv):
         Returns:
             List[gymnasium.Space]: the observation space for the given agent
         """
-        return observations.build_observation_space(environment_task_counts=self.environment_task_count,
-                                                    num_agents=self.agent_config.num_agents,
-                                                    agent_high=self.agent_observation_bounds,
-                                                    fire_high=self.fire_observation_bounds,
-                                                    include_suppressant=self.observe_other_suppressant,
-                                                    include_power=self.observe_other_power)
+        return observations.build_observation_space(
+            environment_task_counts=self.environment_task_count,
+            num_agents=self.agent_config.num_agents,
+            agent_high=self.agent_observation_bounds,
+            fire_high=self.fire_observation_bounds,
+            include_suppressant=self.observe_other_suppressant,
+            include_power=self.observe_other_power,
+        )
