@@ -33,7 +33,7 @@ class StrongestBaseline(Agent):
             observation: Dict[str, Any] - Current observation from the environment.
         """
         self.observation, self.t_mapping = observation
-        self.t_mapping = self.t_mapping['action_task_mappings']
+        self.t_mapping = self.t_mapping['agent_action_mapping']
 
         has_suppressant = self.observation['self'][:, 3] != 0
         fires = self.observation['tasks'].to_padded_tensor(-100)[:, :, 3]

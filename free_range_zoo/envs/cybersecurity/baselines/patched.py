@@ -36,7 +36,7 @@ class PatchedAttackerBaseline(Agent):
             observation: Dict[str, Any] - Current observation from the environment.
         """
         self.observation, self.t_mapping = observation
-        self.t_mapping = self.t_mapping['action_task_mappings']
+        self.t_mapping = self.t_mapping['agent_action_mapping']
         self.t_mapping = self.t_mapping.to_padded_tensor(padding=-100)
 
         new_targets = self.observation['tasks'].argmin(dim=1).flatten()
@@ -88,7 +88,7 @@ class PatchedDefenderBaseline(Agent):
             observation: Dict[str, Any] - Current observation from the environment.
         """
         self.observation, self.t_mapping = observation
-        self.t_mapping = self.t_mapping['action_task_mappings']
+        self.t_mapping = self.t_mapping['agent_action_mapping']
         self.t_mapping = self.t_mapping.to_padded_tensor(padding=-100)
 
         last_monitor = (self.observation['tasks'] != -100).all(dim=1).flatten()
