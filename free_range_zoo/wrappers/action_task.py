@@ -6,6 +6,7 @@ import torch
 from free_range_zoo.wrappers.wrapper_util import shared_wrapper
 from free_range_zoo.utils.env import BatchedAECEnv
 
+
 class ActionTaskMappingWrapperModifier(BaseModifier):
     """Wrapper for mapping actions to tasks in a multi-task environment."""
     env = True
@@ -44,6 +45,7 @@ class ActionTaskMappingWrapperModifier(BaseModifier):
         """
         self.cur_obs = observation, {'agent_action_mapping': self.env.agent_action_mapping[self.subject_agent]}
         return self.cur_obs
+
 
 def action_mapping_wrapper_v0(env, collapse: bool = False) -> BatchedAECEnv:
     """
