@@ -14,6 +14,7 @@ this_dir = os.path.dirname(__file__)
 #                IMAGE AND COLOR HELPERS              #
 ########################################################
 
+
 def render_image(path, cell_size: int):
     """
     Loads an image from the local 'assets' folder, 
@@ -21,6 +22,7 @@ def render_image(path, cell_size: int):
     """
     image = pygame.image.load(os.path.join(this_dir, "assets", path))
     return pygame.transform.scale(image, (cell_size, cell_size))
+
 
 def change_hue(image_surface, hue_change):
     """
@@ -74,9 +76,11 @@ def change_hue(image_surface, hue_change):
     new_surface = pygame.surfarray.make_surface(new_image_array)
     return new_surface
 
+
 ########################################################
 #                   UI HELPERS: SLIDER                #
 ########################################################
+
 
 def draw_slider(window, slider_x, slider_y, slider_width, slider_height, slider_position, max_time, t):
     """
@@ -84,10 +88,11 @@ def draw_slider(window, slider_x, slider_y, slider_width, slider_height, slider_
     updates t based on the position of the handle.
     """
     pygame.draw.rect(window, (150, 150, 150), (slider_x, slider_y, slider_width, slider_height))
-    handle_x = slider_x + slider_position  
+    handle_x = slider_x + slider_position
     pygame.draw.rect(window, (0, 0, 255), (handle_x - 10, slider_y - 10, 20, 30))
     t = int((slider_position / slider_width) * max_time)
     return t
+
 
 def draw_button(window, is_playing, button_x, button_y, button_size):
     """
@@ -96,15 +101,9 @@ def draw_button(window, is_playing, button_x, button_y, button_size):
     if is_playing:
         pygame.draw.rect(window, (255, 0, 0), (button_x, button_y, button_size, button_size))
     else:
-        pygame.draw.polygon(
-            window, 
-            (0, 255, 0),
-            [
-                (button_x,             button_y),
-                (button_x,             button_y + button_size),
-                (button_x + button_size, button_y + button_size // 2)
-            ]
-        )
+        pygame.draw.polygon(window, (0, 255, 0), [(button_x, button_y), (button_x, button_y + button_size),
+                                                  (button_x + button_size, button_y + button_size // 2)])
+
 
 def draw_time(window, t, screen_size, font):
     """
@@ -114,9 +113,11 @@ def draw_time(window, t, screen_size, font):
     text_rect = time_text.get_rect(center=(screen_size // 2, 20))
     window.blit(time_text, text_rect)
 
+
 ########################################################
 #            ARROW DRAWING FOR ANY VISUALS            #
 ########################################################
+
 
 def find_arrow_points(start_pos, end_pos, cell_size, x_offset, y_offset):
     """
@@ -124,9 +125,10 @@ def find_arrow_points(start_pos, end_pos, cell_size, x_offset, y_offset):
     """
     sx, sy = start_pos
     ex, ey = end_pos
-    start_center = (x_offset + sx * cell_size + cell_size//2, y_offset + sy * cell_size + cell_size//2)
-    end_center   = (x_offset + ex * cell_size + cell_size//2, y_offset + ey * cell_size + cell_size//2)
+    start_center = (x_offset + sx * cell_size + cell_size // 2, y_offset + sy * cell_size + cell_size // 2)
+    end_center = (x_offset + ex * cell_size + cell_size // 2, y_offset + ey * cell_size + cell_size // 2)
     return start_center, end_center
+
 
 def draw_arrow(window, start_pos, end_pos, cell_size, x_offset, y_offset):
     """
@@ -143,16 +145,16 @@ def draw_arrow(window, start_pos, end_pos, cell_size, x_offset, y_offset):
           end_edge[1] - arrowhead_length * math.sin(angle + arrowhead_angle))
     pygame.draw.polygon(window, (0, 0, 0), [end_edge, p1, p2])
 
+
 ########################################################
 #              MAIN RENDER FUNCTION                    #
 ########################################################
 
-def render(
-    path: str,
-    render_mode: str = "human",
-    frame_rate: Optional[int] = 15,
-    checkpoint: Optional[int] = None
-) -> Union[None, np.ndarray]:
+
+def render(path: str,
+           render_mode: str = "human",
+           frame_rate: Optional[int] = 15,
+           checkpoint: Optional[int] = None) -> Union[None, np.ndarray]:
     """
     Renders the wildfire environment from a single CSV log (path).
     
@@ -188,7 +190,7 @@ def render(
     for col in array_like_cols:
         if col in df.columns:
             df[col] = df[col].fillna("[]")
-            df[col] = df[col].apply(lambda s: s.replace("nan","[]") if isinstance(s,str) else s)
+            df[col] = df[col].apply(lambda s: s.replace("nan", "[]") if isinstance(s, str) else s)
             df[col] = df[col].apply(literal_eval)
 
     possible_agent_cols = [
@@ -221,12 +223,12 @@ def render(
     # 2. Infer the grid size from the data   #
     ##########################################
     fires_grid_0 = df['fires'].iloc[0]
-    y = len(fires_grid_0)               # rows
+    y = len(fires_grid_0)  # rows
     x = len(fires_grid_0[0]) if y > 0 else 0  # columns
 
     cell_size = 190
-    padding   = 140
-    grid_width  = x * cell_size
+    padding = 140
+    grid_width = x * cell_size
     grid_height = y * cell_size
     screen_size = max(grid_width, grid_height) + padding * 2
 
@@ -240,23 +242,23 @@ def render(
     ##########################################
     # 3. Prepare image assets                #
     ##########################################
-    base_fire_low  = render_image("small_fire.png",  cell_size)
-    base_fire_med  = render_image("medium_fire.png", cell_size)
-    base_fire_high = render_image("large_fire.png",  cell_size)
+    base_fire_low = render_image("small_fire.png", cell_size)
+    base_fire_med = render_image("medium_fire.png", cell_size)
+    base_fire_high = render_image("large_fire.png", cell_size)
     # note that I dont own the burnt_out.png, just used it for now !
     # TODO
-    base_burnt     = render_image("burnt_out.png",   cell_size)
-    base_agent     = render_image("firefighter.png", cell_size)
+    base_burnt = render_image("burnt_out.png", cell_size)
+    base_agent = render_image("firefighter.png", cell_size)
 
     ##########################################
     # 4. Build a structure of per-step info  #
     ##########################################
     state_record = defaultdict(list)
     for i, row in df.iterrows():
-        fires_2d      = row['fires']
-        intensity_2d  = row['intensity']
-        fuel_2d       = row['fuel']
-        agents_list   = row['agents']
+        fires_2d = row['fires']
+        intensity_2d = row['intensity']
+        fuel_2d = row['fuel']
+        agents_list = row['agents']
         for yy in range(y):
             for xx in range(x):
                 val = fires_2d[yy][xx]
@@ -335,7 +337,8 @@ def render(
                 if event.type == pygame.MOUSEBUTTONDOWN:
                     if (slider_x <= event.pos[0] <= slider_x + slider_width) and (slider_y - 5 <= event.pos[1] <= slider_y + 15):
                         dragging_slider = True
-                    if (button_x <= event.pos[0] <= button_x + button_size) and (button_y <= event.pos[1] <= button_y + button_size):
+                    if (button_x <= event.pos[0] <= button_x + button_size) and (button_y <= event.pos[1] <=
+                                                                                 button_y + button_size):
                         is_playing = not is_playing
                 if event.type == pygame.MOUSEBUTTONUP:
                     dragging_slider = False
@@ -357,25 +360,23 @@ def render(
         # ------------ Draw grid -----------------
         line_color = (200, 200, 200)
         for row_i in range(y + 1):
-            pygame.draw.line(window, line_color, 
-                             (x_offset,            y_offset + row_i * cell_size),
+            pygame.draw.line(window, line_color, (x_offset, y_offset + row_i * cell_size),
                              (x_offset + grid_width, y_offset + row_i * cell_size), 1)
         for col_i in range(x + 1):
-            pygame.draw.line(window, line_color, 
-                             (x_offset + col_i * cell_size, y_offset),
+            pygame.draw.line(window, line_color, (x_offset + col_i * cell_size, y_offset),
                              (x_offset + col_i * cell_size, y_offset + grid_height), 1)
         # ------------ Slider / Button / Step ---
         if render_mode == "human":
             draw_slider(window, slider_x, slider_y, slider_width, slider_height, slider_position, max_time, t)
             draw_button(window, is_playing, button_x, button_y, button_size)
         draw_time(window, t, screen_size, font)
-        
+
         # ------------ Render Episode Information ------------
         # Display the episode name and step count (log file name) in the extra UI area.
         episode_info_text = f"Episode: {episode_name_str}  Step: {t}/{max_time}"
         episode_info_surf = small_font.render(episode_info_text, True, (0, 0, 0))
         window.blit(episode_info_surf, (slider_x, screen_size + 5))
-        
+
         # ------------ Render all objects ------------
         fire_index = 0
         for obj in state_record[t]:
@@ -415,11 +416,7 @@ def render(
                 draw_y = center_y - img_height // 2
                 window.blit(img_scaled, (draw_x, draw_y))
                 # Prepare and render overlay text.
-                fire_text = [
-                    f"{fire_name}",
-                    f"intensity: {obj['intensity']:.1f}",
-                    f"Fuel: {obj['fuel']}"
-                ]
+                fire_text = [f"{fire_name}", f"intensity: {obj['intensity']:.1f}", f"Fuel: {obj['fuel']}"]
                 for idx, line in enumerate(fire_text):
                     line_surf = small_font.render(line, True, (0, 0, 0))
                     window.blit(line_surf, (cell_x + 5, cell_y + 5 + idx * 15))
@@ -432,9 +429,7 @@ def render(
                 name_surf = small_font.render(agent_name, True, default_color)
                 window.blit(name_surf, (draw_x + 5, draw_y + 5))
                 agent_text = [
-                    f"suppressant: {obj['suppressant']:.1f}",
-                    f"capacity: {obj['capacity']}",
-                    f"action: {obj['action']}",
+                    f"suppressant: {obj['suppressant']:.1f}", f"capacity: {obj['capacity']}", f"action: {obj['action']}",
                     f"reward: {obj['rewards']:.1f}"
                 ]
                 for idx, line in enumerate(agent_text):
