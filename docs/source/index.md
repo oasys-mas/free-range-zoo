@@ -10,7 +10,7 @@ lastpage:
 
 content/basic_usage
 content/environment_creation
-content/environment_tests
+content/environment_usage
 ```
 
 ```{toctree}
