@@ -93,8 +93,8 @@ def main():
             with open(f"{docs_dir}/code_examples/usage_parallel.py") as f:
                 usage_parallel = f.read()
 
-            usage_parallel = usage_parallel.replace("pistonball_v6", env_name_version)
-            usage_parallel = usage_parallel.replace("butterfly", "free_range_zoo")
+            usage_parallel = usage_parallel.replace("space_invaders_v2", env_name_version)
+            usage_parallel = usage_parallel.replace("atari", "free_range_zoo")
             usage_parallel = usage_parallel.replace("pettingzoo", "free_range_zoo")
             usage_parallel = usage_parallel.strip()
 
