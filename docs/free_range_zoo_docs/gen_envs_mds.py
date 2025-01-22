@@ -145,7 +145,7 @@ def main():
 ```
 """
 
-            docs_env_path = os.path.join(docs_dir, "environments", env_type, env_name + ".md")
+            docs_env_path = os.path.join(docs_dir, "environments", env_type, env_name, "specification.md")
             _create_docs_md(docs_env_path, docs_text, frontmatter_options)
 
 

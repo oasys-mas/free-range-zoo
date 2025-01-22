@@ -27,7 +27,7 @@ def _insert_docstring_into_python_file(file_path, doc):
     match = leading_docstring_pattern.search(file_text)
     if match:
         start, end = match.span()
-        file_text = file_text[:start] + new_docstring + file_text[end:]
+        file_text = file_text[:start] + new_docstring + '\n' + file_text[end:].lstrip('\n')
     else:
         file_text = new_docstring + file_text
 
@@ -44,10 +44,23 @@ def _remove_front_matter(string):
     regex = re.compile(r"---\s*(\n|.)*?(---\s*\n)")
     match = regex.match(string)
     if match:
-        g = match.group(0)
-        return string[len(g):]
-    else:
-        return string
+        string = string[len(match.group(0)):]
+
+    start_block_pattern = re.compile(r'```{toctree}', re.DOTALL)
+    end_block_pattern = re.compile(r'```', re.DOTALL)
+
+    while True:
+        start_match = start_block_pattern.search(string)
+        if not start_match:
+            break
+
+        end_match = end_block_pattern.search(string, start_match.end())
+        if end_match:
+            string = string[:start_match.start()] + string[end_match.end():]
+        else:
+            break
+
+    return string
 
 
 def _parse_markdown(string):
@@ -66,6 +79,10 @@ def _parse_markdown(string):
     for line in string.split('\n'):
         header = header_pattern.match(line)
         if header is not None and not in_code_block:
+            section = section.rstrip('\n')
+            if not section.endswith('\n'):
+                section += '\n'
+
             parsed_content.append((last_header, section))
             section = ""
             last_header = header.group(2)
@@ -78,6 +95,9 @@ def _parse_markdown(string):
             in_code_block = False
 
         section += line + '\n'
+
+    parsed_content = parsed_content[1:]
+    parsed_content.append((last_header, section))
 
     return parsed_content
 
@@ -93,16 +113,25 @@ def main():
         if not os.path.isdir(dir_path) or env_name == '__pycache__':
             continue
 
-        environment_documentation = os.path.join(docs_dir, 'environments', f'{env_name}.md')
+        environment_index = os.path.join(docs_dir, 'environments', env_name, 'index.md')
+        environment_specification = os.path.join(docs_dir, 'environments', env_name, 'specification.md')
 
         environment_runtime_file = os.path.join(dir_path, 'env', f'{env_name}.py')
         environment_readme = os.path.join(dir_path, 'README.md')
 
-        with open(environment_documentation, encoding="utf-8") as file:
-            contents = file.read()
+        with open(environment_index, encoding="utf-8") as file:
+            index_contents = file.read()
 
-        contents = _remove_front_matter(contents)
-        contents = _parse_markdown(contents)
+        index_contents = _remove_front_matter(index_contents)
+        index_contents = _parse_markdown(index_contents)
+
+        with open(environment_specification, encoding="utf-8") as file:
+            specification_contents = file.read()
+
+        specification_contents = _remove_front_matter(specification_contents)
+        specification_contents = _parse_markdown(specification_contents)
+
+        contents = index_contents + specification_contents
 
         header_blacklist_python = [
             'Usage',
@@ -110,23 +139,8 @@ def main():
             'AEC API',
             'Configuration',
             'API',
-            'Baseline Policies',
-            'Behavior',
-            'Reasoning',
-            'noop',
-            'random',
-
-            # Wildfire baseline policies
-            'strongest',
-            'weakest',
-
-            # Cybersecurity baseline policies
-            'camp (defenders only)',
-            'patched (defender - greedy defensive)',
-            'patched (attacker - greedy offensive)',
-            'exploited (defender - greedy offensive)',
-            'exploited (attacker - greedy defensive)',
         ]
+
         header_blacklist_markdown = [
             'Configuration',
             'API',
@@ -136,6 +150,7 @@ def main():
         for key, section in contents:
             if key not in header_blacklist_python:
                 header_text += f'{section}'
+        header_text.rstrip('\n')
 
         _insert_docstring_into_python_file(environment_runtime_file, header_text)
 
@@ -143,6 +158,7 @@ def main():
         for key, section in contents:
             if key not in header_blacklist_markdown:
                 header_text += f'{section}'
+        header_text.rstrip('\n')
 
         _insert_docstring_into_markdown_file(environment_readme, header_text)
 
