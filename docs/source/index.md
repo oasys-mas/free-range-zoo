@@ -14,12 +14,13 @@ content/environment_usage
 ```
 
 ```{toctree}
-:hidden:
 :caption: Environments
+:maxdepth: 2
+:hidden:
 
-environments/cybersecurity
-environments/rideshare
-environments/wildfire
+environments/wildfire/index
+environments/cybersecurity/index
+environments/rideshare/index
 ```
 
 ```{toctree}
