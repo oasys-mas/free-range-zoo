@@ -16,10 +16,11 @@ class RewardConfiguration(Configuration):
     """
     Settings for configuring the reward function.
 
-    fire_rewards: torch.FloatTensor - Reward for extinguishing a fire
-    bad_attack_penalty: float - Penalty for attacking a tile that is not on fire
-    burnout_penalty: float - Penalty for attacking a burned out fire
-    termination_reward: float - Reward for terminating the environment
+    Attributes:
+        fire_rewards: torch.FloatTensor - Reward for extinguishing a fire
+        bad_attack_penalty: float - Penalty for attacking a tile that is not on fire
+        burnout_penalty: float - Penalty for attacking a burned out fire
+        termination_reward: float - Reward for terminating the environment
     """
 
     fire_rewards: torch.FloatTensor
@@ -45,8 +46,8 @@ class FireConfiguration(Configuration):
     """
     Setting for configuring fire properties in the environment.
 
-    General Attributes:
-        fire_types: torch.Tensor - Required attack power in order to extinguish the fire
+    Attributes:
+        fire_types: torch.IntTensor - Required attack power in order to extinguish the fire
         num_fire_states: int - Number of fire states
         lit: torch.IntTensor - Tensor representing the initially lit tiles
         intensity_increase_probability: float - Probability of fire intensity increase

@@ -1,21 +1,4 @@
 # Wildfire
-<hr>
-
-| Import             | `from free_range_zoo.envs import wildfire_v0`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
-| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Actions            | Discrete & Stochastic                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
-| Observations       | Discrete and fully Observed with private observations                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
-| Parallel API       | Yes                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
-| Manual Control     | No                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
-| Agent Names        | [$firefighter$_0, ..., $firefighter$_n]                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
-| # Agents           | [0, $n_firefighters$]                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
-| Action Shape       | ($envs$, 2)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
-| Action Values      | [$fight_0$, ..., $fight_{tasks}$, $noop$ (-1)]                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
-| Observation Shape  | TensorDict: { <br>&emsp;**self**: $<ypos, xpos, fire power, suppressant>$<br>&emsp;**others**: $<ypos,xpos,fire power, suppressant>$<br>&emsp;**tasks**: $<y, x, fire level, intensity>$ <br> **batch_size**: $num\_envs$ }                                                                                                                                                                                                                                                                                                                                                                      |
-| Observation Values | <u>**self**</u>:<br>&emsp;$ypos$: $[0, max_y]$<br>&emsp;$xpos$: $[0, max_x]$<br>&emsp;$fire\_power\_reduction$: $[0, max_{fire\_power\_reduction}]$<br>&emsp;$suppressant$: $[0, max_{suppressant}]$<br><u>**others**</u>:<br>&emsp;$ypos$: $[0, max_y]$<br>&emsp;$xpos$: $[0, max_x]$<br>&emsp;$fire\_power\_reduction$: $[0, max_{fire\_power\_reduction}]$<br>&emsp;$suppressant$: $[0, max_{suppressant}]$<br> <u>**tasks**</u><br>&emsp;$ypos$: $[0, max_y]$<br>&emsp;$xpos$: $[0, max_x]$<br>&emsp;$fire\_level$: $[0, max_{fire\_level}]$<br>&emsp;$intensity$: $[0, num_{fire\_states}]$ |
-
-<hr>
-
 ## Description
 
 The wildfire domain simulates a grid-based environment where fires can spread and agents are tasked with extinguishing
@@ -49,81 +32,32 @@ adjacent tiles and vary in intensity. Fires can also burn out once they reach a 
     - `wildfire`: Agents can damage their equipment over time, and have their capabilities slowly degrade. On
       the other hand, agents might also recieve different equipment upon leaving the environment to resupply.
 
+# Specification
 <hr>
 
-## Baseline Policies
-
-### noop
-<u>**Behavior**</u><br>
-The agent takes no action in all states, effectively leaving the environment unchanged where possible. If the
-environment naturally evolves regardless of the agent's actions, the no-op policy simply observes without intervention.
-
-<u>**Reasoning**</u><br>
-The no-op policy serves as a baseline for understanding the impact of inaction in the environment. It highlights the
-natural dynamics of the environment without any agent interference, providing a benchmark to compare active policies.
-This policy is particularly useful in identifying whether external factors (e.g., environmental dynamics or other
-agents) play a significant role in achieving rewards or whether deliberate actions are necessary for success.
-
-### random
-<u>**Behavior**</u><br>
-The agent selects actions uniformly at random from the available action space, with no regard for the state, goals, or
-consequences of the actions.
-
-<u>**Reasoning**</u><br>
-The random policy establishes a baseline for performance in the absence of any learning or strategy. It demonstrates
-the environment's inherent difficulty by showing how likely success is when actions are chosen arbitrarily. This helps
-evaluate the performance improvement of learned or more sophisticated policies over pure chance. It is especially
-valuable in stochastic environments where outcomes may vary widely even with random actions.
-
-### strongest
-<u>**Behavior**</u><br>
-The agent prioritizes fighting fires that are closest to burning out by focusing on tiles where the fire intensity is
-highest. If the agent runs out of suppressant, it leaves the environment to refill its supply before returning to resume
-operations.
-
-<u>**Reasoning**</u><br>
-In the wildfire-fighting domain, fires with high intensity are closer to reaching a tipping point where they can either
-burn out naturally or intensify the spread to adjacent tiles. The strongest policy aims to strategically intervene by
-suppressing these critical fires before they can escalate or self-extinguish. By targeting fires on the brink of burning
-out, the agent maximizes its suppressant efficiency, potentially stabilizing the environment faster.
-
-The policy's refill mechanism ensures the agent is always operational and avoids remaining idle when suppressant is
-depleted. This behavior is crucial in scenarios where a delay in response could allow the fire to spread unchecked. The
-strongest policy provides a benchmark for evaluating whether focusing on critical fires (as opposed to uniformly
-suppressing all fires or prioritizing larger ones) is an effective strategy in mitigating the wildfire's overall impact.
-
-### weakest
-<u>**Behavior**</u><br>
-The agent prioritizes fighting fires with the lowest intensity, focusing on tiles where the fire is closest to being
-extinguished. If the agent runs out of suppressant, it leaves the environment to refill its supply before returning to
-continue firefighting operations.
-
-<u>**Reasoning**</u><br>
-In the wildfire-fighting domain, extinguishing fires provides rewards, making it advantageous to target fires that are
-closest to being put out. The weakest policy aims to harvest these rewards efficiently by allocating suppressant to
-low-intensity fires, which require fewer resources to extinguish.
-
-This strategy leverages the fact that fires close to extinguishment offer a high probability of success with minimal
-effort. By concentrating on these easier targets, the agent maximizes short-term rewards while avoiding the risk of
-wasting suppressant on more challenging, high-intensity fires. The refill mechanism ensures the agent remains
-operational and ready to capitalize on emerging opportunities.
-
-The weakest policy serves as a benchmark for evaluating reward-focused strategies, contrasting with other policies
-that might prioritize long-term stability or overall fire suppression. It highlights the trade-offs between immediate
-rewards and broader control of the environment.
+| Import             | `from free_range_zoo.envs import wildfire_v0`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Actions            | Discrete & Stochastic                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| Observations       | Discrete and fully Observed with private observations                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| Parallel API       | Yes                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| Manual Control     | No                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| Agent Names        | [$firefighter$_0, ..., $firefighter$_n]                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| # Agents           | [0, $n_firefighters$]                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| Action Shape       | ($envs$, 2)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| Action Values      | [$fight_0$, ..., $fight_{tasks}$, $noop$ (-1)]                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| Observation Shape  | TensorDict: { <br>&emsp;**self**: $<ypos, xpos, fire power, suppressant>$<br>&emsp;**others**: $<ypos,xpos,fire power, suppressant>$<br>&emsp;**tasks**: $<y, x, fire level, intensity>$ <br> **batch_size**: $num\_envs$ }                                                                                                                                                                                                                                                                                                                                                                      |
+| Observation Values | <u>**self**</u>:<br>&emsp;$ypos$: $[0, max_y]$<br>&emsp;$xpos$: $[0, max_x]$<br>&emsp;$fire\_power\_reduction$: $[0, max_{fire\_power\_reduction}]$<br>&emsp;$suppressant$: $[0, max_{suppressant}]$<br><u>**others**</u>:<br>&emsp;$ypos$: $[0, max_y]$<br>&emsp;$xpos$: $[0, max_x]$<br>&emsp;$fire\_power\_reduction$: $[0, max_{fire\_power\_reduction}]$<br>&emsp;$suppressant$: $[0, max_{suppressant}]$<br> <u>**tasks**</u><br>&emsp;$ypos$: $[0, max_y]$<br>&emsp;$xpos$: $[0, max_x]$<br>&emsp;$fire\_level$: $[0, max_{fire\_level}]$<br>&emsp;$intensity$: $[0, num_{fire\_states}]$ |
 
 <hr>
-
 ## Usage
-
 ### Parallel API
 ```python
-from free_range_zoo.envs import space_invaders_v2
+from free_range_zoo.envs import wildfire_v0
 
 main_logger = logging.getLogger(__name__)
 
 # Initialize and reset environment to initial state
-env = space_invaders_v2.parallel_env(render_mode="human")
+env = wildfire_v0.parallel_env(render_mode="human")
 observations, infos = env.reset()
 
 # Initialize agents and give initial observations
@@ -150,7 +84,6 @@ while not torch.all(env.finished):
 
 env.close()
 ```
-
 ### AEC API
 ```python
 from free_range_zoo.envs import wildfire_v0
@@ -186,4 +119,3 @@ env.close()
 ```
 
 <hr>
-
