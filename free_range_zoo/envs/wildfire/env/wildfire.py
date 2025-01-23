@@ -112,9 +112,9 @@ class raw_env(BatchedAECEnv):
     @torch.no_grad()
     def __init__(self,
                  *args,
-                 observe_other_suppressant: bool = True,
-                 observe_other_power: bool = True,
-                 show_bad_actions: bool = True,
+                 observe_other_suppressant: bool = False,
+                 observe_other_power: bool = False,
+                 show_bad_actions: bool = False,
                  **kwargs) -> None:
         """
         Initialize the Wildfire environment.
