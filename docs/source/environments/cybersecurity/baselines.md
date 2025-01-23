@@ -130,5 +130,3 @@ advantage of the defender's limited resources and strategic focus.
 The three-timestep reevaluation ensures that attackers can continuously adapt their strategies based on the changing
 state of the environment. Without needing a monitor action, attackers can swiftly shift their attention to new nodes
 that become vulnerable, making it difficult for defenders to maintain a consistent focus on all nodes.
-
-<hr>

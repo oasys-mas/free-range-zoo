@@ -41,12 +41,3 @@ If you want to actively change files and watch for changes then run the followin
 ```sh
 poetry run build
 ```
-
-## Testing[^1]
-
-The plugin [pytest-markdown-docs](https://github.com/modal-labs/pytest-markdown-docs) allows us to test our documentation to ensure that example code runs successfully. To test, run the following command:
-```sh
-poetry run test
-```
-
-[^1]: NOTE: **At the current moment this script is broken**

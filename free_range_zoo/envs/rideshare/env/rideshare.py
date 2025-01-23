@@ -1,7 +1,7 @@
 """
 # Rideshare
 
-<hr>
+---
 
 | Import             | `from freerangezoo.otask import rideshare_v0` |
 |--------------------|------------------------------------|

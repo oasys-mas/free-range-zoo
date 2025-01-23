@@ -5,33 +5,34 @@ lastpage:
 ---
 
 ```{toctree}
-:hidden:
 :caption: Introduction
+:hidden:
+introduction/installation
+introduction/basic_usage
+```
 
-content/basic_usage
-content/environment_creation
-content/environment_usage
+```{toctree}
+:caption: API
+:hidden:
+api/environments
 ```
 
 ```{toctree}
 :caption: Environments
-:maxdepth: 2
 :hidden:
-
 environments/wildfire/index
 environments/cybersecurity/index
 environments/rideshare/index
 ```
 
 ```{toctree}
-:hidden:
 :caption: Development
-
+:hidden:
 Github <https://github.com/oasys-mas/free-range-zoo>
 ```
 
 ```{project-logo} _static/img/darkgoat.png
-:alt: PettingZoo Logo
+:alt: free-range-zoo Logo
 ```
 
 ```{project-heading}
