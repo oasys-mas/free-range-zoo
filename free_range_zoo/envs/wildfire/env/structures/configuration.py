@@ -54,7 +54,6 @@ class FireConfiguration(Configuration):
         intensity_decrease_probability: float - Probability of fire intensity decrease
         extra_power_decrease_bonus: float - Additional decrease bonus per extra power
         burnout_probability: float - Probability of fire burnout
-    Fire Spreads Attributes:
         base_spread_rate: float - Base spread rate of the fire
         max_spread_rate: float - Maximum spread rate of the fire
         random_ignition_probability: float - Probability of random ignition
@@ -62,12 +61,6 @@ class FireConfiguration(Configuration):
         wind_direction: float - Direction of the wind (radians)
         ignition_temp: torch.IntTensor - Initial intensity of each fire once ignited
         initial_fuel: int - Initial fuel value of each cell in the grid, controls the number of re-ignitions
-    Calculated Attributes:
-        realistic_burnout_probability: float - Burnout probability with realistic spread rates
-        burned_out: int - Burned out fire state
-        almost_burned_out: int - Almost burned out fire state
-        max_fire_type: int - Maximum fire type
-        realistic_spread_rates: List[float] - Spread rates in each direction calculated with wind direction
     """
 
     fire_types: torch.IntTensor
@@ -158,29 +151,22 @@ class AgentConfiguration(Configuration):
     """
     Setting for configuring agent properties in the environment.
 
-    General Attributes:
+    Attributes:
         agents: torch.IntTensor - Tensor representing the location of each agent
         fire_reduction_power: torch.FloatTensor - Power of each agent to reduce the fire intensity
         attack_range: torch.Tensor - Range of attack for each agent
-    Suppressant Attributes:
         suppressant_states: int - Number of suppressant states
         initial_suppressant: int - Initial suppressant value for each agent
         suppressant_decrease_probability: float - Probability of suppressant decrease
         suppressant_refill_probability: float - Probability of suppressant refill
-    Equipment Attributes:
         intial_equipment_state: int - Initial equipment state for each agent
         equipment_states: torch.FloatTensor - Definition of equipment states modifiers in the form of (capacity, power, range)
         repair_probability: float - Probability that an agent get their repaired equipment once fully damaged
         degrade_probability: float - Probability that an agent's tank will degrade
         critical_error_probability: float - Probability that an agent at full will suffer a critical error
-    Suppressant Tank Attributes:
         tank_switch_probability: float - Probability that an agent will be supplied with a different tank on refill
         possible_capacities: torch.Tensor - Possible maximum suppressant values
         capacity_probabilities: torch.Tensor - Probability that each suppressant maximum is chosen
-    Calculated Attributes:
-        num_agents: int - Number of agents
-        max_fire_reduction_power: float - Maximum fire reduction power of the agents
-        num_equipment_states: int - Number of equipment states
     """
 
     agents: torch.IntTensor
@@ -272,17 +258,14 @@ class StochasticConfiguration(Configuration):
     """
     Configuration for the stochastic elements of the environment.
 
-    General Fire Attributes:
+    Attributes:
         special_burnout_probability: bool - Whether to use special burnout probabilities
-    Stochastic Suppressant Attributes:
         suppressant_refill: bool - Whether suppressants refill stochastically
         suppressant_decrease: bool - Whether suppressants decrease stochastically
-    Stochastic Equipment Attributes:
         tank_switch: bool - Whether to use stochastic tank switching
         critical_error: bool - Whether equipment state can have a critical error
         degrade: bool - Whether equipment state stochastically degrades
         repair: bool - Whether equipment state stochastically repairs
-    Stochastic Fire Attributes:
         fire_decrease: bool - Whether fires decrease stochastically
         fire_increase: bool - Whether fires increase stochastically
         fire_spread: bool - Whether fires spread
@@ -332,7 +315,6 @@ class WildfireConfiguration(Configuration):
     Attributes:
         grid_width: int - Width of the grid
         grid_height: int - Height of the grid
-    Configuration Attributes:
         fire_configuration: FireConfiguration - Configuration for the fire properties
         agent_configuration: AgentConfiguration - Configuration for the agent properties
         reward_configuration: RewardConfiguration - Configuration for the environment rewards
