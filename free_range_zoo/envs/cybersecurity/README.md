@@ -19,7 +19,7 @@ system state.
   take actions based on limited information.
 
 <u>**Environment Openness**</u><br>
-- **agent openness**: Environments where agents can dynamically enter and leave, enabling ad-hoc teamwork and
+- **agent openness**: Environments where agents can dynamically enter and leave, enabling dynamic cooperation and
   multi-agent scenarios with evolving participants.
     - `cybersecurity`: Agents can lose access to the network, disallowing them from taking actions within the
       environment for a period of time. Agents must reason about how many collaborators are within the

@@ -17,7 +17,7 @@ adjacent tiles and vary in intensity. Fires can also burn out once they reach a 
   station before returning to continue fighting fires.
 
 <u>**Environment Openness**</u><br>
-- **agent openness**: Environments where agents can dynamically enter and leave, enabling ad-hoc teamwork and
+- **agent openness**: Environments where agents can dynamically enter and leave, enabling dynamic cooperation and
   multi-agent scenarios with evolving participants.
     - `wildfire`: Agents can run out of suppressant and leave the environment, removing their contributions
       to existing fires. Agents must reason about their collaborators leaving, or new collaborators entering.
