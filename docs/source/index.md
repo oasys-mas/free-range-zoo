@@ -44,7 +44,7 @@ This repository provides a collection of PyTorch implementations for various rei
 and **open-frame** systems. These systems are designed to allow dynamic changes in the environment, such as the entry and exit of agents, tasks, and types, simulating more realistic and flexible scenarios. 
 The implementations are designed to facilitate experimentation, comparison, and the development of new techniques in RL and planning. 
 
- There are extensions for each environment to handle batching for updating the trajectories of multiples states simulataneously. Pettingzoo partially supports agent-open environments through its distinction between `agents` and `possible_agents`, but has no built-in support for task or frame openness.
+ There are extensions for each environment to handle batching for updating the trajectories of multiple states simulataneously. Pettingzoo partially supports agent-open environments through its distinction between `agents` and `possible_agents`, but has no built-in support for task or frame openness.
 
 # Core Research Applications
 All forms of openness should have the ability to be completely removed the from the environment. Allowing for testing with each form in complete isolatioAll forms of openness should have the ability to be completely removed 
