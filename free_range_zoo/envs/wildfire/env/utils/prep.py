@@ -1,4 +1,4 @@
-from planning.experiments.configs.wildfire import setup3,single_agent_two_fires,single_agent_single_fire
+from planning.experiments.configs.wildfire import setup3, single_agent_two_fires, single_agent_single_fire
 import termcolor
 
 printg = lambda x: print(termcolor.colored(x, "green"))

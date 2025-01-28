@@ -23,7 +23,7 @@ if __name__ == "__main__":
     )
     frames = render(csv_path, render_mode="rgb_array", frame_rate=500)
     frames = frames[::-1]  # Reverse the frames if they appear reversed in the GIF
-# Save frames as a GIF
+    # Save frames as a GIF
     gif_path = "wildfire_simulation.gif"
     imageio.mimsave(gif_path, frames, fps=500)
     render_mode = "human"  # Change to "rgb_array" if you want frames
@@ -33,9 +33,4 @@ if __name__ == "__main__":
     checkpoint = None  # Filter by label, if needed
 
     # Call the renderer
-    render(
-        path=csv_path,
-        render_mode=render_mode,
-        frame_rate=frame_rate,
-        checkpoint=checkpoint
-    )
+    render(path=csv_path, render_mode=render_mode, frame_rate=frame_rate, checkpoint=checkpoint)

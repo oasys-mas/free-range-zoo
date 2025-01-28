@@ -10,9 +10,11 @@ import pandas as pd
 
 this_dir = os.path.dirname(__file__)
 
+
 def render_image(path: str, size: int):
     image = pygame.image.load(path)
     return pygame.transform.scale(image, (size, size))
+
 
 def draw_aaline_arrow(window, color, start, end, width=2):
     """
@@ -29,6 +31,7 @@ def draw_aaline_arrow(window, color, start, end, width=2):
           end[1] - arrowhead_length * math.sin(angle + arrowhead_angle))
     pygame.draw.polygon(window, color, [end, p1, p2])
 
+
 def circular_layout(num_nodes, center_x, center_y, radius):
     coords = []
     for i in range(num_nodes):
@@ -38,20 +41,22 @@ def circular_layout(num_nodes, center_x, center_y, radius):
         coords.append((x, y))
     return coords
 
+
 def distribute_angles(n_agents, total_angle_degs=40):
     """
     Distribute `n_agents` across -total_angle_degs/2..+total_angle_degs/2 (in degrees).
     Returns offsets in radians. This helps avoid overlapping agents.
     """
     if n_agents <= 1:
-        return [0.0]*n_agents
+        return [0.0] * n_agents
     offsets = []
     total_rad = math.radians(total_angle_degs)
     step = total_rad / (n_agents - 1)
     start = -total_rad / 2
     for i in range(n_agents):
-        offsets.append(start + i*step)
+        offsets.append(start + i * step)
     return offsets
+
 
 def action_name(action_value):
     """
@@ -69,6 +74,7 @@ def action_name(action_value):
     else:
         return "???"
 
+
 def draw_slider(window, slider_x, slider_y, slider_width, slider_height, slider_position, max_time, t):
     pygame.draw.rect(window, (150, 150, 150), (slider_x, slider_y, slider_width, slider_height))
     handle_x = slider_x + slider_position
@@ -79,31 +85,25 @@ def draw_slider(window, slider_x, slider_y, slider_width, slider_height, slider_
         t = 0
     return t
 
+
 def draw_button(window, is_playing, button_x, button_y, button_size):
     if is_playing:
         pygame.draw.rect(window, (255, 0, 0), (button_x, button_y, button_size, button_size))
     else:
-        pygame.draw.polygon(
-            window,
-            (0, 255, 0),
-            [
-                (button_x,               button_y),
-                (button_x,               button_y + button_size),
-                (button_x + button_size, button_y + button_size // 2)
-            ]
-        )
+        pygame.draw.polygon(window, (0, 255, 0), [(button_x, button_y), (button_x, button_y + button_size),
+                                                  (button_x + button_size, button_y + button_size // 2)])
+
 
 def draw_time(window, t, screen_size, font):
     time_text = font.render(f"Step: {t}", True, (0, 0, 0))
     text_rect = time_text.get_rect(center=(screen_size // 2, 20))
     window.blit(time_text, text_rect)
 
-def render(
-    path: str,
-    render_mode: str = "human",
-    frame_rate: Optional[int] = 15,
-    checkpoint: Optional[str] = None
-) -> Union[None, list]:
+
+def render(path: str,
+           render_mode: str = "human",
+           frame_rate: Optional[int] = 15,
+           checkpoint: Optional[str] = None) -> Union[None, list]:
 
     pygame.init()
     clock = pygame.time.Clock()
@@ -116,22 +116,17 @@ def render(
 
     # Make sure columns exist
     columns_needed = [
-        "network_state", "location", "presence",
-        "attacker_1_action_choice", "attacker_2_action_choice",
-        "defender_1_action_choice", "defender_2_action_choice",
-        "attacker_1_rewards", "attacker_2_rewards",
-        "defender_1_rewards", "defender_2_rewards",
-        "exploited", "patched", "label", "new_episode"
+        "network_state", "location", "presence", "attacker_1_action_choice", "attacker_2_action_choice",
+        "defender_1_action_choice", "defender_2_action_choice", "attacker_1_rewards", "attacker_2_rewards", "defender_1_rewards",
+        "defender_2_rewards", "exploited", "patched", "label", "new_episode"
     ]
     for col in columns_needed:
         if col not in df.columns:
             df[col] = None
 
     list_like_cols = [
-        "network_state", "location", "presence",
-        "attacker_1_action_choice", "attacker_2_action_choice",
-        "defender_1_action_choice", "defender_2_action_choice",
-        "exploited", "patched"
+        "network_state", "location", "presence", "attacker_1_action_choice", "attacker_2_action_choice",
+        "defender_1_action_choice", "defender_2_action_choice", "exploited", "patched"
     ]
     for col in list_like_cols:
         df[col] = df[col].apply(safe_literal_eval)
@@ -175,16 +170,16 @@ def render(
 
     try:
         node_img_exploited = render_image(os.path.join("assets", "node_exploited.png"), 40)
-        node_img_patched   = render_image(os.path.join("assets", "node_patched.png"),   40)
-        node_img_normal    = render_image(os.path.join("assets", "node_normal.png"),    40)
+        node_img_patched = render_image(os.path.join("assets", "node_patched.png"), 40)
+        node_img_normal = render_image(os.path.join("assets", "node_normal.png"), 40)
     except:
         node_img_exploited = None
-        node_img_patched   = None
-        node_img_normal    = None
+        node_img_patched = None
+        node_img_normal = None
 
     try:
-        attacker_img = render_image(os.path.join(this_dir,"assets", "attacker.png"), 40)
-        defender_img = render_image(os.path.join(this_dir,"assets", "defender.png"), 40)
+        attacker_img = render_image(os.path.join(this_dir, "assets", "attacker.png"), 40)
+        defender_img = render_image(os.path.join(this_dir, "assets", "defender.png"), 40)
     except:
         attacker_img = None
         defender_img = None
@@ -207,17 +202,17 @@ def render(
     state_record = {}
     for t_i, row in df.iterrows():
         # Parse node states (exploited, patched) + latency
-        exploited_list = row["exploited"] if row["exploited"] else [False]*total_nodes
-        patched_list   = row["patched"]   if row["patched"]   else [False]*total_nodes
+        exploited_list = row["exploited"] if row["exploited"] else [False] * total_nodes
+        patched_list = row["patched"] if row["patched"] else [False] * total_nodes
 
         node_info = []
         for n_idx in range(total_nodes):
             e = bool(exploited_list[n_idx]) if n_idx < len(exploited_list) else False
-            p = bool(patched_list[n_idx])   if n_idx < len(patched_list)   else False
+            p = bool(patched_list[n_idx]) if n_idx < len(patched_list) else False
             node_info.append({
                 "exploited": e,
-                "patched":   p,
-                "latency":   0   # default
+                "patched": p,
+                "latency": 0  # default
             })
 
         # If network_state has at least 3 entries: [env_id, node_idx, latency]
@@ -243,12 +238,7 @@ def render(
             def_reward = row.get(reward_col, 0.0)
             d_loc = location_list[idx] if idx < len(location_list) else 0
 
-            agents_info[def_name] = {
-                "present": is_present,
-                "location": d_loc,
-                "action": def_action,
-                "reward": def_reward
-            }
+            agents_info[def_name] = {"present": is_present, "location": d_loc, "action": def_action, "reward": def_reward}
 
         # Parse attackers
         for idx, acol in enumerate(attacker_cols):
@@ -261,17 +251,9 @@ def render(
             reward_col = atk_name + "_rewards"
             atk_reward = row.get(reward_col, 0.0)
 
-            agents_info[atk_name] = {
-                "present": is_present,
-                "location": None,
-                "action": atk_action,
-                "reward": atk_reward
-            }
+            agents_info[atk_name] = {"present": is_present, "location": None, "action": atk_action, "reward": atk_reward}
 
-        state_record[t_i] = {
-            "nodes": node_info,
-            "agents": agents_info
-        }
+        state_record[t_i] = {"nodes": node_info, "agents": agents_info}
 
     start_time = 0
     t = start_time
@@ -344,17 +326,17 @@ def render(
 
         # Fully connect nodes
         for i in range(total_nodes):
-            for j in range(i+1, total_nodes):
+            for j in range(i + 1, total_nodes):
                 x1, y1 = node_positions[i]
                 x2, y2 = node_positions[j]
-                pygame.draw.aaline(window, (180,180,180), (x1, y1), (x2, y2), True)
+                pygame.draw.aaline(window, (180, 180, 180), (x1, y1), (x2, y2), True)
 
         # Draw nodes + show latency
         for n_idx, ninfo in enumerate(node_data):
             nx, ny = node_positions[n_idx]
             exploited = ninfo["exploited"]
-            patched   = ninfo["patched"]
-            latency   = ninfo["latency"]  # from network_state[2]
+            patched = ninfo["patched"]
+            latency = ninfo["latency"]  # from network_state[2]
 
             if exploited and node_img_exploited:
                 node_img = node_img_exploited
@@ -375,12 +357,12 @@ def render(
                 pygame.draw.circle(window, color, (int(nx), int(ny)), NODE_RADIUS)
 
             # Node label inside
-            label_surf = small_font.render(f"{n_idx}", True, (0,0,0))
+            label_surf = small_font.render(f"{n_idx}", True, (0, 0, 0))
             label_rect = label_surf.get_rect(center=(nx, ny))
             window.blit(label_surf, label_rect)
 
             # Show latency below the node
-            lat_surf = small_font.render(f"latency={latency}", True, (0,0,0))
+            lat_surf = small_font.render(f"latency={latency}", True, (0, 0, 0))
             window.blit(lat_surf, (nx - 25, ny + 22))
 
         # Separate defenders/attackers
@@ -412,14 +394,14 @@ def render(
                 rect = defender_img.get_rect(center=(dx, dy))
                 window.blit(defender_img, rect)
             else:
-                pygame.draw.rect(window, (0, 0, 255), (dx-20, dy-20, 40, 40))
+                pygame.draw.rect(window, (0, 0, 255), (dx - 20, dy - 20, 40, 40))
 
             # Name + Reward
-            name_surf = small_font.render(def_name, True, (0,0,0))
-            name_rect = name_surf.get_rect(midbottom=(dx, dy +30))
+            name_surf = small_font.render(def_name, True, (0, 0, 0))
+            name_rect = name_surf.get_rect(midbottom=(dx, dy + 30))
             window.blit(name_surf, name_rect)
 
-            rew_surf = small_font.render(f"Reward={d_info['reward']:.1f}", True, (0,0,0))
+            rew_surf = small_font.render(f"Reward={d_info['reward']:.1f}", True, (0, 0, 0))
             rew_rect = rew_surf.get_rect(midtop=(dx, dy + 32))
             window.blit(rew_surf, rew_rect)
 
@@ -431,16 +413,16 @@ def render(
                     tx, ty = node_positions[target_idx]
                     # Arrow to node edge
                     ex, ey = _point_on_node_edge((tx, ty), (dx, dy), NODE_RADIUS=NODE_RADIUS)
-                    draw_aaline_arrow(window, (0,255,0), (dx,dy), (ex,ey), width=3)
+                    draw_aaline_arrow(window, (0, 255, 0), (dx, dy), (ex, ey), width=3)
 
                 # Label the action
                 a_str = action_name(code)
-                a_surf = small_font.render(a_str, True, (0,255,0))
+                a_surf = small_font.render(a_str, True, (0, 255, 0))
                 a_rect = a_surf.get_rect(midbottom=(dx, dy - 25))
                 window.blit(a_surf, a_rect)
             else:
                 # ??? action
-                a_surf = small_font.render("???", True, (0,255,0))
+                a_surf = small_font.render("???", True, (0, 255, 0))
                 a_rect = a_surf.get_rect(midbottom=(dx, dy - 25))
                 window.blit(a_surf, a_rect)
 
@@ -458,7 +440,7 @@ def render(
             if not isinstance(target_idx, int) or target_idx < 0 or target_idx >= total_nodes:
                 target_idx = 0
             node_x, node_y = node_positions[target_idx]
-            
+
             #agents distance metric
             base_offset = 185
             angle = atk_angles[i]
@@ -470,14 +452,14 @@ def render(
                 rect = attacker_img.get_rect(center=(ax, ay))
                 window.blit(attacker_img, rect)
             else:
-                pygame.draw.rect(window, (255,0,0), (ax-20, ay-20, 40, 40))
+                pygame.draw.rect(window, (255, 0, 0), (ax - 20, ay - 20, 40, 40))
 
             # Name + Reward
-            name_surf = small_font.render(atk_name, True, (0,0,0))
+            name_surf = small_font.render(atk_name, True, (0, 0, 0))
             name_rect = name_surf.get_rect(midbottom=(ax, ay + 30))
             window.blit(name_surf, name_rect)
 
-            rew_surf = small_font.render(f"R={a_info['reward']:.1f}", True, (0,0,0))
+            rew_surf = small_font.render(f"R={a_info['reward']:.1f}", True, (0, 0, 0))
             rew_rect = rew_surf.get_rect(midtop=(ax, ay + 32))
             window.blit(rew_surf, rew_rect)
 
@@ -486,13 +468,13 @@ def render(
                 # Arrow to node edge
                 tx, ty = node_positions[target_idx]
                 ex, ey = _point_on_node_edge((tx, ty), (ax, ay), NODE_RADIUS=NODE_RADIUS)
-                draw_aaline_arrow(window, (255,0,0), (ax,ay), (ex,ey), width=3)
+                draw_aaline_arrow(window, (255, 0, 0), (ax, ay), (ex, ey), width=3)
 
-                a_surf = small_font.render(a_str, True, (255,0,0))
+                a_surf = small_font.render(a_str, True, (255, 0, 0))
                 a_rect = a_surf.get_rect(midbottom=(ax, ay - 25))
                 window.blit(a_surf, a_rect)
             else:
-                a_surf = small_font.render("???", True, (255,0,0))
+                a_surf = small_font.render("???", True, (255, 0, 0))
                 a_rect = a_surf.get_rect(midbottom=(ax, ay - 25))
                 window.blit(a_surf, a_rect)
 
