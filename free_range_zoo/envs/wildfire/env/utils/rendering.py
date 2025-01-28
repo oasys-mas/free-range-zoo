@@ -17,6 +17,7 @@ this_dir = os.path.dirname(__file__)
 #                IMAGE AND COLOR HELPERS              #
 ########################################################
 
+
 def render_image(path, cell_size: int):
     """
     Loads an image from the local 'assets' folder,
@@ -24,6 +25,7 @@ def render_image(path, cell_size: int):
     """
     image = pygame.image.load(os.path.join(this_dir, "assets", path))
     return pygame.transform.scale(image, (cell_size, cell_size))
+
 
 def change_hue(image_surface, hue_change):
     """
@@ -79,9 +81,11 @@ def change_hue(image_surface, hue_change):
     new_surface = pygame.surfarray.make_surface(new_image_array)
     return new_surface
 
+
 ########################################################
 #                   UI HELPERS: SLIDER                #
 ########################################################
+
 
 def draw_slider(window, slider_x, slider_y, slider_width, slider_height, slider_position, max_time, t):
     """
@@ -90,9 +94,11 @@ def draw_slider(window, slider_x, slider_y, slider_width, slider_height, slider_
     """
     pygame.draw.rect(window, (150, 150, 150), (slider_x, slider_y, slider_width, slider_height))
     handle_x = slider_x + slider_position
+    handle_x = slider_x + slider_position
     pygame.draw.rect(window, (0, 0, 255), (handle_x - 10, slider_y - 10, 20, 30))
     t = int((slider_position / slider_width) * max_time)
     return t
+
 
 def draw_button(window, is_playing, button_x, button_y, button_size):
     """
@@ -121,9 +127,11 @@ def draw_time(window, t, screen_size, font):
     text_rect = time_text.get_rect(center=(screen_size // 2, 20))
     window.blit(time_text, text_rect)
 
+
 ########################################################
 #            ARROW DRAWING FOR ANY VISUALS            #
 ########################################################
+
 
 def find_arrow_points(start_pos, end_pos, cell_size, x_offset, y_offset):
     """
@@ -137,6 +145,7 @@ def find_arrow_points(start_pos, end_pos, cell_size, x_offset, y_offset):
     end_center = (x_offset + ex * cell_size + cell_size//2,
                   y_offset + ey * cell_size + cell_size//2)
     return start_center, end_center
+
 
 def draw_arrow(window, start_pos, end_pos, cell_size, x_offset, y_offset):
     """
@@ -240,8 +249,8 @@ def render(
     x = len(fires_grid_0[0]) if y > 0 else 0  # columns in each row
 
     cell_size = 190
-    padding   = 140
-    grid_width  = x * cell_size
+    padding = 140
+    grid_width = x * cell_size
     grid_height = y * cell_size
     screen_size = max(grid_width, grid_height) + padding * 2
 

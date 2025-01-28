@@ -28,9 +28,4 @@ if __name__ == "__main__":
     checkpoint = None  # Filter by label, if needed
 
     # Call the renderer
-    render(
-        path=csv_path,
-        render_mode=render_mode,
-        frame_rate=frame_rate,
-        checkpoint=checkpoint
-    )
+    render(path=csv_path, render_mode=render_mode, frame_rate=frame_rate, checkpoint=checkpoint)

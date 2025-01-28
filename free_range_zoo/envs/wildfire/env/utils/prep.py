@@ -5,17 +5,15 @@ printg = lambda x: print(termcolor.colored(x, "green"))
 printr = lambda x: print(termcolor.colored(x, "red"))
 printb = lambda x: print(termcolor.colored(x, "blue"))
 
-
 from free_range_zoo.envs import wildfire_v0
 import torch
-
 
 env = wildfire_v0.parallel_env(
     max_steps=100,
     parallel_envs=2,
     configuration=setup3(),
     device=torch.device('cpu'),
-    log_dir="outputs/wildfire_logging_test_0", 
+    log_dir="outputs/wildfire_logging_test_0",
 )
 
 obs = env.reset()
@@ -30,4 +28,4 @@ for i in range(10):
     printr(f"R:{reward}\n")
     printb(f"term/trunc:{term}/{trunc}\n")
     printr(f"info:{info}\n")
-x=2
+x = 2

@@ -85,6 +85,11 @@ class BatchedAECEnv(ABC, AECEnv):
         if options is not None and options.get('max_steps') is not None:
             self.max_steps = options['max_steps']
 
+        if options is not None and options.get('log_label') is not None:
+            self._log_label = options['log_label']
+        else:
+            self._log_label = None
+
         # Set seeding if given (prepares for the next random number generation i.e. self._make_randoms())
         self.seeds = torch.zeros((self.parallel_envs), dtype=torch.int32, device=self.device)
 
@@ -144,6 +149,9 @@ class BatchedAECEnv(ABC, AECEnv):
         """
         self.generator.seed(seed, partial_seeding=batch_indices)
 
+        if options is not None and options.get('log_label') is not None:
+            self._log_label = options['log_label']
+
         for agent in self.agents:
             self.rewards[agent][batch_indices] = 0
             self._cumulative_rewards[agent][batch_indices] = 0
@@ -162,7 +170,7 @@ class BatchedAECEnv(ABC, AECEnv):
         raise NotImplementedError('This method should be implemented in the subclass')
 
     @torch.no_grad()
-    def step(self, actions: torch.Tensor, log_label: Optional[str] = None) -> None:
+    def step(self, actions: torch.Tensor) -> None:
         """
         Take a step in the environment.
 
@@ -180,7 +188,7 @@ class BatchedAECEnv(ABC, AECEnv):
                             new_episode=True,
                             constant_observations=self.constant_observations,
                             initial=self.is_new_environment,
-                            label=log_label,
+                            label=self._log_label,
                             partial_log=self._any_reset,
                             actions=self.agents,
                             log_exclusions=self.log_exclusions,
@@ -223,7 +231,7 @@ class BatchedAECEnv(ABC, AECEnv):
                                 new_episode=False,
                                 constant_observations=self.constant_observations,
                                 initial=False,
-                                label=log_label,
+                                label=self._log_label,
                                 actions=self.actions,
                                 rewards=self.rewards,
                                 log_exclusions=self.log_exclusions,

@@ -91,7 +91,7 @@ class State(ABC):
             random_variables = {key: value[partial_log].tolist() for key, value in random_variables.items()}
 
         #?handling initial observations (present at all times, but storing sparsely)
-        if initial:
+        if initial or new_episode:
             constants = {
                 key: value
                 for key, value in self.__dict__.items() if isinstance(value, torch.Tensor) and key in constant_observations
