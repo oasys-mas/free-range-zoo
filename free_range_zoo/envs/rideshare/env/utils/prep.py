@@ -1,21 +1,27 @@
-from planning.experiments.configs.wildfire import setup3,single_agent_two_fires,single_agent_single_fire
+import sys
 import termcolor
+sys.path.append('.')
+
+from tests.utils import rideshare_configs
+from tests.utils.rideshare_configs import non_stochastic
 
 printg = lambda x: print(termcolor.colored(x, "green"))
 printr = lambda x: print(termcolor.colored(x, "red"))
 printb = lambda x: print(termcolor.colored(x, "blue"))
 
 
-from free_range_zoo.envs import wildfire_v0
+from free_range_zoo.envs import rideshare_v0
+
 import torch
+# conf=non_stochastic()
+configuration = rideshare_configs.non_stochastic()
 
-
-env = wildfire_v0.parallel_env(
+env = rideshare_v0.parallel_env(
     max_steps=100,
     parallel_envs=2,
-    configuration=setup3(),
+    configuration= rideshare_configs.non_stochastic(),
     device=torch.device('cpu'),
-    log_dir="outputs/wildfire_logging_test_0", 
+    log_dir="outputs/rideshare_logging_test_0", 
 )
 
 obs = env.reset()
