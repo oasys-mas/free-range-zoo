@@ -411,7 +411,10 @@ class raw_env(BatchedAECEnv):
         attacker_presence = self._state.presence[:, :self.attacker_config.num_attackers].unsqueeze(2)
         attacker_observation = torch.cat([attacker_threat, attacker_presence], dim=2)
 
-        self.task_store = self._state.network_state.unsqueeze(2)
+        # Aggregate information needed for the network observations
+        network_state = self._state.network_state.unsqueeze(2)
+        criticality = self.network_config.criticality.unsqueeze(1).unsqueeze(0).expand(self.parallel_envs, -1, -1)
+        self.task_store = torch.cat([network_state, criticality], dim=2)
 
         self.observations = {}
         for agent in self.agents:
