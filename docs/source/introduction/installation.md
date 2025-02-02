@@ -1,8 +1,9 @@
-# Free-Range-Zoo Installation Guide
- ![https://github.com/C4theBomb/free-range-rust]
- ![Free Range Zoo Logo (it is a goat!)](source/_static/img/darkgoat.png)
+# Installation
 
- In this guide we walk through installing [free-range-zoo](https://github.com/oasys-mas/free-range-zoo). For this we need a python virtual environment, here we use miniconda. The action/observation spaces in free-range-zoo rely on rust functions implemented in [free-range-rust](https://github.com/C4theBomb/free-range-rust) for efficency. Compiling these is part of the `poetry` install, so we will: 
+In this guide we walk through installing [free-range-zoo](https://github.com/oasys-mas/free-range-zoo). For this we 
+need a python virtual environment, here we use miniconda. The action/observation spaces in free-range-zoo rely on 
+rust functions implemented in [free-range-rust](https://github.com/C4theBomb/free-range-rust) for efficency. Compiling 
+these is part of the `poetry` install, so we will: 
  
 1. Install gcc-13 / clang and [Rust](https://www.rust-lang.org/tools/install)
 2. Clone  [free-range-zoo](https://github.com/oasys-mas/free-range-zoo)
@@ -11,15 +12,12 @@
 5. Install dependencies
 6. Test
 
+## Install gcc-13 / clang
 
-# Install gcc-13 / clang
+> If `gcc --version` >= 13.0, continue to the next step. We set these paths so `maturin`, the rust<->python binder, 
+uses the right version of gcc.
 
--  check if you have a sufficient C compiler if `> gcc -version` -> `13.0` higher then skip the next install steps for gcc/clang.
-
->We set these paths so `maturin`, the rust<->python binder, uses the right version of gcc.
-
-
-## Linux (GCC 13)
+### Linux (GCC 13)
 
 -  Install gcc
    - If in **Ubuntu** `sudo apt install gcc-13`
@@ -27,20 +25,16 @@
 - Set your `gcc` and `g++` paths. Installing gcc with (2) will install `g++` as well.
    - `export CC="<path to your gcc v13 binary>"`
    - `export CXX="<path to your g++ v13 binary>`
- - Make sure the version is correct
+- Make sure the version is correct
    - `gcc -v` = `13.x`
 
+### MacOS (Clang) - aarch64
 
+> `brew install llvm@15`: Install clang 14/15
+- Run the path override command that homebrew gives you when running this (this updates your `.zshrc` or `.bashrc`).
+>`gcc -v`: Make sure the version is correct and `^15.0`
 
-## MacOS (Clang) -tested on apple silicon
-
-- install clang 14/15
-  - `brew install llvm@15` 
-- Run the path override command that homebrew gives you when running this (this updates your `~/.zshrc`)
-- Make sure the version is correct
-  - `gcc -v` = `15.x`
-
-## Windows (MinGW-w64)
+### Windows (MinGW-w64)
 
 - Install [Chocolatey](https://chocolatey.org/install)
 - Install GCC/MinGW (in administrative powershell)
@@ -52,57 +46,52 @@
 -   `gcc -v` >= `13.x`
 -   Reboot your machine. (Needed for rust install if you just installed chocolatey)
 
-# Rust
+## Rust
 
-## Linux / MacOS
--  Go to [Rust Install](https://www.rust-lang.org/tools/install) select your os, and run the curl command.
+### Linux / MacOS
+Go to [Rust Install](https://www.rust-lang.org/tools/install) select your os, and run the curl command.
 
-## Windows
-- `choco install rust`
-- Restart your machine.
-- Open powershell.
-- Make sure rust and cargo installed.
-  - `rustc`
-  - `cargo`
+### Windows
+> `choco install rust`: Install Rust, restart machine to see effects.
 
-# Clone Free-Range-Zoo
+> `rustc --version`: Verify that the RustC compiler was installed.
 
-...
+> `cargo --version`: Verify that cargo was properly installed.
 
-# Install Miniconda
+## Clone Free-Range-Zoo
 
-> ⚠ DO NOT USE SUDO HERE! it often breaks it.
+<!--TODO: Correct this URL to the competition repository.-->
+> `git clone git@github.com:oasys-mas/free-range-zoo.git`: Clone the latest release of the free-range-zoo repository.
+
+## Miniconda
+
+> ⚠ WARNING: DO NOT USE SUDO HERE! IT IS VERY LIKELY TO BREAK INSTALL.
 
 - Run the installation script for [Miniconda](https://docs.anaconda.com/miniconda/install/), select your os. 
 
-
->If using mac make sure to pick apple/intel silicon in your selection.
+> We have experienced problems with installation in macOS computers which utilize x86_64 architectures. `pytorch` no 
+longer supports x86 macOS.
 
 - Install with defaults, and say `yes` to the conda init question.
 - Restart your terminal
 - You should see something like `(base) user@machine:...` 
 
-
 >If you don't then double check that the `miniconda3` folder is in your home directory and that it was added to your path.
 
-# Create Python env
+## Create Python env
 
-10. Create a python 3.12 environment
-    - `conda create -n three12 python=3.12`
-11. Activate it
-    - `conda activate three12`
+> `conda create -n three12 python=3.12`: Create a python 3.12 environment
+> `conda activate three12`: Activate the created python environment
 
-# Install Dependencies
+## Install Dependencies
 
-11. Install poetry, the dependency tool we use.
-    - `pip install poetry`
-12. Install all dependencies with poetry
-    - `poetry install`
+> `pip install poetry`: Install poetry, the dependency tool we use.
+> `poetry install`: Install all dependencies with poetry
 
-> Sometimes two packages give issues here `neptune` and `neptune-optuna`. If these fail to install manually install them with pip `pip install neptune neptune-optuna` then rerun the poetry install. 
+Sometimes two packages give issues here `neptune` and `neptune-optuna`. If these fail to install manually install them
+with pip `pip install neptune neptune-optuna` then rerun the poetry install. 
 
-# Test
+## Test
 
-To see if everything is working try running our unit tests. This will build a local copy of our docs page, see `free-range-zoo/docs/build/index.html`
-
-13. `python -m unittest`
+> `python -m unittest -b`: To see if everything is working try running our unit tests. This will build a local copy of 
+our docs page, see `free-range-zoo/docs/build/index.html`.
