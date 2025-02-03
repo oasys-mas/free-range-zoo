@@ -50,7 +50,7 @@ class BatchedAECEnv(ABC, AECEnv):
         self.render_mode = render_mode
         self.log_directory = log_directory
         self.single_seeding = single_seeding
-        self.is_new_environment = True
+        self.log_description = None
 
         if configuration is not None:
             self.config = configuration.to(device)
@@ -58,13 +58,6 @@ class BatchedAECEnv(ABC, AECEnv):
             for key, value in configuration.__dict__.items():
                 if isinstance(value, Configuration):
                     setattr(self, key, value)
-
-        # Checks if any environments reset for logging purposes
-        self._any_reset = None
-
-        # Default logging param
-        self.constant_observations = []
-        self.log_exclusions = []
 
         self.generator = RandomGenerator(
             parallel_envs=parallel_envs,
@@ -98,6 +91,11 @@ class BatchedAECEnv(ABC, AECEnv):
         if not options or not options.get('skip_seeding'):
             self.generator.seed(seed, partial_seeding=None)
 
+        # Reset the log label if one has been provided, None otherwise
+        self.log_description = None
+        if options and options.get('log_description'):
+            self.log_description = options.get('log_description')
+
         # Initial environment AEC attributes
         self.agents = self.possible_agents
         self.rewards = {agent: torch.zeros(self.parallel_envs, dtype=torch.float32, device=self.device) for agent in self.agents}
@@ -107,10 +105,7 @@ class BatchedAECEnv(ABC, AECEnv):
             for agent in self.agents
         }
         self.truncations = {agent: torch.zeros(self.parallel_envs, dtype=torch.bool, device=self.device) for agent in self.agents}
-
-        # Task-action-index-map identifies the global <-> local task indices for environments
-        # This is used when the availability of actions/tasks is not uniform across agents & environments for logging
-        self.infos = {agent: {'task-action-index-map': [None for _ in range(self.parallel_envs)]} for agent in self.agents}
+        self.infos = {}
 
         # Dictionary storing actions for each agent
         self.actions = {
@@ -152,8 +147,6 @@ class BatchedAECEnv(ABC, AECEnv):
 
         self.num_moves[batch_indices] = 0
 
-        self._any_reset = batch_indices
-
     @torch.no_grad()
     def _post_reset_hook(self):
         """Actions to take after each environment has globally handled all reset functionality."""
@@ -167,13 +160,12 @@ class BatchedAECEnv(ABC, AECEnv):
         raise NotImplementedError('This method should be implemented in the subclass')
 
     @torch.no_grad()
-    def step(self, actions: torch.Tensor, log_label: Optional[str] = None) -> None:
+    def step(self, actions: torch.Tensor) -> None:
         """
         Take a step in the environment.
 
         Args:
             actions: torch.Tensor - The actions to take in the environment
-            log_label: Optional[str] - A additional label added as a column to the log file if logging is enabled
         """
         # Handle stepping an agent which is completely dead
         if torch.all(self.terminations[self.agent_selection]) or torch.all(self.truncations[self.agent_selection]):
@@ -252,6 +244,8 @@ class BatchedAECEnv(ABC, AECEnv):
 
         if extra is not None:
             df = pd.concat([df, extra], axis=1)
+
+        df['description'] = self.log_description
 
         for i in range(self.parallel_envs):
             df.iloc[[i]].to_csv(
