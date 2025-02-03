@@ -359,6 +359,8 @@ class raw_env(BatchedAECEnv):
         if not options or not options.get('skip_actions', False):
             self.update_actions()
 
+        self._post_reset_hook()
+
     @torch.no_grad()
     def reset_batches(self,
                       batch_indices: List[int],

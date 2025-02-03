@@ -1,12 +1,13 @@
 """BatchedAECEnv class for batched environments."""
 from abc import ABC, abstractmethod
 from typing import Dict, Tuple, List, Any, Optional
-
 from pettingzoo import AECEnv
 from pettingzoo.utils import agent_selector
 import gymnasium
 import torch
 from tensordict import TensorDict
+import pandas as pd
+import os
 
 from free_range_zoo.utils.configuration import Configuration
 from free_range_zoo.utils.state import State
@@ -16,17 +17,19 @@ from free_range_zoo.utils.random_generator import RandomGenerator
 class BatchedAECEnv(ABC, AECEnv):
     """Pettingzoo environment for adapter for batched environments."""
 
-    def __init__(self,
-                 *args,
-                 configuration: Configuration = None,
-                 max_steps: int = 1,
-                 parallel_envs: int = 1,
-                 device: torch.DeviceObjType = torch.device('cpu'),
-                 render_mode: str | None = None,
-                 log_dir: str = None,
-                 single_seeding: bool = False,
-                 buffer_size: int = 0,
-                 **kwargs):
+    def __init__(
+        self,
+        *args,
+        configuration: Configuration = None,
+        max_steps: int = 1,
+        parallel_envs: int = 1,
+        device: torch.DeviceObjType = torch.device('cpu'),
+        render_mode: str | None = None,
+        log_directory: str = None,
+        single_seeding: bool = False,
+        buffer_size: int = 0,
+        **kwargs,
+    ):
         """
         Initialize the environment.
 
@@ -36,8 +39,7 @@ class BatchedAECEnv(ABC, AECEnv):
             parallel_envs: int - the number of parallel environments to run
             device: torch.DeviceObjType - the device to run the environment on
             render_mode: str | None - the mode to render the environment in
-            log: bool - whether to log the environment
-            log_dir: str - the directory to log the environment to
+            log_directory: str - the directory to log the environment to
             single_seeding: bool - whether to seed all parallel environments with the same seed
             buffer_size: int - the size of the buffer for random number generation
         """
@@ -46,8 +48,7 @@ class BatchedAECEnv(ABC, AECEnv):
         self.max_steps = max_steps
         self.device = device
         self.render_mode = render_mode
-        self.log_dir = log_dir
-        self.is_logging = log_dir is not None
+        self.log_directory = log_directory
         self.single_seeding = single_seeding
         self.is_new_environment = True
 
@@ -127,8 +128,6 @@ class BatchedAECEnv(ABC, AECEnv):
         self.environment_task_count = torch.empty((self.parallel_envs, ), dtype=torch.int32, device=self.device)
         self.agent_task_count = torch.empty((self.num_agents, self.parallel_envs), dtype=torch.int32, device=self.device)
 
-        self._any_reset = True
-
     @torch.no_grad()
     def reset_batches(self,
                       batch_indices: List[int],
@@ -155,6 +154,12 @@ class BatchedAECEnv(ABC, AECEnv):
 
         self._any_reset = batch_indices
 
+    @torch.no_grad()
+    def _post_reset_hook(self):
+        """Actions to take after each environment has globally handled all reset functionality."""
+        if self.log_directory is not None:
+            self._log_environment(reset=True)
+
     @abstractmethod
     @torch.no_grad()
     def step_environment(self) -> Tuple[Dict[str, torch.Tensor], Dict[str, torch.Tensor], Dict[str, Dict[str, bool]]]:
@@ -174,31 +179,12 @@ class BatchedAECEnv(ABC, AECEnv):
         if torch.all(self.terminations[self.agent_selection]) or torch.all(self.truncations[self.agent_selection]):
             return
 
-        # Reset logging, logs if any batches reset
-        if self._any_reset and self.is_logging:
-            self._state.log(path=self.log_dir,
-                            new_episode=True,
-                            constant_observations=self.constant_observations,
-                            initial=self.is_new_environment,
-                            label=log_label,
-                            partial_log=self._any_reset,
-                            actions=self.agents,
-                            log_exclusions=self.log_exclusions,
-                            rewards=self.rewards,
-                            infos=self.infos)
-
-            # Flip tags
-            self._any_reset = None
-            self.is_new_environment = False
-
         self._clear_rewards()
         agent = self.agent_selection
         self.actions[agent] = actions
 
-        is_last = self.agent_selector.is_last()
-
         # Step the environment after all agents have taken actions
-        if is_last:
+        if self.agent_selector.is_last():
             # Handle the stepping of the environment itself and update the AEC attributes
             rewards, terminations, infos = self.step_environment()
             self.rewards = rewards
@@ -217,17 +203,8 @@ class BatchedAECEnv(ABC, AECEnv):
             self.update_observations()
             self.update_actions()
 
-            # Log the new state of the environment
-            if self.is_logging and is_last:
-                self._state.log(path=self.log_dir,
-                                new_episode=False,
-                                constant_observations=self.constant_observations,
-                                initial=False,
-                                label=log_label,
-                                actions=self.actions,
-                                rewards=self.rewards,
-                                log_exclusions=self.log_exclusions,
-                                infos=self.infos)
+            if self.log_directory is not None:
+                self._log_environment()
 
         self.agent_selection = self.agent_selector.next()
 
@@ -242,6 +219,48 @@ class BatchedAECEnv(ABC, AECEnv):
         """Clear environmental rewards while taking into account parallel environments."""
         for agent in self.rewards:
             self.rewards[agent] = torch.zeros(self.parallel_envs, dtype=torch.float32, device=self.device)
+
+    def _log_environment(self, reset: bool = False, extra: pd.DataFrame = None) -> None:
+        """
+        Log all portions of the environment.
+
+        Args:
+            reset: bool - Indicates whether the source of the logging is due to a reset. N/A flag on step-specific items.
+            extra: pd.DataFrame = Additional data to append to the environment logs.
+        """
+        if len(extra) != self.parallel_envs:
+            raise ValueError('The number of elements in extras must match the number of parallel environments.')
+
+        df = self._state.to_dataframe()
+        if reset:
+            for agent in self.possible_agents:
+                df[[f'{agent}_action', f'{agent}_rewards']] = None
+                df[f'{agent}_action_map'] = [str(mapping.tolist()) for mapping in self.agent_action_mapping[agent]]
+                df[f'{agent}_observation_map'] = [str(mapping.tolist()) for mapping in self.agent_observation_mapping[agent]]
+
+            df['step'] = -1
+            df['complete'] = None
+        else:
+            for agent in self.possible_agents:
+                df[f'{agent}_action'] = [str(action) for action in self.actions[agent].tolist()]
+                df[f'{agent}_rewards'] = self.rewards[agent]
+                df[f'{agent}_action_map'] = [str(mapping.tolist()) for mapping in self.agent_action_mapping[agent]]
+                df[f'{agent}_observation_map'] = [str(mapping.tolist()) for mapping in self.agent_observation_mapping[agent]]
+
+            df['step'] = self.num_moves
+            df['complete'] = self.finished
+
+        if extra is not None:
+            df = pd.concat([df, extra], axis=1)
+
+        for i in range(self.parallel_envs):
+            df.iloc[[i]].to_csv(
+                os.path.join(self.log_directory, f'{i}.csv'),
+                mode='w' if reset else 'a',
+                header=reset,
+                index=False,
+                na_rep="NULL",
+            )
 
     @abstractmethod
     def update_actions(self) -> None:
