@@ -63,7 +63,8 @@ class BatchedAECEnv(ABC, AECEnv):
 
         self._are_logs_initialized = False
         if not override_initialization_check and self.log_directory is not None and os.path.exists(self.log_directory):
-            raise FileExistsError("The logging output directory already exists. Set override_initialization_check or rename.")
+            if os.listdir(self.log_directory):
+                raise FileExistsError("The logging output directory already exists. Set override_initialization_check or rename.")
         if self.log_directory is not None and not os.path.exists(self.log_directory):
             os.mkdir(self.log_directory)
 
@@ -263,6 +264,7 @@ class BatchedAECEnv(ABC, AECEnv):
                 index=False,
                 na_rep="NULL",
             )
+        self._are_logs_initialized = True
 
     @abstractmethod
     def update_actions(self) -> None:

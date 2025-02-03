@@ -43,14 +43,15 @@ class TestConfiguration(unittest.TestCase):
         # Confirm that reset logging is working
         for i in range(self.env.aec_env.parallel_envs):
             df = pd.read_csv(os.path.join('unittest_logs', f'{i}.csv'))
+            print(df)
             self.assertEqual(
-                len(df[(df.step == -1)]), 1, f'''Environment logs must include a row indicating a reset
-                    \rExpected:\n\t{1}
-                    \rActual:\n\t{len(df[(df.step == -1)])}''')
-            self.assertEqual(
-                len(df) - len(df[(df.step == -1)]), 2, f'''Environment logs must include a row indicating actions that were taken
+                len(df[(df.step == -1)]), 2, f'''Environment logs must include a row indicating a reset
                     \rExpected:\n\t{2}
                     \rActual:\n\t{len(df[(df.step == -1)])}''')
+            self.assertEqual(
+                len(df) - len(df[(df.step == -1)]), 3, f'''Environment logs must include a row indicating actions that were taken
+                    \rExpected:\n\t{3}
+                    \rActual:\n\t{len(df) - len(df[(df.step == -1)])}''')
 
     def tearDown(self) -> None:
         if os.path.exists('unittest_logs'):
