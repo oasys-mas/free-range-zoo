@@ -228,7 +228,7 @@ class BatchedAECEnv(ABC, AECEnv):
             reset: bool - Indicates whether the source of the logging is due to a reset. N/A flag on step-specific items.
             extra: pd.DataFrame = Additional data to append to the environment logs.
         """
-        if len(extra) != self.parallel_envs:
+        if extra is not None and len(extra) != self.parallel_envs:
             raise ValueError('The number of elements in extras must match the number of parallel environments.')
 
         df = self._state.to_dataframe()
