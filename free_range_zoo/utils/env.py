@@ -28,6 +28,7 @@ class BatchedAECEnv(ABC, AECEnv):
         log_directory: str = None,
         single_seeding: bool = False,
         buffer_size: int = 0,
+        override_initialization_check: bool = False,
         **kwargs,
     ):
         """
@@ -42,6 +43,7 @@ class BatchedAECEnv(ABC, AECEnv):
             log_directory: str - the directory to log the environment to
             single_seeding: bool - whether to seed all parallel environments with the same seed
             buffer_size: int - the size of the buffer for random number generation
+            override_initialization_check: bool - whether to override throwing logs being rewritten on init
         """
         super().__init__(*args, **kwargs)
         self.parallel_envs = parallel_envs
@@ -58,6 +60,12 @@ class BatchedAECEnv(ABC, AECEnv):
             for key, value in configuration.__dict__.items():
                 if isinstance(value, Configuration):
                     setattr(self, key, value)
+
+        self._are_logs_initialized = False
+        if not override_initialization_check and self.log_directory is not None and os.path.exists(self.log_directory):
+            raise FileExistsError("The logging output directory already exists. Set override_initialization_check or rename.")
+        if self.log_directory is not None and not os.path.exists(self.log_directory):
+            os.mkdir(self.log_directory)
 
         self.generator = RandomGenerator(
             parallel_envs=parallel_envs,
@@ -105,7 +113,7 @@ class BatchedAECEnv(ABC, AECEnv):
             for agent in self.agents
         }
         self.truncations = {agent: torch.zeros(self.parallel_envs, dtype=torch.bool, device=self.device) for agent in self.agents}
-        self.infos = {}
+        self.infos = {agent: {} for agent in self.agents}
 
         # Dictionary storing actions for each agent
         self.actions = {
@@ -250,8 +258,8 @@ class BatchedAECEnv(ABC, AECEnv):
         for i in range(self.parallel_envs):
             df.iloc[[i]].to_csv(
                 os.path.join(self.log_directory, f'{i}.csv'),
-                mode='w' if reset else 'a',
-                header=reset,
+                mode='w' if not self._are_logs_initialized else 'a',
+                header=not self._are_logs_initialized,
                 index=False,
                 na_rep="NULL",
             )

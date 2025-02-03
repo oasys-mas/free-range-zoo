@@ -11,8 +11,6 @@ from free_range_zoo.envs.wildfire.configs.aaai_2024 import aaai_2025_ol_config
 class TestConfiguration(unittest.TestCase):
 
     def setUp(self) -> None:
-        os.mkdir('unittest_logs')
-
         self.paper_configuration = aaai_2025_ol_config(2)
         self.env = wildfire_v0.parallel_env(
             parallel_envs=3,
