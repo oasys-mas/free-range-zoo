@@ -12,6 +12,9 @@ these is part of the `poetry` install, so we will:
 5. Install dependencies
 6. Test
 
+> We have experienced problems with installation in macOS computers which utilize x86_64 architectures. `pytorch` no 
+longer supports x86 macOS.
+
 ## Install gcc-13 / clang
 
 > If `gcc --version` >= 13.0, continue to the next step. We set these paths so `maturin`, the rust<->python binder, 
@@ -69,8 +72,7 @@ Go to [Rust Install](https://www.rust-lang.org/tools/install) select your os, an
 
 - Run the installation script for [Miniconda](https://docs.anaconda.com/miniconda/install/), select your os. 
 
-> We have experienced problems with installation in macOS computers which utilize x86_64 architectures. `pytorch` no 
-longer supports x86 macOS.
+
 
 - Install with defaults, and say `yes` to the conda init question.
 - Restart your terminal
@@ -94,4 +96,16 @@ with pip `pip install neptune neptune-optuna` then rerun the poetry install.
 ## Test
 
 > `python -m unittest -b`: To see if everything is working try running our unit tests. This will build a local copy of 
-our docs page, see `free-range-zoo/docs/build/index.html`.
+our docs page, see `free-range-zoo/docs/build/html/index.html`.
+
+### Windows
+
+When on Windows, the unittest will not build the docs. To build them:
+
+> If you are having trouble getting `free-range-rust` to install, and you still want to build the docs, run `pip install -e .` in the root of the `free-range-zoo` repository before doing this. Then **uninstall the frz library first before reattempting to install free-range-rust** `pip uninstall free-range-zoo`.
+
+-  navigate to `free-range-zoo/docs`. 
+-  Ensure you are on the `three12` conda environment
+-  run  `python free_range_zoo_docs/gen_envs_docstrings.py`
+-  run `python free_range_zoo_docs/gen_envs_mds.py`
+-  run `make build`.  
