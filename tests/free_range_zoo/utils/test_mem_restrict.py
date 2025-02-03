@@ -5,6 +5,7 @@ if os.name != 'nt':
     import resource
     from free_range_zoo.utils.mem_restrict import limit_memory
 
+
 class TestLimitMemory(unittest.TestCase):
 
     @patch('psutil.virtual_memory')
