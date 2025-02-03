@@ -110,8 +110,8 @@ def draw_button(window, is_playing, button_x, button_y, button_size):
 
 
 # Function to draw the current time at the top of the screen
-def draw_time(window, t, screen_size, font):
-    time_text = font.render(f"Time: {t}", True, (0, 0, 0))  # Render text
+def draw_title(window, checkpoint, t, screen_size, font):
+    time_text = font.render(f"Checkpoint: {checkpoint}, Time: {t}", True, (0, 0, 0))  # Render text
     text_rect = time_text.get_rect(center=(screen_size // 2, 20))  # Centered at the top
     window.blit(time_text, text_rect)  # Draw the text
 
@@ -218,15 +218,16 @@ def draw_dash_arrow(window, start_pos, end_pos, cell_size, x_offset, y_offset):
 
 
 def render(
-        path: str,
-        render_mode: str,
-        # Define grid dimensions (m rows, n columns)
-        y=10,
-        x=10,
-        cell_size=50,  # Width and height of each grid cell
-        line_color=(200, 200, 200),  # Gray color for the grid lines
-        padding=50,  # Padding around the grid
-        frame_rate=30,  # Frames per second (mostly matters for rgb_array rendering)
+    path: str,
+    render_mode: str,
+    # Define grid dimensions (m rows, n columns)
+    y=10,
+    x=10,
+    cell_size=50,  # Width and height of each grid cell
+    line_color=(200, 200, 200),  # Gray color for the grid lines
+    padding=50,  # Padding around the grid
+    frame_rate=30,  # Frames per second (mostly matters for rgb_array rendering)
+    checkpoint=None  #specific checkpoint to render
 ) -> Union[None, np.ndarray]:
     """
     
@@ -236,10 +237,10 @@ def render(
 
     grid_width = y * cell_size
     grid_height = x * cell_size
-    screen_size = max(grid_width, grid_height) + padding * 2  # Square screen size
+    screen_size = max(grid_width, grid_height) + padding * 3  # Square screen size
 
     #?window configuration
-    window = pygame.display.set_mode((screen_size, screen_size + 150))
+    window = pygame.display.set_mode(size=(screen_size, screen_size + 200))
 
     # Initialize Pygame
     pygame.init()
@@ -249,6 +250,13 @@ def render(
 
     #?load log
     df = pd.read_csv(path)
+
+    #filter by checkpoint if specified
+    if checkpoint is not None:
+        renderAll = False
+        df = df[df['label'].apply(lambda s: f'{checkpoint}' in f'{s}')].reset_index(drop=True)
+    else:
+        renderAll = True  #maybe use this flag later
 
     df['locations'] = df['locations'].apply(literal_eval)
     df['destinations'] = df['destinations'].apply(literal_eval)
@@ -264,6 +272,7 @@ def render(
     agent_cols = df.columns[df.columns.str.contains('driver')]
     agent_states = [col for col in agent_cols if 'state' in col]
     agent_actions = [col for col in agent_cols if 'action_choice' in col]
+    task_actions = [col for col in agent_cols if 'task-action-index' in col]
 
     for col in agent_cols:
         df[col] = df[col].apply(lambda x: x.replace('tensor', '')[1:-1] if type(x) == str else '[-1,-1]')
@@ -275,12 +284,53 @@ def render(
     #preparing assets
     car_hues = 360 // number_of_agents
     passenger_hues = 360 // max_number_of_tasks
+    # 2. Load base images and convert them for alpha
+    base_car = pygame.image.load(os.path.join(this_dir, "..", "assets", "car_asset.png")).convert_alpha()
+    base_passenger = pygame.image.load(os.path.join(this_dir, "..", "assets", "passenger_asset.png")).convert_alpha()
+    small_passenger = pygame.transform.scale(base_passenger, (cell_size // 3, cell_size // 3)).convert_alpha()
+    # Scale them to fit exactly in a cell
+    base_car = pygame.transform.scale(base_car, (cell_size, cell_size))
+    base_passenger = pygame.transform.scale(base_passenger, (cell_size, cell_size))
+    # small_passenger = pygame.transform.scale(base_passenger, (cell_size // 3, cell_size // 3))
+    # base_car = render_image('car_asset.png', cell_size=cell_size)
+    # small_passenger = render_image('passenger_asset.png', cell_size=cell_size // 3)
+    # base_passenger = render_image('passenger_asset.png', cell_size=cell_size)
 
-    base_car = render_image('car_asset.png', cell_size=cell_size)
-    base_passenger = render_image('passenger_asset.png', cell_size=cell_size)
+    # 3. Create hue variants for cars
+    car_assets = []
+    for i in range(number_of_agents):
+        # Shift hue for each car
+        car_surface = change_hue(base_car, i * car_hues)
+        car_assets.append(car_surface)
+            
+    # 4. Create hue variants for passengers and their destinations
+    passenger_assets = []
+    small_passenger_assets = []
+    passenger_dest_assets = []
 
+    for i in range(max_number_of_tasks):
+        # Shift hue for each passenger
+        p_surface = change_hue(base_passenger, i * passenger_hues).convert_alpha()
+        sp_surface = change_hue(small_passenger, i * passenger_hues).convert_alpha()
+
+        # Make the destination a semi‐transparent copy of the passenger
+        p_dest_surface = p_surface.copy()
+        p_dest_surface.set_alpha(128)  # Adjust alpha for partial transparency
+
+        passenger_assets.append(p_surface)
+        small_passenger_assets.append(sp_surface)
+        passenger_dest_assets.append(p_dest_surface)
+
+    # 5. Store these assets in a dictionary for easy retrieval
+    assets = {
+        "car": car_assets,
+        "passenger": passenger_assets,
+        "smallpassenger": small_passenger_assets,
+        "passenger_dest": passenger_dest_assets
+    }
     assets = {
         'car': [change_hue(base_car, i * car_hues) for i in range(number_of_agents)],
+        'smallpassenger': [change_hue(small_passenger, i * passenger_hues) for i in range(max_number_of_tasks)],
         'passenger': [change_hue(base_passenger, i * passenger_hues) for i in range(max_number_of_tasks)]
     }
     #create ghosts of destinations
@@ -289,15 +339,26 @@ def render(
 
     #?organizing for rendering
     state_record = defaultdict(lambda *args, **kwargs: {})
+    label_record = defaultdict(lambda *args, **kwargs: 'NaN')
+    time_record = defaultdict(lambda *args, **kwargs: -1)
 
     for i, row in df.iterrows():
         time_step = {}
+        first_timestep = i if row['label'] not in label_record.values() else list(label_record.values()).index(row['label'])
+        label_record[i] = row['label']
+        time_record[i] = first_timestep
 
         #add passengers (location and destination)
         for ix, passenger in enumerate(row['locations']):
             key = (passenger[1], passenger[2], ix + number_of_agents)
             dest_key = (row['destinations'][ix][1], row['destinations'][ix][2], ix + number_of_agents)
-            time_step[key] = {'asset': assets['passenger'][ix], 'type': 'passenger'}
+            time_step[key] = {
+                'asset': assets['passenger'][ix],
+                'smallasset': assets['smallpassenger'][ix],
+                'type': 'passenger',
+                'acceptedby': row['associations'][ix][1],
+                'ridingwith': row['associations'][ix][2]
+            }
             time_step[dest_key] = {'asset': assets['passenger_dest'][ix], 'type': 'passenger_dest'}
         state_record[i] = time_step
 
@@ -305,6 +366,9 @@ def render(
 
             ag_state = row[agent_state]
             ag_action = df.loc[i + 1][agent_action] if df.shape[0] > i + 1 else [-1, -1]
+            #maps (agent local task, action) -> (global task "within this batch", action)
+            # ag_task_action_map = df.loc[i + 1][task_actions[agent_index]] if df.shape[0] > i + 1 else None
+            ag_task_action_map = row[task_actions[agent_index]]
 
             key = (ag_state[2], ag_state[3], agent_index)
 
@@ -315,40 +379,79 @@ def render(
                     'name': f'driver_{agent_index}',
                     'type': 'driver'
                 }
+            else:
+                #map the local task to the global task
+                try:
+                    ag_action = (ag_task_action_map[int(ag_action[0])][2] - 1, ag_action[1])
+                except Exception as e:
+                    # print(e)
+                    print(f"Error mapping task index: {e}")
+                    print(f"Current action: {ag_action}, Task-Action-Map: {ag_task_action_map}")
+                    continue  # Skip this action if mapping fails
+                # Ensure the index is valid
+                if not (0 <= ag_action[0] < len(row['locations'])):
+                    print(f"Invalid task index: {ag_action[0]}, Available tasks: {len(row['locations'])}")
+                    print(f"Locations: {row['locations']}, Task-Action-Map: {ag_task_action_map}")
+                    continue  # Skip this iteration instead of raising an error
 
-            elif ag_action[1] == 0:
-                time_step[key] = {
-                    'asset': assets['car'][agent_index],
-                    'action': 'accept',
-                    #TODO this won't be accurate because of 'global' vs 'local' indices
-                    'accept_position': row['locations'][ag_action[0]],
-                    'name': f'driver_{agent_index}',
-                    'type': 'driver'
+                if ag_action[1] == 0:
+                    time_step[key] = {
+                        'asset': assets['car'][agent_index],
+                        'action': 'accept',
+                        'accept_position': row['locations'][int(ag_action[0])],
+                        'name': f'driver_{agent_index}',
+                        'type': 'driver'
+                    }
+                elif ag_action[1] in [1, 2]:
+                    travel_dest = row['locations'][int(ag_action[0])] if i + 1 >= df.shape[0] else (df.loc[i + 1][agent_state][2], df.loc[i + 1][agent_state][3])
+                    time_step[key] = {
+                        'asset': assets['car'][agent_index],
+                        'action': 'pickup' if ag_action[1] == 1 else 'dropoff',
+                        'move': [travel_dest[1], travel_dest[2-1]],
+                        'name': f'driver_{agent_index}',
+                        'type': 'driver'
                 }
-
-            elif ag_action[1] == 1 or ag_action[1] == 2:
-
-                if df.shape[0] < i + 1:
-                    travel_dest = row['locations'][ag_action[0]]
-
-                    time_step[key] = {
-                        'asset': assets['car'][agent_index],
-                        'action': 'pickup' if ag_action[1] == 1 else 'dropoff',
-                        'move': [travel_dest[1], travel_dest[2]],
-                        'name': f'driver_{agent_index}',
-                        'type': 'driver'
-                    }
-
                 else:
-                    travel_dest = (df.loc[i + 1][agent_state][2], df.loc[i + 1][agent_state][3])
+                    print(f"Invalid action index: {ag_action[1]}")
+                    continue  # Skip invalid actions
+                assert ag_action[0] < len(
+                    row['locations']), f"Invalid task index: {ag_action[0]},\n {row['locations']},\n {ag_task_action_map}"
 
+                if ag_action[1] == 0:
                     time_step[key] = {
                         'asset': assets['car'][agent_index],
-                        'action': 'pickup' if ag_action[1] == 1 else 'dropoff',
-                        'move': travel_dest,
+                        'action': 'accept',
+                        #TODO this won't be accurate because of 'global' vs 'local' indices
+                        'accept_position': row['locations'][int(ag_action[0])],
                         'name': f'driver_{agent_index}',
                         'type': 'driver'
                     }
+
+                elif ag_action[1] == 1 or ag_action[1] == 2:
+
+                    if df.shape[0] < i + 1:
+                        travel_dest = row['locations'][int(ag_action[0])]
+
+                        time_step[key] = {
+                            'asset': assets['car'][agent_index],
+                            'action': 'pickup' if ag_action[1] == 1 else 'dropoff',
+                            'move': [travel_dest[1], travel_dest[2]],
+                            'name': f'driver_{agent_index}',
+                            'type': 'driver'
+                        }
+
+                    else:
+                        travel_dest = (df.loc[i + 1][agent_state][2], df.loc[i + 1][agent_state][3])
+
+                        time_step[key] = {
+                            'asset': assets['car'][agent_index],
+                            'action': 'pickup' if ag_action[1] == 1 else 'dropoff',
+                            'move': travel_dest,
+                            'name': f'driver_{agent_index}',
+                            'type': 'driver'
+                        }
+                else:
+                    raise IndexError(f"Invalid action index: {ag_action[1]}")
 
     # state_record[0] = {(0, 0, 0): {'asset': assets['car'], 'move': (1, 3), 'name': 'driver_0', 'action': 'dropoff'}}
 
@@ -380,7 +483,7 @@ def render(
 
     # Initialize Pygame font
     pygame.font.init()
-    font = pygame.font.SysFont(None, 48)  # Use a default font, size 48
+    font = pygame.font.SysFont(None, 32)  # Use a default font, size 48
     tinyfont = pygame.font.SysFont(None, 24)  # Use a default font, size 24
     """
  
@@ -458,7 +561,10 @@ def render(
         else:
             t = t + 1 if t < max_time else max_time
 
-        draw_time(window=window, t=t, screen_size=screen_size, font=font)
+        draw_title(window=window, checkpoint=label_record[t], t=t - time_record[t], screen_size=screen_size, font=font)
+
+        #count offset for multiple passengers in driver/passenger list
+        x_count_offset = {key: 0 for key in range(number_of_agents)}
 
         # Render each asset in the correct grid position
         for (_y, _x, order_in_df), asset_details in state_record[t].items():
@@ -484,8 +590,29 @@ def render(
             window.blit(asset_details['asset'],
                         (x_offset + _x * cell_size + driver_offset, y_offset + _y * cell_size + driver_offset))
 
+            #handle identifying accepted passengers
+            if asset_details['type'] == 'driver':
+                agent_index = asset_details['name'].split('_')[-1]
+                #pick position below grid * by number of agents
+                labeling_text_pos = (cell_size * 2, y_offset + y * cell_size + 25 + 50 * int(agent_index))
+                labeling_text = tinyfont.render(f"{asset_details['name']}", True, (0, 0, 0))
+                window.blit(labeling_text, labeling_text_pos)
+
+            if 'acceptedby' in asset_details and asset_details.get('acceptedby') != -1:
+                agent_index = int(asset_details['acceptedby'])
+                #pick position below grid * by number of agents
+                labeling_image_pos = (cell_size * 4 + 40 * x_count_offset[agent_index],
+                                      y_offset + y * cell_size + 25 + 50 * int(agent_index))
+                x_count_offset[agent_index] += 1
+                # print(labeling_image_pos, x_count_offset, agent_index, screen_size, asset_details['asset'])
+                window.blit(asset_details['smallasset'], labeling_image_pos)
+
+                if asset_details['ridingwith'] != -1:
+                    riding_text = tinyfont.render(f"RIDING", True, (0, 0, 0))
+                    window.blit(riding_text, (labeling_image_pos[0], labeling_image_pos[1] - 20))
+
             if 'move' in asset_details:
-                print(_y, _x, asset_details['move'])
+                # print(_y, _x, asset_details['move'])
                 move_y, move_x = asset_details['move']
                 if asset_details['action'] == 'pickup':
                     draw_dash_arrow(window, (_x, _y), (move_x, move_y),
@@ -507,7 +634,10 @@ def render(
             if t == max_time:
                 running = False
 
-        clock.tick(frame_rate)
+        if render_mode == 'human':
+            clock.tick(frame_rate)
+        else:
+            clock.tick()
 
     # Quit Pygame
     pygame.quit()
