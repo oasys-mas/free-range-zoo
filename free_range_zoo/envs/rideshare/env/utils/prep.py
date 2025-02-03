@@ -17,7 +17,8 @@ import torch
 configuration = rideshare_configs.non_stochastic()
 
 env = rideshare_v0.parallel_env(
-    max_steps=10,render_mode='human',
+    max_steps=10,
+    render_mode='human',
     parallel_envs=2,
     configuration=rideshare_configs.non_stochastic(),
     device=torch.device('cpu'),
