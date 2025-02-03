@@ -294,7 +294,7 @@ def render(
         # Shift hue for each car
         car_surface = change_hue(base_car, 120)
         car_assets.append(car_surface)
-            
+
     # 4. Create hue variants for passengers and their destinations
     passenger_assets = []
     small_passenger_assets = []
@@ -395,14 +395,15 @@ def render(
                         'type': 'driver'
                     }
                 elif ag_action[1] in [1, 2]:
-                    travel_dest = row['locations'][int(ag_action[0])] if i + 1 >= df.shape[0] else (df.loc[i + 1][agent_state][2], df.loc[i + 1][agent_state][3])
+                    travel_dest = row['locations'][int(ag_action[0])] if i + 1 >= df.shape[0] else (df.loc[i + 1][agent_state][2],
+                                                                                                    df.loc[i + 1][agent_state][3])
                     time_step[key] = {
                         'asset': assets['car'][agent_index],
                         'action': 'pickup' if ag_action[1] == 1 else 'dropoff',
-                        'move': [travel_dest[1], travel_dest[2-1]],
+                        'move': [travel_dest[1], travel_dest[2 - 1]],
                         'name': f'driver_{agent_index}',
                         'type': 'driver'
-                }
+                    }
                 else:
                     print(f"Invalid action index: {ag_action[1]}")
                     continue  # Skip invalid actions
