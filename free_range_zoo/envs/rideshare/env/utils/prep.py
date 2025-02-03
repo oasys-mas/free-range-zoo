@@ -4,7 +4,6 @@ import termcolor
 sys.path.append('.')
 
 from tests.utils import rideshare_configs
-from tests.utils.rideshare_configs import non_stochastic
 
 printg = lambda x: print(termcolor.colored(x, "green"))
 printr = lambda x: print(termcolor.colored(x, "red"))
@@ -13,11 +12,11 @@ printb = lambda x: print(termcolor.colored(x, "blue"))
 from free_range_zoo.envs import rideshare_v0
 
 import torch
-# conf=non_stochastic()
 configuration = rideshare_configs.non_stochastic()
 
 env = rideshare_v0.parallel_env(
-    max_steps=10,render_mode='human',
+    max_steps=40,
+    render_mode='human',
     parallel_envs=2,
     configuration=rideshare_configs.non_stochastic(),
     device=torch.device('cpu'),
@@ -27,7 +26,7 @@ env = rideshare_v0.parallel_env(
 obs = env.reset()
 agents = env.agents
 
-for i in range(10):
+for i in range(40):
     print(f"Step {i}")
     actions = {agent: torch.tensor(env.action_space(agent).sample_nested()) for agent in agents}
     printr(f"Action taken: {actions}\n")

@@ -19,12 +19,10 @@ def render_image(path, cell_size: int):
     return pygame.transform.scale(image, (cell_size, cell_size))
 
 
+
 def change_hue(image_surface, hue_change):
     """
-    Convert surface to a 3D numpy array (width, height, color_channels)
-    
-    image_surface: pygame.Surface - some rendered image for conversion
-    hue_change: int - int /360 to shift the hue of the given image
+    Shift the hue of the given image_surface by hue_change degrees.
     """
     image_array = pygame.surfarray.array3d(image_surface).astype(np.float32)
 
@@ -34,30 +32,28 @@ def change_hue(image_surface, hue_change):
     min_val = np.minimum(np.minimum(r, g), b)
     delta = max_val - min_val
 
-    # Initialize hue array
     hue = np.zeros_like(max_val)
     mask = delta != 0
 
-    # Calculate hue based on RGB max channel
+    # Compute hue
     hue[mask & (max_val == r)] = (60 * ((g - b) / delta) + 0)[mask & (max_val == r)]
     hue[mask & (max_val == g)] = (60 * ((b - r) / delta) + 120)[mask & (max_val == g)]
     hue[mask & (max_val == b)] = (60 * ((r - g) / delta) + 240)[mask & (max_val == b)]
-    hue = (hue + hue_change) % 360  # Adjust hue and wrap within range
+    hue = (hue + hue_change) % 360  # shift hue
 
-    # Calculate saturation and value
     sat = np.zeros_like(max_val)
     sat[mask] = delta[mask] / max_val[mask]
-    val = max_val / 255
+    val = max_val / 255.0
 
-    # Convert HSV back to RGB
     c = val * sat
     x = c * (1 - np.abs((hue / 60) % 2 - 1))
     m = val - c
 
-    # Initialize r, g, b as zeros
-    r, g, b = np.zeros_like(hue), np.zeros_like(hue), np.zeros_like(hue)
+    # Reconstruct new r/g/b
+    rr = np.zeros_like(hue)
+    gg = np.zeros_like(hue)
+    bb = np.zeros_like(hue)
 
-    # Assign RGB based on hue segment
     idx0 = (0 <= hue) & (hue < 60)
     idx1 = (60 <= hue) & (hue < 120)
     idx2 = (120 <= hue) & (hue < 180)
@@ -65,22 +61,20 @@ def change_hue(image_surface, hue_change):
     idx4 = (240 <= hue) & (hue < 300)
     idx5 = (300 <= hue) & (hue < 360)
 
-    r[idx0], g[idx0], b[idx0] = c[idx0], x[idx0], 0
-    r[idx1], g[idx1], b[idx1] = x[idx1], c[idx1], 0
-    r[idx2], g[idx2], b[idx2] = 0, c[idx2], x[idx2]
-    r[idx3], g[idx3], b[idx3] = 0, x[idx3], c[idx3]
-    r[idx4], g[idx4], b[idx4] = x[idx4], 0, c[idx4]
-    r[idx5], g[idx5], b[idx5] = c[idx5], 0, x[idx5]
+    rr[idx0], gg[idx0], bb[idx0] = c[idx0], x[idx0], 0
+    rr[idx1], gg[idx1], bb[idx1] = x[idx1], c[idx1], 0
+    rr[idx2], gg[idx2], bb[idx2] = 0, c[idx2], x[idx2]
+    rr[idx3], gg[idx3], bb[idx3] = 0, x[idx3], c[idx3]
+    rr[idx4], gg[idx4], bb[idx4] = x[idx4], 0, c[idx4]
+    rr[idx5], gg[idx5], bb[idx5] = c[idx5], 0, x[idx5]
 
-    # Add m to match brightness and stack channels
-    r = ((r + m) * 255).astype(np.uint8)
-    g = ((g + m) * 255).astype(np.uint8)
-    b = ((b + m) * 255).astype(np.uint8)
+    rr = ((rr + m) * 255).astype(np.uint8)
+    gg = ((gg + m) * 255).astype(np.uint8)
+    bb = ((bb + m) * 255).astype(np.uint8)
 
-    new_image_array = np.stack([r, g, b], axis=-1)
+    new_image_array = np.dstack([rr, gg, bb])
     new_surface = pygame.surfarray.make_surface(new_image_array)
-    return new_surface
-
+    return new_surface.convert_alpha()
 
 # Function to draw the slider and handle dragging
 def draw_slider(window, slider_x, slider_y, slider_width, slider_height, slider_position, max_time, t):
@@ -111,7 +105,8 @@ def draw_button(window, is_playing, button_x, button_y, button_size):
 
 # Function to draw the current time at the top of the screen
 def draw_title(window, checkpoint, t, screen_size, font):
-    time_text = font.render(f"Checkpoint: {checkpoint}, Time: {t}", True, (0, 0, 0))  # Render text
+    # time_text = font.render(f"Checkpoint: {checkpoint}, Time: {t}", True, (0, 0, 0))  # Render text
+    time_text = font.render(f"Time: {t}", True, (0, 0, 0))  # Render text
     text_rect = time_text.get_rect(center=(screen_size // 2, 20))  # Centered at the top
     window.blit(time_text, text_rect)  # Draw the text
 
@@ -291,16 +286,13 @@ def render(
     # Scale them to fit exactly in a cell
     base_car = pygame.transform.scale(base_car, (cell_size, cell_size))
     base_passenger = pygame.transform.scale(base_passenger, (cell_size, cell_size))
-    # small_passenger = pygame.transform.scale(base_passenger, (cell_size // 3, cell_size // 3))
-    # base_car = render_image('car_asset.png', cell_size=cell_size)
-    # small_passenger = render_image('passenger_asset.png', cell_size=cell_size // 3)
-    # base_passenger = render_image('passenger_asset.png', cell_size=cell_size)
+
 
     # 3. Create hue variants for cars
     car_assets = []
     for i in range(number_of_agents):
         # Shift hue for each car
-        car_surface = change_hue(base_car, i * car_hues)
+        car_surface = change_hue(base_car, 120)
         car_assets.append(car_surface)
             
     # 4. Create hue variants for passengers and their destinations
@@ -561,7 +553,7 @@ def render(
         else:
             t = t + 1 if t < max_time else max_time
 
-        draw_title(window=window, checkpoint=label_record[t], t=t - time_record[t], screen_size=screen_size, font=font)
+        draw_title(window=window, checkpoint=label_record[t], t=t , screen_size=screen_size, font=font)
 
         #count offset for multiple passengers in driver/passenger list
         x_count_offset = {key: 0 for key in range(number_of_agents)}

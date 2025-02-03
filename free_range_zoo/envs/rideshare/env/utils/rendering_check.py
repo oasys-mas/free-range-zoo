@@ -26,7 +26,7 @@ if __name__ == "__main__":
     frames = [np.transpose(frame, (1, 0, 2)) for frame in frames]  # Swap width and height
 
     # frames = frames[::-1]  # Reverse the frames if they appear reversed in the GIF
-# Save frames as a GIF
+    # Save frames as a GIF
     gif_path = "rideshare_simulation.gif"
     imageio.mimsave(gif_path, frames, fps=1)
     render_mode = "human"  # Change to "rgb_array" if you want frames
