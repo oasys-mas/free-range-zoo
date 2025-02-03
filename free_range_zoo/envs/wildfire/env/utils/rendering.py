@@ -109,15 +109,9 @@ def draw_button(window, is_playing, button_x, button_y, button_size):
         pygame.draw.rect(window, (255, 0, 0), (button_x, button_y, button_size, button_size))
     else:
         # Play button (green triangle)
-        pygame.draw.polygon(
-            window,
-            (0, 255, 0),
-            [
-                (button_x,              button_y),
-                (button_x,              button_y + button_size),
-                (button_x + button_size, button_y + button_size // 2)
-            ]
-        )
+        pygame.draw.polygon(window, (0, 255, 0), [(button_x, button_y), (button_x, button_y + button_size),
+                                                  (button_x + button_size, button_y + button_size // 2)])
+
 
 def draw_time(window, t, screen_size, font):
     """
@@ -140,10 +134,8 @@ def find_arrow_points(start_pos, end_pos, cell_size, x_offset, y_offset):
     """
     sx, sy = start_pos
     ex, ey = end_pos
-    start_center = (x_offset + sx * cell_size + cell_size//2,
-                    y_offset + sy * cell_size + cell_size//2)
-    end_center = (x_offset + ex * cell_size + cell_size//2,
-                  y_offset + ey * cell_size + cell_size//2)
+    start_center = (x_offset + sx * cell_size + cell_size // 2, y_offset + sy * cell_size + cell_size // 2)
+    end_center = (x_offset + ex * cell_size + cell_size // 2, y_offset + ey * cell_size + cell_size // 2)
     return start_center, end_center
 
 
@@ -167,16 +159,16 @@ def draw_arrow(window, start_pos, end_pos, cell_size, x_offset, y_offset):
 
     pygame.draw.polygon(window, (0, 0, 0), [end_center, p1, p2])
 
+
 ########################################################
 #              MAIN RENDER FUNCTION                    #
 ########################################################
 
-def render(
-    path: str,
-    render_mode: str = "human",
-    frame_rate: Optional[int] = 15,
-    checkpoint: Optional[int] = None
-) -> Union[None, list]:
+
+def render(path: str,
+           render_mode: str = "human",
+           frame_rate: Optional[int] = 15,
+           checkpoint: Optional[int] = None) -> Union[None, list]:
     """
     Renders the wildfire environment from a single CSV log (path).
 
@@ -208,7 +200,7 @@ def render(
     for col in array_like_cols:
         if col in df.columns:
             df[col] = df[col].fillna("[]")  # handle NaN
-            df[col] = df[col].apply(lambda s: s.replace("nan","[]") if isinstance(s,str) else s)
+            df[col] = df[col].apply(lambda s: s.replace("nan", "[]") if isinstance(s, str) else s)
             df[col] = df[col].apply(literal_eval)
 
     # Agent action columns may or may not exist
@@ -265,11 +257,11 @@ def render(
     # ----------------------------------------------------------------
     # Pre-load images for each type of fire or agent
     # ----------------------------------------------------------------
-    base_fire_low  = render_image("small_fire.png",  cell_size)
-    base_fire_med  = render_image("medium_fire.png", cell_size)
-    base_fire_high = render_image("large_fire.png",  cell_size)
-    base_burnt     = render_image("burnt_out.png",   cell_size)
-    base_agent     = render_image("firefighter.png", cell_size)
+    base_fire_low = render_image("small_fire.png", cell_size)
+    base_fire_med = render_image("medium_fire.png", cell_size)
+    base_fire_high = render_image("large_fire.png", cell_size)
+    base_burnt = render_image("burnt_out.png", cell_size)
+    base_agent = render_image("firefighter.png", cell_size)
 
     # ----------------------------------------------------------------
     # Precompute a row-major list of cell positions for "fire_number"
@@ -291,16 +283,16 @@ def render(
     # ----------------------------------------------------------------
     state_record = defaultdict(list)
     for i, row in df.iterrows():
-        fires_2d     = row['fires']
+        fires_2d = row['fires']
         intensity_2d = row['intensity']
-        fuel_2d      = row['fuel']
-        agents_list  = row['agents']
+        fuel_2d = row['fuel']
+        agents_list = row['agents']
 
         # Build list of fire cell states
         for yy in range(y):
             for xx in range(x):
                 intensity_val = intensity_2d[yy][xx]
-                fuel_val      = fuel_2d[yy][xx]
+                fuel_val = fuel_2d[yy][xx]
                 cell_obj = {
                     "type": "fire",
                     "row": yy,
@@ -419,17 +411,11 @@ def render(
         # -------------------- Draw grid lines --------------------
         line_color = (200, 200, 200)
         for row_i in range(y + 1):
-            pygame.draw.line(
-                window, line_color,
-                (x_offset,               y_offset + row_i * cell_size),
-                (x_offset + grid_width,  y_offset + row_i * cell_size), 1
-            )
+            pygame.draw.line(window, line_color, (x_offset, y_offset + row_i * cell_size),
+                             (x_offset + grid_width, y_offset + row_i * cell_size), 1)
         for col_i in range(x + 1):
-            pygame.draw.line(
-                window, line_color,
-                (x_offset + col_i * cell_size, y_offset),
-                (x_offset + col_i * cell_size, y_offset + grid_height), 1
-            )
+            pygame.draw.line(window, line_color, (x_offset + col_i * cell_size, y_offset),
+                             (x_offset + col_i * cell_size, y_offset + grid_height), 1)
 
         # -------------------- Draw slider / button / step info --------------------
         if render_mode == "human":
@@ -468,14 +454,14 @@ def render(
                     base_img = base_burnt
                     scale_factor = 0.75
 
-                img_width  = int(cell_size * scale_factor)
+                img_width = int(cell_size * scale_factor)
                 img_height = int(cell_size * scale_factor)
                 img_scaled = pygame.transform.scale(base_img, (img_width, img_height))
 
                 center_x = cell_x + cell_size // 2
                 center_y = cell_y + cell_size // 2
-                draw_x   = center_x - img_width // 2
-                draw_y   = center_y - img_height // 2
+                draw_x = center_x - img_width // 2
+                draw_y = center_y - img_height // 2
                 window.blit(img_scaled, (draw_x, draw_y))
 
                 # Optional text label
@@ -504,23 +490,18 @@ def render(
 
                 # Show some textual info in the bottom part of the cell
                 agent_text = [
-                    f"supp: {obj['suppressant']:.1f}",
-                    f"cap: {obj['capacity']}",
-                    f"action: {obj['action']}",
+                    f"supp: {obj['suppressant']:.1f}", f"cap: {obj['capacity']}", f"action: {obj['action']}",
                     f"rew: {obj['rewards']:.1f}"
                 ]
                 for idx, line in enumerate(agent_text):
                     line_surf = small_font.render(line, True, (0, 0, 0))
                     # Stack lines from the bottom upward
-                    window.blit(
-                        line_surf,
-                        (draw_x + 5, draw_y + cell_size - (len(agent_text)-idx)*15)
-                    )
+                    window.blit(line_surf, (draw_x + 5, draw_y + cell_size - (len(agent_text) - idx) * 15))
 
                 # If the action is [fire_number, power], handle arrow or sleep
                 if isinstance(obj["action"], (list, tuple)) and len(obj["action"]) == 2:
                     fire_num, power = obj["action"]  # e.g. [3, 2.0], or [0, -1]
-                    
+
                     # ---------------------------------------------------
                     # If [0, -1] => "no operation" or "sleep" => draw "Z"
                     # ---------------------------------------------------
@@ -528,7 +509,7 @@ def render(
                         z_surf = small_font.render("NOOP", True, (128, 128, 128))
                         # Place the "Z" near the center of the agent's tile
                         window.blit(z_surf, (draw_x + cell_size // 2, draw_y + cell_size // 2))
-                    
+
                     else:
                         # If valid fire_number, draw arrow from agent to that fire
                         if 0 <= fire_num < len(fire_positions):
@@ -538,12 +519,11 @@ def render(
                             # Draw arrow from agent -> that fire cell
                             draw_arrow(
                                 window,
-                                start_pos=(obj["col"], obj["row"]),   # (x, y) for agent
-                                end_pos=(fire_col, fire_row),         # (x, y) for the target fire
+                                start_pos=(obj["col"], obj["row"]),  # (x, y) for agent
+                                end_pos=(fire_col, fire_row),  # (x, y) for the target fire
                                 cell_size=cell_size,
                                 x_offset=x_offset,
-                                y_offset=y_offset
-                            )
+                                y_offset=y_offset)
 
         # -------------------- Flip display or record frame --------------------
         if render_mode == "human":

@@ -23,11 +23,11 @@ from free_range_zoo.envs.cybersecurity.baselines import (
 
 def main():
     """Run baselines for the cybersecurity environment."""
-  
+
     device = 'cpu'
-    parallel_envs=2
-    attacker_baseline='random'
-    defender_baseline='random'
+    parallel_envs = 2
+    attacker_baseline = 'random'
+    defender_baseline = 'random'
     configuration = cybersecurity_configs.non_stochastic()
     env = cybersecurity_v0.parallel_env(
         parallel_envs=2,
@@ -35,8 +35,7 @@ def main():
         configuration=configuration,
         device=device,
         buffer_size=0,
-        log_dir="outputs/cyberSec_logging_test_0", 
-
+        log_dir="outputs/cyberSec_logging_test_0",
     )
     env = action_mapping_wrapper_v0(env)
     env.render()
