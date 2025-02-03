@@ -12,6 +12,7 @@ printb = lambda x: print(termcolor.colored(x, "blue"))
 from free_range_zoo.envs import rideshare_v0
 
 import torch
+
 configuration = rideshare_configs.non_stochastic()
 
 env = rideshare_v0.parallel_env(

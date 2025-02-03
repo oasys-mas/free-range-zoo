@@ -91,11 +91,8 @@ def draw_button(window, is_playing, button_x, button_y, button_size):
     if is_playing:
         pygame.draw.rect(window, (255, 0, 0), (button_x, button_y, button_size, button_size))
     else:
-        pygame.draw.polygon(window, (0, 255, 0), [
-            (button_x, button_y),
-            (button_x, button_y + button_size),
-            (button_x + button_size, button_y + button_size // 2)
-        ])
+        pygame.draw.polygon(window, (0, 255, 0), [(button_x, button_y), (button_x, button_y + button_size),
+                                                  (button_x + button_size, button_y + button_size // 2)])
 
 
 def draw_time(window, t, screen_size, font):
@@ -289,12 +286,7 @@ def render(path: str,
             # location for this defender
             d_loc = location_list[idx] if idx < len(location_list) else 0
 
-            agents_info[def_name] = {
-                "present": is_present,
-                "location": d_loc,
-                "action": def_action,
-                "reward": def_reward
-            }
+            agents_info[def_name] = {"present": is_present, "location": d_loc, "action": def_action, "reward": def_reward}
 
         # Parse attackers
         for idx, acol in enumerate(attacker_cols):
@@ -311,7 +303,7 @@ def render(path: str,
 
             agents_info[atk_name] = {
                 "present": is_present,
-                "location": None,   # Attackers in your code appear to position themselves based on action target
+                "location": None,  # Attackers in your code appear to position themselves based on action target
                 "action": atk_action,
                 "reward": atk_reward
             }
@@ -381,8 +373,7 @@ def render(path: str,
 
         # Draw UI
         if render_mode == "human":
-            t = draw_slider(window, slider_x, slider_y, slider_width, slider_height,
-                            slider_position, max_time, t)
+            t = draw_slider(window, slider_x, slider_y, slider_width, slider_height, slider_position, max_time, t)
             draw_button(window, is_playing, button_x, button_y, button_size)
 
         draw_time(window, t, screen_size, font)

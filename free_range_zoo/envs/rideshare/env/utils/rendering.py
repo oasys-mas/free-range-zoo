@@ -19,7 +19,6 @@ def render_image(path, cell_size: int):
     return pygame.transform.scale(image, (cell_size, cell_size))
 
 
-
 def change_hue(image_surface, hue_change):
     """
     Shift the hue of the given image_surface by hue_change degrees.
@@ -75,6 +74,7 @@ def change_hue(image_surface, hue_change):
     new_image_array = np.dstack([rr, gg, bb])
     new_surface = pygame.surfarray.make_surface(new_image_array)
     return new_surface.convert_alpha()
+
 
 # Function to draw the slider and handle dragging
 def draw_slider(window, slider_x, slider_y, slider_width, slider_height, slider_position, max_time, t):
@@ -286,7 +286,6 @@ def render(
     # Scale them to fit exactly in a cell
     base_car = pygame.transform.scale(base_car, (cell_size, cell_size))
     base_passenger = pygame.transform.scale(base_passenger, (cell_size, cell_size))
-
 
     # 3. Create hue variants for cars
     car_assets = []
@@ -554,7 +553,7 @@ def render(
         else:
             t = t + 1 if t < max_time else max_time
 
-        draw_title(window=window, checkpoint=label_record[t], t=t , screen_size=screen_size, font=font)
+        draw_title(window=window, checkpoint=label_record[t], t=t, screen_size=screen_size, font=font)
 
         #count offset for multiple passengers in driver/passenger list
         x_count_offset = {key: 0 for key in range(number_of_agents)}
