@@ -51,6 +51,7 @@ import torch
 from tensordict.tensordict import TensorDict
 import gymnasium
 from pettingzoo.utils.wrappers import OrderEnforcingWrapper
+import pandas as pd
 
 from free_range_zoo.utils.env import BatchedAECEnv
 from free_range_zoo.utils.conversions import batched_aec_to_batched_parallel
@@ -108,14 +109,16 @@ class raw_env(BatchedAECEnv):
     }
 
     @torch.no_grad()
-    def __init__(self,
-                 *args,
-                 observe_other_location: bool = True,
-                 observe_other_presence: bool = True,
-                 observe_other_power: bool = True,
-                 partially_observable: bool = True,
-                 show_bad_actions: bool = True,
-                 **kwargs) -> None:
+    def __init__(
+        self,
+        *args,
+        observe_other_location: bool = False,
+        observe_other_presence: bool = False,
+        observe_other_power: bool = True,
+        partially_observable: bool = True,
+        show_bad_actions: bool = True,
+        **kwargs,
+    ) -> None:
         """
         Initialize the cybersecurity environment.
 
@@ -214,6 +217,8 @@ class raw_env(BatchedAECEnv):
             self.update_observations()
         if not options or not options.get('skip_actions', False):
             self.update_actions()
+
+        self._post_reset_hook()
 
     @torch.no_grad()
     def reset_batches(self,
@@ -411,7 +416,10 @@ class raw_env(BatchedAECEnv):
         attacker_presence = self._state.presence[:, :self.attacker_config.num_attackers].unsqueeze(2)
         attacker_observation = torch.cat([attacker_threat, attacker_presence], dim=2)
 
-        self.task_store = self._state.network_state.unsqueeze(2)
+        # Aggregate information needed for the network observations
+        network_state = self._state.network_state.unsqueeze(2)
+        criticality = self.network_config.criticality.unsqueeze(1).unsqueeze(0).expand(self.parallel_envs, -1, -1)
+        self.task_store = torch.cat([network_state, criticality], dim=2)
 
         self.observations = {}
         for agent in self.agents:
@@ -502,3 +510,9 @@ class raw_env(BatchedAECEnv):
             include_location=self.observe_other_location,
             include_presence=self.observe_other_presence,
         )
+
+    def _log_environment(self, *args, **kwargs) -> None:
+        """Log the environment state to a csv."""
+        adj_matrix = str(self.network_config.adj_matrix.int().tolist())
+        df = pd.DataFrame({'adj_matrix': [adj_matrix] * self.parallel_envs})
+        super()._log_environment(*args, **kwargs, extra=df)

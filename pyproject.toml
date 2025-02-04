@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "free-range-zoo"
-version = "0.1.8"
+version = "0.1.10"
 description = ""
 authors = ["C4 Patino <cpatino2@huskers.unl.edu>", "Daniel Redder <daniel.redder@uga.edu>"]
 license = "AGPL-3.0-or-later"

@@ -1,135 +1,29 @@
+"""Abstract state class for storing environmental state."""
 from __future__ import annotations
-
-from typing import Self, Optional, Tuple, List, Union, Dict
+from typing import Self, Optional, Tuple, List
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
+import copy
+import os
 
 import torch
-import copy, os
-
 import pandas as pd
 
 
 @dataclass
 class State(ABC):
+    """Abstract state class for storing environmental state."""
 
     def __post_init__(self):
+        """Run after initialization actions."""
+        self.metadata = {}
         self.initial_state = None
         self.checkpoint = None
 
-    def log(self,
-            path: str,
-            new_episode: bool = False,
-            constant_observations: Optional[List[str]] = [],
-            initial: Optional[bool] = False,
-            label: Optional[str] = None,
-            partial_log: Optional[List[int]] = None,
-            actions: Union[Dict[str, torch.Tensor], List[str]] = None,
-            rewards: Union[Dict[str, torch.Tensor], List[float]] = None,
-            infos: Union[Dict[str, torch.Tensor], List[str]] = None,
-            log_exclusions: List[str] = [],
-            masked_attributes: Dict[Tuple[str, int], torch.Tensor] = None):
-        """
-        Save the state to log files.
-
-        Only includes constants on the first line, then the empty on the rest
-
-        Args:
-            path: str - Path to save the log files (will split log files into seperate based on batches)
-            new_episode: bool - is this a new episode?
-            constant_observations: Optional[List[str] - list of attributes that are constant throughout the episode
-            initial: bool - use file headers
-            label: Optional[str] - a generic string filled in as the "label" column
-            partial_log: Optional[List[int]] - list of specific batch indices to log
-            actions: Union[Dict[str, torch.Tensor], List[str]] - dictionary of actions to log
-            exclusions: List[str] - list of attributes to exclude from logging
-            masked_attributes: Dict[Tuple[str, int], torch.Tensor] - dictionary of attributes (per batch) to mask rather than batch index
-        """
-
-        if initial:
-            try:
-                os.mkdir(path)
-            except FileExistsError:
-                assert not os.path.exists(os.path.join(
-                    path, "0.csv")), "path already exists and files found, check path. Don't waste experiments!"
-
-        if label is not None:
-            assert "test" not in label and "train" not in label, "label should not be used to distinguish between test and train data make a new file"
-
-        #ensure all elements are tensors (in case of nested states)
-        random_variables = {
-            key: value
-            for key, value in self.__dict__.items()
-            if isinstance(value, torch.Tensor) and key not in constant_observations and key not in log_exclusions
-        }
-
-        #all elements have the same batch size
-        batch_size = random_variables[list(random_variables.keys())[0]].shape[0]
-        assert all([random_variables[key].shape[0] == random_variables[list(random_variables.keys())[0]].shape[0]\
-             for key in random_variables.keys()]), "All elements must have the same batch size, check constant_observations list"
-
-        #?handle defaults / env init states
-        if isinstance(actions, dict):
-            actions = {key: value.tolist() for key, value in actions.items()}
-        else:
-            actions = {key: [None for _ in range(batch_size)] for key in actions}
-        if isinstance(rewards, dict):
-            rewards = {key: value.tolist() for key, value in rewards.items()}
-        else:
-            rewards = {key: [0.0 for _ in range(batch_size)] for key in rewards}
-
-        infos = {key: {_k: _v if isinstance(_v, list) else [_v] for _k, _v in value.items()} for key, value in infos.items()}
-
-        if partial_log is None:
-            random_variables = {key: value.tolist() for key, value in random_variables.items()}
-
-        elif (isinstance(partial_log, bool) and partial_log):
-            random_variables = {key: value.tolist() for key, value in random_variables.items()}
-            partial_log = None
-
-        else:
-            random_variables = {key: value[partial_log].tolist() for key, value in random_variables.items()}
-
-        #?handling initial observations (present at all times, but storing sparsely)
-        if initial or new_episode:
-            constants = {
-                key: value
-                for key, value in self.__dict__.items() if isinstance(value, torch.Tensor) and key in constant_observations
-            }
-            constants = {key: [value.tolist()] for key, value in constants.items()}
-        else:
-            constants = {key: None for key in constant_observations}
-
-        if partial_log is None:
-            batch_loop_list = list(range(batch_size))
-        else:
-            batch_loop_list = partial_log
-
-        #?saving to log files per batch
-        for batch in batch_loop_list:
-
-            batch_random_variables = {key: [value[batch]] for key, value in random_variables.items()}
-
-            batched_actions = {k + "_action_choice": [v[batch]] for k, v in actions.items()}
-            batched_rewards = {k + "_rewards": [v[batch]] for k, v in rewards.items()}
-
-            batched_info = {}
-            for _ag, _ag_infos in infos.items():
-                for _info_key, _info_value in _ag_infos.items():
-                    batched_info[f"{_ag}_{_info_key}"] = _info_value[batch]
-
-            data = batch_random_variables | constants | batched_actions | batched_rewards | batched_info
-
-            df = pd.DataFrame(data)
-
-            df['label'] = label
-            df['new_episode'] = new_episode
-
-            df.to_csv(os.path.join(path, f"{batch}.csv"), mode='a' if not initial else 'w', header=initial, index=False)
-
     def to(self, device: torch.DeviceObjType = torch.device('cpu')) -> Self:
         """
-        Move all tensors to the specified device
+        Move all tensors to the specified device.
+
         Args:
             device: torch.DeviceObjType - Device to move tensors to
         Returns:
@@ -142,14 +36,12 @@ class State(ABC):
         return self
 
     def save_initial(self):
-        """
-        Save the initial state
-        """
+        """Save the initial state."""
         self.initial_state = self.clone()
 
     def restore_initial(self, batch_indices: Optional[torch.Tensor] = None) -> None:
         """
-        Restore the initial state of the environment
+        Restore the initial state of the environment.
 
         Args:
             batch_indices: Optional[torch.Tensor] - The indices of the batch to restore
@@ -169,14 +61,12 @@ class State(ABC):
                     setattr(self, attribute, value)
 
     def save_checkpoint(self):
-        """
-        Save the current state as a checkpoint
-        """
+        """Save the current state as a checkpoint."""
         self.checkpoint = self.clone()
 
     def restore_from_checkpoint(self, batch_indices: Optional[torch.Tensor] = None) -> None:
         """
-        Restore the state from the checkpoint
+        Restore the state from the checkpoint.
 
         Args:
             batch_indices: Optional[torch.Tensor] - The indices of the batch to restore
@@ -197,7 +87,7 @@ class State(ABC):
 
     def load_state(self, state: Self, batch_indices: Optional[torch.Tensor] = None) -> None:
         """
-        Load a custom state
+        Load a custom state.
 
         Args:
             state: Self - The state to load
@@ -217,7 +107,7 @@ class State(ABC):
 
     def clone(self) -> Self:
         """
-        Clone the state
+        Clone the state.
 
         Returns:
             Self - The cloned state
@@ -230,17 +120,19 @@ class State(ABC):
                 cloned_attributes[attribute] = copy.deepcopy(value)
         cloned_initial = cloned_attributes.pop('initial_state', None)
         cloned_checkpoint = cloned_attributes.pop('checkpoint', None)
+        cloned_metadata = cloned_attributes.pop('metadata', None)
 
         cloned = self.__class__(**cloned_attributes)
         cloned.initial_state = cloned_initial
         cloned.checkpoint = cloned_checkpoint
+        cloned.metadata = cloned_metadata
 
         return cloned
 
     @staticmethod
     def stack(states: List[State], *args, **kwargs) -> Self:
         """
-        Stack a list of states
+        Stack a list of states.
 
         Args:
             states: List[State] - The states to stack
@@ -251,9 +143,9 @@ class State(ABC):
         """
         stacked_attributes = {}
         for attribute in states[0].__dict__.keys():
-            if attribute in ['initial_state', 'checkpoint']:
+            if attribute in ('initial_state', 'checkpoint', 'metadata'):
                 continue
-            if attribute in ['agents']:
+            if attribute == 'agents':
                 stacked_attributes[attribute] = getattr(states[0], attribute)
                 continue
             stacked_attributes[attribute] = torch.stack([getattr(state, attribute) for state in states], *args, **kwargs)
@@ -265,7 +157,7 @@ class State(ABC):
     @staticmethod
     def cat(states: List[State], *args, **kwargs) -> Self:
         """
-        Concatenate a list of batched state tensors
+        Concatenate a list of batched state tensors.
 
         Args:
             states: List[State] - The states to stack
@@ -276,9 +168,9 @@ class State(ABC):
         """
         concatenated = {}
         for attribute in states[0].__dict__.keys():
-            if attribute in ['initial_state', 'checkpoint']:
+            if attribute in ('initial_state', 'checkpoint', 'metadata'):
                 continue
-            if attribute in ['agents']:
+            if attribute == 'agents':
                 concatenated[attribute] = getattr(states[0], attribute)
                 continue
             concatenated[attribute] = torch.cat([getattr(state, attribute) for state in states], *args, **kwargs)
@@ -287,9 +179,23 @@ class State(ABC):
 
         return concat
 
+    def to_dataframe(self) -> int:
+        """Convert the state into a dataframe."""
+        shared = self.metadata.get('shared', ())
+        blacklist = ('initial_state', 'checkpoint', 'metadata') + shared
+        columns = [attribute for attribute in self.__dict__.keys() if attribute not in blacklist]
+        data = {column: [str(row.tolist()) for row in self.__dict__[column]] for column in columns}
+
+        df = pd.DataFrame(data)
+        for key in shared:
+            df[key] = str(self.__dict__[key].tolist())
+
+        return df
+
     def unwrap(self) -> List[Self]:
         """
-        Unwrap a set of batched states
+        Unwrap a set of batched states.
+
         Returns:
             List[Self] - The unwrapped states
         """
@@ -303,7 +209,8 @@ class State(ABC):
 
     def __len__(self) -> int:
         """
-        Get the length of the state
+        Get the length of the state.
+
         Returns:
             int - The length of the state
         """
@@ -314,7 +221,7 @@ class State(ABC):
     @abstractmethod
     def __getitem__(self, indices: torch.Tensor) -> Self:
         """
-        Get the state at the specified indices
+        Get the state at the specified indices.
 
         Args:
             indices: torch.Tensor - The indices to get
@@ -326,7 +233,7 @@ class State(ABC):
     @abstractmethod
     def __hash__(self) -> Tuple[int] | int:
         """
-        Hash the state
+        Hash the state.
 
         Returns:
             Tuple[int] | int - The hash of the state

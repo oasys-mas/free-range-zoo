@@ -127,8 +127,6 @@ class raw_env(BatchedAECEnv):
         """
         super().__init__(*args, **kwargs)
 
-        self.constant_observations = ['agents']
-
         self.observe_other_suppressant = observe_other_suppressant
         self.observe_other_power = observe_other_power
         self.show_bad_actions = show_bad_actions
@@ -310,6 +308,8 @@ class raw_env(BatchedAECEnv):
             self.update_observations()
         if not options or not options.get('skip_actions', False):
             self.update_actions()
+
+        self._post_reset_hook()
 
     @torch.no_grad()
     def reset_batches(self,

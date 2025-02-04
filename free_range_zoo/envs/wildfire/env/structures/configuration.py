@@ -355,11 +355,6 @@ class WildfireConfiguration(Configuration):
         if self.stochastic_config.realistic_fire_spread:
             Ns, Es, Ss, Ws = self.fire_config.realistic_spread_rates
         else:
-            pass
-
-        if self.stochastic_config.realistic_fire_spread:
-            Ns, Es, Ss, Ws = self.fire_config.realistic_spread_rates
-        else:
             Ns, Es, Ss, Ws = [self.fire_config.base_spread_rate] * 4
 
         fire_filter = torch.tensor([
