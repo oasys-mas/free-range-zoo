@@ -1,12 +1,13 @@
 """BatchedAECEnv class for batched environments."""
 from abc import ABC, abstractmethod
 from typing import Dict, Tuple, List, Any, Optional
-
 from pettingzoo import AECEnv
 from pettingzoo.utils import agent_selector
 import gymnasium
 import torch
 from tensordict import TensorDict
+import pandas as pd
+import os
 
 from free_range_zoo.utils.configuration import Configuration
 from free_range_zoo.utils.state import State
@@ -16,17 +17,20 @@ from free_range_zoo.utils.random_generator import RandomGenerator
 class BatchedAECEnv(ABC, AECEnv):
     """Pettingzoo environment for adapter for batched environments."""
 
-    def __init__(self,
-                 *args,
-                 configuration: Configuration = None,
-                 max_steps: int = 1,
-                 parallel_envs: int = 1,
-                 device: torch.DeviceObjType = torch.device('cpu'),
-                 render_mode: str | None = None,
-                 log_dir: str = None,
-                 single_seeding: bool = False,
-                 buffer_size: int = 0,
-                 **kwargs):
+    def __init__(
+        self,
+        *args,
+        configuration: Configuration = None,
+        max_steps: int = 1,
+        parallel_envs: int = 1,
+        device: torch.DeviceObjType = torch.device('cpu'),
+        render_mode: str | None = None,
+        log_directory: str = None,
+        single_seeding: bool = False,
+        buffer_size: int = 0,
+        override_initialization_check: bool = False,
+        **kwargs,
+    ):
         """
         Initialize the environment.
 
@@ -36,20 +40,19 @@ class BatchedAECEnv(ABC, AECEnv):
             parallel_envs: int - the number of parallel environments to run
             device: torch.DeviceObjType - the device to run the environment on
             render_mode: str | None - the mode to render the environment in
-            log: bool - whether to log the environment
-            log_dir: str - the directory to log the environment to
+            log_directory: str - the directory to log the environment to
             single_seeding: bool - whether to seed all parallel environments with the same seed
             buffer_size: int - the size of the buffer for random number generation
+            override_initialization_check: bool - whether to override throwing logs being rewritten on init
         """
         super().__init__(*args, **kwargs)
         self.parallel_envs = parallel_envs
         self.max_steps = max_steps
         self.device = device
         self.render_mode = render_mode
-        self.log_dir = log_dir
-        self.is_logging = log_dir is not None
+        self.log_directory = log_directory
         self.single_seeding = single_seeding
-        self.is_new_environment = True
+        self.log_description = None
 
         if configuration is not None:
             self.config = configuration.to(device)
@@ -58,12 +61,12 @@ class BatchedAECEnv(ABC, AECEnv):
                 if isinstance(value, Configuration):
                     setattr(self, key, value)
 
-        # Checks if any environments reset for logging purposes
-        self._any_reset = None
-
-        # Default logging param
-        self.constant_observations = []
-        self.log_exclusions = []
+        self._are_logs_initialized = False
+        if not override_initialization_check and self.log_directory is not None and os.path.exists(self.log_directory):
+            if os.listdir(self.log_directory):
+                raise FileExistsError("The logging output directory already exists. Set override_initialization_check or rename.")
+        if self.log_directory is not None and not os.path.exists(self.log_directory):
+            os.mkdir(self.log_directory)
 
         self.generator = RandomGenerator(
             parallel_envs=parallel_envs,
@@ -97,6 +100,11 @@ class BatchedAECEnv(ABC, AECEnv):
         if not options or not options.get('skip_seeding'):
             self.generator.seed(seed, partial_seeding=None)
 
+        # Reset the log label if one has been provided, None otherwise
+        self.log_description = None
+        if options and options.get('log_description'):
+            self.log_description = options.get('log_description')
+
         # Initial environment AEC attributes
         self.agents = self.possible_agents
         self.rewards = {agent: torch.zeros(self.parallel_envs, dtype=torch.float32, device=self.device) for agent in self.agents}
@@ -106,10 +114,7 @@ class BatchedAECEnv(ABC, AECEnv):
             for agent in self.agents
         }
         self.truncations = {agent: torch.zeros(self.parallel_envs, dtype=torch.bool, device=self.device) for agent in self.agents}
-
-        # Task-action-index-map identifies the global <-> local task indices for environments
-        # This is used when the availability of actions/tasks is not uniform across agents & environments for logging
-        self.infos = {agent: {'task-action-index-map': [None for _ in range(self.parallel_envs)]} for agent in self.agents}
+        self.infos = {agent: {} for agent in self.agents}
 
         # Dictionary storing actions for each agent
         self.actions = {
@@ -126,8 +131,6 @@ class BatchedAECEnv(ABC, AECEnv):
         # Intialize the mapping of the tasks "in" the environment, used to map actions
         self.environment_task_count = torch.empty((self.parallel_envs, ), dtype=torch.int32, device=self.device)
         self.agent_task_count = torch.empty((self.num_agents, self.parallel_envs), dtype=torch.int32, device=self.device)
-
-        self._any_reset = True
 
     @torch.no_grad()
     def reset_batches(self,
@@ -153,7 +156,11 @@ class BatchedAECEnv(ABC, AECEnv):
 
         self.num_moves[batch_indices] = 0
 
-        self._any_reset = batch_indices
+    @torch.no_grad()
+    def _post_reset_hook(self):
+        """Actions to take after each environment has globally handled all reset functionality."""
+        if self.log_directory is not None:
+            self._log_environment(reset=True)
 
     @abstractmethod
     @torch.no_grad()
@@ -162,43 +169,23 @@ class BatchedAECEnv(ABC, AECEnv):
         raise NotImplementedError('This method should be implemented in the subclass')
 
     @torch.no_grad()
-    def step(self, actions: torch.Tensor, log_label: Optional[str] = None) -> None:
+    def step(self, actions: torch.Tensor) -> None:
         """
         Take a step in the environment.
 
         Args:
             actions: torch.Tensor - The actions to take in the environment
-            log_label: Optional[str] - A additional label added as a column to the log file if logging is enabled
         """
         # Handle stepping an agent which is completely dead
         if torch.all(self.terminations[self.agent_selection]) or torch.all(self.truncations[self.agent_selection]):
             return
 
-        # Reset logging, logs if any batches reset
-        if self._any_reset and self.is_logging:
-            self._state.log(path=self.log_dir,
-                            new_episode=True,
-                            constant_observations=self.constant_observations,
-                            initial=self.is_new_environment,
-                            label=log_label,
-                            partial_log=self._any_reset,
-                            actions=self.agents,
-                            log_exclusions=self.log_exclusions,
-                            rewards=self.rewards,
-                            infos=self.infos)
-
-            # Flip tags
-            self._any_reset = None
-            self.is_new_environment = False
-
         self._clear_rewards()
         agent = self.agent_selection
         self.actions[agent] = actions
 
-        is_last = self.agent_selector.is_last()
-
         # Step the environment after all agents have taken actions
-        if is_last:
+        if self.agent_selector.is_last():
             # Handle the stepping of the environment itself and update the AEC attributes
             rewards, terminations, infos = self.step_environment()
             self.rewards = rewards
@@ -217,17 +204,8 @@ class BatchedAECEnv(ABC, AECEnv):
             self.update_observations()
             self.update_actions()
 
-            # Log the new state of the environment
-            if self.is_logging and is_last:
-                self._state.log(path=self.log_dir,
-                                new_episode=False,
-                                constant_observations=self.constant_observations,
-                                initial=False,
-                                label=log_label,
-                                actions=self.actions,
-                                rewards=self.rewards,
-                                log_exclusions=self.log_exclusions,
-                                infos=self.infos)
+            if self.log_directory is not None:
+                self._log_environment()
 
         self.agent_selection = self.agent_selector.next()
 
@@ -242,6 +220,51 @@ class BatchedAECEnv(ABC, AECEnv):
         """Clear environmental rewards while taking into account parallel environments."""
         for agent in self.rewards:
             self.rewards[agent] = torch.zeros(self.parallel_envs, dtype=torch.float32, device=self.device)
+
+    def _log_environment(self, reset: bool = False, extra: pd.DataFrame = None) -> None:
+        """
+        Log all portions of the environment.
+
+        Args:
+            reset: bool - Indicates whether the source of the logging is due to a reset. N/A flag on step-specific items.
+            extra: pd.DataFrame = Additional data to append to the environment logs.
+        """
+        if extra is not None and len(extra) != self.parallel_envs:
+            raise ValueError('The number of elements in extras must match the number of parallel environments.')
+
+        df = self._state.to_dataframe()
+        if reset:
+            for agent in self.possible_agents:
+                df[[f'{agent}_action', f'{agent}_rewards']] = None
+                df[f'{agent}_action_map'] = [str(mapping.tolist()) for mapping in self.agent_action_mapping[agent]]
+                df[f'{agent}_observation_map'] = [str(mapping.tolist()) for mapping in self.agent_observation_mapping[agent]]
+
+            df['step'] = -1
+            df['complete'] = None
+        else:
+            for agent in self.possible_agents:
+                df[f'{agent}_action'] = [str(action) for action in self.actions[agent].tolist()]
+                df[f'{agent}_rewards'] = self.rewards[agent]
+                df[f'{agent}_action_map'] = [str(mapping.tolist()) for mapping in self.agent_action_mapping[agent]]
+                df[f'{agent}_observation_map'] = [str(mapping.tolist()) for mapping in self.agent_observation_mapping[agent]]
+
+            df['step'] = self.num_moves
+            df['complete'] = self.finished
+
+        if extra is not None:
+            df = pd.concat([df, extra], axis=1)
+
+        df['description'] = self.log_description
+
+        for i in range(self.parallel_envs):
+            df.iloc[[i]].to_csv(
+                os.path.join(self.log_directory, f'{i}.csv'),
+                mode='w' if not self._are_logs_initialized else 'a',
+                header=not self._are_logs_initialized,
+                index=False,
+                na_rep="NULL",
+            )
+        self._are_logs_initialized = True
 
     @abstractmethod
     def update_actions(self) -> None:

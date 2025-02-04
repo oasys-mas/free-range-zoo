@@ -82,7 +82,7 @@ def env(wrappers: List[Callable] = [], **kwargs) -> BatchedAECEnv:
 
 
 class raw_env(BatchedAECEnv):
-    metadata = {"render.modes": ["human", "rgb_array"], "name": "wildfire_v0", "is_parallelizable": True, "render_fps": 2}
+    metadata = {"render.modes": ["human", "rgb_array"], "name": "rideshare_v0", "is_parallelizable": True, "render_fps": 2}
 
     @torch.no_grad()
     def __init__(
@@ -359,6 +359,8 @@ class raw_env(BatchedAECEnv):
         if not options or not options.get('skip_actions', False):
             self.update_actions()
 
+        self._post_reset_hook()
+
     @torch.no_grad()
     def reset_batches(self,
                       batch_indices: List[int],
@@ -464,7 +466,7 @@ class raw_env(BatchedAECEnv):
         # Initialize storages
         rewards = {agent: torch.zeros(self.parallel_envs, dtype=torch.float32, device=self.device) for agent in self.agents}
         terminations = {agent: torch.zeros(self.parallel_envs, dtype=torch.bool, device=self.device) for agent in self.agents}
-        infos = {agent: {'task-action-index-map': None} for agent in self.agents}
+        infos = {agent: {} for agent in self.agents}
 
         #?collect accept actions to process later
         accepts = [defaultdict(lambda: []) for _ in range(self.parallel_envs)]
@@ -670,8 +672,6 @@ class raw_env(BatchedAECEnv):
             self.agent_task_indices[agent] = []
             self.agent_action_indices[agent] = []
 
-            self.infos[agent]['task-action-index-map'] = []
-
             #driver related passengers
             accept_mask = self._state.associations[:, 1] == agent_idx
             ride_mask = self._state.associations[:, 2] == agent_idx
@@ -726,10 +726,6 @@ class raw_env(BatchedAECEnv):
 
                 agent_task_indices.append(passenger_list[:, [0]])  #use global index
                 self.agent_action_indices[agent].append(passenger_list[:, [1]])  #just show actions
-
-                self.infos[agent]['task-action-index-map'].append(
-                    passenger_list
-                )  #use global index to uniquely identify tasks, use local index to find them in the masked state
 
             #convert agent_task_indices to nested tensor
             self.agent_task_indices[agent] = torch.nested.nested_tensor(agent_task_indices)

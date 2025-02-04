@@ -11,9 +11,6 @@ from pstats import Stats
 
 from free_range_zoo.envs import cybersecurity_v0, wildfire_v0, rideshare_v0
 from tests.utils import cybersecurity_configs, wildfire_configs, rideshare_configs
-from free_range_zoo.wrappers.heterograph import heterograph_wrapper_v0
-
-storage = {}
 
 
 def main():
@@ -52,10 +49,7 @@ def main():
                 configuration=configuration,
                 device=device,
             )
-    env = heterograph_wrapper_v0(env, collapse=True)
     observation, _ = env.reset()
-
-    storage['o'] = observation
 
     profiler = cProfile.Profile()
 
@@ -73,21 +67,12 @@ def main():
 
             action[agent] = actions
 
-        storage['a'] = action
-
         profiler.enable()
         observation, reward, term, trunc, info = env.step(action)
         profiler.disable()
 
-        storage['r'] = reward
-        storage['o_prime'] = observation
-        storage['d'] = term | trunc
-
         print(f'Completed step {current_step}')
         current_step += 1
-
-    # import pickle
-    # pickle.dump(storage, open(f'{args.environment}.pkl', 'wb'))
 
     profiler.create_stats()
 
