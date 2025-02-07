@@ -1,3 +1,4 @@
+import random
 from typing import Union, Optional
 import os
 import time
@@ -139,25 +140,76 @@ def find_arrow_points(start_pos, end_pos, cell_size, x_offset, y_offset):
     return start_center, end_center
 
 
-def draw_arrow(window, start_pos, end_pos, cell_size, x_offset, y_offset):
-    """
-    Draw a solid arrow from start cell to end cell in grid coordinates:
-    start_pos = (sx, sy), end_pos = (ex, ey).
-    """
-    start_center, end_center = find_arrow_points(start_pos, end_pos, cell_size, x_offset, y_offset)
-    pygame.draw.line(window, (0, 0, 0), start_center, end_center, 3)
+def draw_arrow(window, start_pos, end_pos, cell_size, x_offset, y_offset,use_water_effect=0):
+    if use_water_effect==0:
+        """
+        Draw a solid arrow from start cell to end cell in grid coordinates:
+        start_pos = (sx, sy), end_pos = (ex, ey).
+        """
+        start_center, end_center = find_arrow_points(start_pos, end_pos, cell_size, x_offset, y_offset)
+        pygame.draw.line(window, (10, 50, 170), start_center, end_center, 5)
 
-    # Calculate arrowhead
-    angle = math.atan2(end_center[1] - start_center[1], end_center[0] - start_center[0])
-    arrowhead_length = 12
-    arrowhead_angle = math.radians(30)
+        # Calculate arrowhead
+        angle = math.atan2(end_center[1] - start_center[1], end_center[0] - start_center[0])
+        arrowhead_length = 15
+        arrowhead_angle = math.radians(30)
 
-    p1 = (end_center[0] - arrowhead_length * math.cos(angle - arrowhead_angle),
-          end_center[1] - arrowhead_length * math.sin(angle - arrowhead_angle))
-    p2 = (end_center[0] - arrowhead_length * math.cos(angle + arrowhead_angle),
-          end_center[1] - arrowhead_length * math.sin(angle + arrowhead_angle))
+        p1 = (end_center[0] - arrowhead_length * math.cos(angle - arrowhead_angle),
+            end_center[1] - arrowhead_length * math.sin(angle - arrowhead_angle))
+        p2 = (end_center[0] - arrowhead_length * math.cos(angle + arrowhead_angle),
+            end_center[1] - arrowhead_length * math.sin(angle + arrowhead_angle))
 
-    pygame.draw.polygon(window, (0, 0, 0), [end_center, p1, p2])
+        pygame.draw.polygon(window, (10, 50, 170), [end_center, p1, p2])
+
+    else:
+        """
+        Simulates water spraying from a firefighter hose instead of a solid arrow.
+        """
+        start_center, end_center = find_arrow_points(start_pos, end_pos, cell_size, x_offset, y_offset)
+    
+        # Water colors from light blue to white for realistic effect
+        water_colors = [(173, 216, 230), (135, 206, 250), (200, 230, 255), (255, 255, 255)]  # Light Blue to White
+        
+        # Calculate main spray direction
+        angle = math.atan2(end_center[1] - start_center[1], end_center[0] - start_center[0])
+    
+        # Main jet stream (center water flow)
+        pygame.draw.line(window, (0, 191, 255), start_center, end_center, 6)  # Deep Sky Blue main stream
+    
+        # Generate multiple side sprays to simulate dispersion
+        num_sprays = 20  # Adjust for more or fewer spray lines
+        for _ in range(num_sprays):
+            # Randomize deviation to simulate turbulence in water spray
+            spray_angle = angle + random.uniform(-0.4, 0.4)  # Wider deviation
+            spray_length = random.uniform(20, 80)  # Random spray distances
+    
+            spray_end = (
+                start_center[0] + spray_length * math.cos(spray_angle),
+                start_center[1] + spray_length * math.sin(spray_angle)
+            )
+            
+            # Randomly select a water color
+            spray_color = random.choice(water_colors)
+            
+            # Draw thin spray streams
+            pygame.draw.line(window, spray_color, start_center, spray_end, random.randint(1, 3))
+    
+        # Water droplets forming mist around the spray
+        for _ in range(30):  # More droplets for mist effect
+            droplet_distance = random.uniform(10, 80)  # Random distance from hose exit
+            droplet_angle = angle + random.uniform(-0.6, 0.6)  # Wider mist angle
+            
+            droplet_x = start_center[0] + droplet_distance * math.cos(droplet_angle)
+            droplet_y = start_center[1] + droplet_distance * math.sin(droplet_angle)
+    
+            droplet_size = random.randint(2, 5)  # Small droplets
+            droplet_color = random.choice(water_colors)  # Light blue or white
+            pygame.draw.circle(window, droplet_color, (int(droplet_x), int(droplet_y)), droplet_size)
+    
+        # Water spray dispersion (wider at the end)
+        spray_end_x = end_center[0] + random.uniform(-15, 15)  # Add slight spread
+        spray_end_y = end_center[1] + random.uniform(-15, 15)
+        pygame.draw.circle(window, (135, 206, 250), (int(spray_end_x), int(spray_end_y)), 8)  # Larger water impact
 
 
 ########################################################
@@ -205,9 +257,9 @@ def render(path: str,
 
     # Agent action columns may or may not exist
     possible_agent_cols = [
-        'firefighter_1_action_choice',
-        'firefighter_2_action_choice',
-        'firefighter_3_action_choice',
+        'firefighter_1_action',
+        'firefighter_2_action',
+        'firefighter_3_action',
     ]
     for col in possible_agent_cols:
         if col not in df.columns:
@@ -269,12 +321,18 @@ def render(path: str,
     #   row=0 => cells 0..(x-1)
     #   row=1 => cells x..(2x-1)
     # etc.
-    # fire_positions[0] = (0,0), fire_positions[1] = (0,1), ...
     # ----------------------------------------------------------------
     fire_positions = []
-    for row_i in range(y):
-        for col_i in range(x):
-            fire_positions.append((row_i, col_i))
+    for fy, row in enumerate(fires_grid_0):  
+        for fx, fvalue in enumerate(row):  
+            if fvalue != 0:  # Fire exists
+                fire_positions.append({
+                    "fire": fx,  # Fire ID = column index
+                    "y": fy,  # Row position
+                    "x": fx,  # Column position
+                    "intensity": fvalue  # Fire intensity
+                })
+
 
     # ----------------------------------------------------------------
     # Build a per-step record of "objects" to render:
@@ -310,11 +368,11 @@ def render(path: str,
 
             # Read the action from the CSV
             if a_id == 0:
-                action_str = row['firefighter_1_action_choice']
+                action_str = row['firefighter_1_action']
             elif a_id == 1:
-                action_str = row['firefighter_2_action_choice']
+                action_str = row['firefighter_2_action']
             else:
-                action_str = row['firefighter_3_action_choice']
+                action_str = row['firefighter_3_action']
 
             try:
                 action_data = literal_eval(action_str) if isinstance(action_str, str) and action_str.strip() else []
@@ -355,7 +413,8 @@ def render(path: str,
     last_time = time.time()
 
     font = pygame.font.SysFont(None, 32)
-    small_font = pygame.font.SysFont(None, 20)
+    small_font = pygame.font.SysFont(None, 10)
+    big_font = pygame.font.SysFont(None, 30)
     slider_width = 300
     slider_height = 10
     slider_x = (screen_size - slider_width) // 2
@@ -431,29 +490,34 @@ def render(path: str,
         # -------------------- Render the state for this time-step --------------------
         fire_index = 0  # Just for labeling fires
         for obj in state_record[t]:
+            cell_x = x_offset + obj["col"] * cell_size
+            cell_y = y_offset + obj["row"] * cell_size
             if obj["type"] == "fire":
                 # If intensity == 0, might skip rendering anything
                 if obj["intensity"] == 0:
                     continue
 
-                cell_x = x_offset + obj["col"] * cell_size
-                cell_y = y_offset + obj["row"] * cell_size
 
+                fire_tag=''
                 # Choose a base image by intensity
                 if obj["intensity"] == 1:
                     base_img = base_fire_low
-                    scale_factor = 0.5
+                    fire_tag="Small Fire"
+                    # scale_factor = 0.5
                 elif obj["intensity"] == 2:
                     base_img = base_fire_med
-                    scale_factor = 0.75
+                    fire_tag="Medium Fire"
+                    # scale_factor = 0.75
                 elif obj["intensity"] == 3:
                     base_img = base_fire_high
-                    scale_factor = 1.0
+                    fire_tag="Large Fire"
+                    # scale_factor = 1.0
                 else:
                     # E.g. "4" or burnt
                     base_img = base_burnt
-                    scale_factor = 0.75
-
+                    fire_tag="Burnt Out"
+                    # scale_factor = 0.75
+                scale_factor = 0.9
                 img_width = int(cell_size * scale_factor)
                 img_height = int(cell_size * scale_factor)
                 img_scaled = pygame.transform.scale(base_img, (img_width, img_height))
@@ -466,9 +530,9 @@ def render(path: str,
 
                 # Optional text label
                 fire_text = [
-                    f"F{fire_index}",  # Fire index label
-                    f"intensity: {obj['intensity']}",
-                    f"fuel: {obj['fuel']}"
+                    f"Fire {fire_index}",  # Fire index label
+                    f"Intensity: {obj['intensity']} - {fire_tag}",
+                    f"Fuel: {obj['fuel']}"
                 ]
                 fire_index += 1
 
@@ -478,25 +542,32 @@ def render(path: str,
                     window.blit(line_surf, (cell_x + 5, cell_y + 5 + idx * 15))
 
             elif obj["type"] == "agent":
-                # Draw the agent image
-                draw_x = x_offset + obj["col"] * cell_size
-                draw_y = y_offset + obj["row"] * cell_size
-                window.blit(base_agent, (draw_x, draw_y))
+                scale_factor = 0.5
+                img_width = int(cell_size * scale_factor)
+                img_height = int(cell_size * scale_factor)
+                img_scaled = pygame.transform.scale(base_agent, (img_width, img_height))
 
-                # Label the agent
-                agent_name = f"A{obj['id']}"
-                agent_name_surf = small_font.render(agent_name, True, (0, 0, 0))
-                window.blit(agent_name_surf, (draw_x + 5, draw_y + 5))
+                center_x = cell_x + cell_size // 2
+                center_y = cell_y + cell_size // 2
+                draw_x = center_x - img_width // 2
+                draw_y = center_y - img_height // 2
+                window.blit(img_scaled, (draw_x, draw_y))
+
+
 
                 # Show some textual info in the bottom part of the cell
                 agent_text = [
-                    f"supp: {obj['suppressant']:.1f}", f"cap: {obj['capacity']}", f"action: {obj['action']}",
-                    f"rew: {obj['rewards']:.1f}"
+                    f"Agent {obj['id']}",
+                    f"Suppressant: {obj['suppressant']}", f"Capacity: {obj['capacity']}", f"Action: {obj['action']}",
+                    f"Reward: {obj['rewards']:.1f}"
                 ]
                 for idx, line in enumerate(agent_text):
                     line_surf = small_font.render(line, True, (0, 0, 0))
                     # Stack lines from the bottom upward
-                    window.blit(line_surf, (draw_x + 5, draw_y + cell_size - (len(agent_text) - idx) * 15))
+                    # window.blit(line_surf, (draw_x + 5, draw_y + cell_size - (len(agent_text) - idx) * 15))
+                    window.blit(line_surf, (cell_x + 5, cell_y + 5 + idx * 15))
+
+                    
 
                 # If the action is [fire_number, power], handle arrow or sleep
                 if isinstance(obj["action"], (list, tuple)) and len(obj["action"]) == 2:
@@ -506,17 +577,27 @@ def render(path: str,
                     # If [0, -1] => "no operation" or "sleep" => draw "Z"
                     # ---------------------------------------------------
                     if power == -1:
-                        z_surf = small_font.render("NOOP", True, (128, 128, 128))
+                        z_surf = big_font.render("NOOP", True, (250, 0, 0))
                         # Place the "Z" near the center of the agent's tile
-                        window.blit(z_surf, (draw_x + cell_size // 2, draw_y + cell_size // 2))
-
-                    else:
+                        # window.blit(z_surf, (draw_x + cell_size // 2, draw_y + cell_size // 2))
+                        z_rect = z_surf.get_rect(center=(draw_x + 45  , draw_y + img_height + 35))
+                        window.blit(z_surf, z_rect)
+                    # supress
+                    if power == 0:
+                        
                         # If valid fire_number, draw arrow from agent to that fire
-                        if 0 <= fire_num < len(fire_positions):
+                        # if 0 <= fire_num <= len(fire_positions):
                             # Get the (row, col) of that fire from row-major list
-                            fire_row, fire_col = fire_positions[fire_num]
-
+                            fire_to_supress = next((fire for fire in fire_positions if fire.get("fire") == fire_num), None)
+                            fire_row=fire_to_supress['y']
+                            fire_col = fire_to_supress['x']
+                
                             # Draw arrow from agent -> that fire cell
+                            z_surf = big_font.render(f"Supress Fire {fire_num}", True, (0, 0, 250))
+                            # Place the "Z" near the center of the agent's tile
+                            # window.blit(z_surf, (draw_x + cell_size // 2, draw_y + cell_size // 2))
+                            z_rect = z_surf.get_rect(center=(draw_x + 45  , draw_y + img_height + 35))
+                            window.blit(z_surf, z_rect)
                             draw_arrow(
                                 window,
                                 start_pos=(obj["col"], obj["row"]),  # (x, y) for agent

@@ -21,7 +21,7 @@ env = rideshare_v0.parallel_env(
     parallel_envs=2,
     configuration=rideshare_configs.non_stochastic(),
     device=torch.device('cpu'),
-    log_dir="outputs/rideshare_logging_test_0",
+    log_directory="outputs/rideshare_logging_test_0",
 )
 
 obs = env.reset()

@@ -142,7 +142,7 @@ def render(path: str,
         return val
 
     # Dynamically parse columns that might be list-like
-    # (For example, columns containing "action_choice", "presence", etc.)
+    # (For example, columns containing "action$", "presence", etc.)
     for col in df.columns:
         df[col] = df[col].apply(safe_literal_eval_if_str)
 
@@ -176,10 +176,10 @@ def render(path: str,
                 node_idx = ns[1]
                 if isinstance(node_idx, int) and node_idx > max_node_index:
                     max_node_index = node_idx
-        total_nodes = max_node_index + 1
-    else:
+        total_nodes = max_node_index 
+    # else:
         # fallback if no network_state column => you can define a default or skip
-        total_nodes = 5  # Just some fallback; or read from somewhere else
+        # total_nodes = 5  # Just some fallback; or read from somewhere else
 
     screen_size = 700
     bottom_ui_height = 120
@@ -216,9 +216,9 @@ def render(path: str,
     node_positions = circular_layout(total_nodes, center_x, center_y, circle_radius)
 
     # Identify any attacker/defender columns dynamically
-    # e.g. attacker_1_action_choice, attacker_2_action_choice, ...
-    attacker_cols = sorted([c for c in df.columns if re.match(r"attacker_\d+_action_choice", c)])
-    defender_cols = sorted([c for c in df.columns if re.match(r"defender_\d+_action_choice", c)])
+    # e.g. attacker_1_action$, attacker_2_action$, ...
+    attacker_cols = sorted([c for c in df.columns if re.match(r"attacker_\d+_action$", c)])
+    defender_cols = sorted([c for c in df.columns if re.match(r"defender_\d+_action$", c)])
 
     def parse_presence(idx, presence_list):
         if idx < len(presence_list):
@@ -241,12 +241,12 @@ def render(path: str,
             patched_list = row["patched"]
         else:
             patched_list = [False] * total_nodes
-
+        
         # Prepare node_info array
         for n_idx in range(total_nodes):
             e = bool(exploited_list[n_idx]) if n_idx < len(exploited_list) else False
             p = bool(patched_list[n_idx]) if n_idx < len(patched_list) else False
-            node_info.append({"exploited": e, "patched": p, "latency": 0})
+            node_info.append({"exploited": e, "patched": p, "latency": 0,"adj_matrix":row["adj_matrix"]})
 
         # If network_state is present, parse out node + latency
         if "network_state" in df.columns:
@@ -266,9 +266,9 @@ def render(path: str,
 
         # Parse defenders
         for idx, dcol in enumerate(defender_cols):
-            # For example, dcol = "defender_1_action_choice"
+            # For example, dcol = "defender_1_action$"
             # Extract "defender_1"
-            match_obj = re.match(r"(defender_\d+)_action_choice", dcol)
+            match_obj = re.match(r"(defender_\d+)_action$", dcol)
             if not match_obj:
                 continue
             def_name = match_obj.group(1)
@@ -277,11 +277,20 @@ def render(path: str,
             is_present = parse_presence(idx, presence_list)
 
             # Action might be a list: [target_node, action_code]
-            def_action = row[dcol] if isinstance(row[dcol], (list, tuple)) else []
+            def_action = row[dcol]
+            if isinstance(def_action, str) and def_action.strip().upper() == "NULL":
+                def_action = []
+            elif not isinstance(def_action, (list, tuple)):
+                def_action = []
 
             # Rewards for that defender if the column exists
             reward_col = def_name + "_rewards"
             def_reward = row.get(reward_col, 0.0)
+            if isinstance(def_reward, str) and def_reward.strip().upper() == "NULL":
+                def_reward = 0.0
+            else:
+                try: def_reward = float(def_reward)
+                except: def_reward = 0.0
 
             # location for this defender
             d_loc = location_list[idx] if idx < len(location_list) else 0
@@ -290,16 +299,26 @@ def render(path: str,
 
         # Parse attackers
         for idx, acol in enumerate(attacker_cols):
-            match_obj = re.match(r"(attacker_\d+)_action_choice", acol)
+            match_obj = re.match(r"(attacker_\d+)_action$", acol)
             if not match_obj:
                 continue
             atk_name = match_obj.group(1)
 
             is_present = parse_presence(len(defender_cols) + idx, presence_list)
 
-            atk_action = row[acol] if isinstance(row[acol], (list, tuple)) else []
+            atk_action = row[acol]
+            if isinstance(atk_action, str) and atk_action.strip().upper() == "NULL":
+                atk_action = []
+            elif not isinstance(atk_action, (list, tuple)):
+                atk_action = []
             reward_col = atk_name + "_rewards"
+            
             atk_reward = row.get(reward_col, 0.0)
+            if isinstance(atk_reward, str) and atk_reward.strip().upper() == "NULL":
+                atk_reward = 0.0
+            else:
+                try: atk_reward = float(atk_reward)
+                except: atk_reward = 0.0
 
             agents_info[atk_name] = {
                 "present": is_present,
@@ -387,13 +406,15 @@ def render(path: str,
         node_data = current_data["nodes"]
         agent_data = current_data["agents"]
 
-        # Draw edges between nodes (simple fully-connected net here)
-        for i in range(total_nodes):
-            for j in range(i + 1, total_nodes):
-                x1, y1 = node_positions[i]
-                x2, y2 = node_positions[j]
-                pygame.draw.aaline(window, (180, 180, 180), (x1, y1), (x2, y2), True)
-
+        # Draw edges between nodes 
+        for n_idx, ninfo in enumerate(node_data):
+            adj_matrix = ninfo.get("adj_matrix", [])
+            for i in range(len(adj_matrix)):
+                for j in range(i + 1, len(adj_matrix[i])):
+                    if adj_matrix[i][j] != 0:
+                        x1, y1 = node_positions[i]
+                        x2, y2 = node_positions[j]
+                        pygame.draw.aaline(window, (180, 180, 180), (x1, y1), (x2, y2), True)
         # Draw nodes
         for n_idx, ninfo in enumerate(node_data):
             nx, ny = node_positions[n_idx]
@@ -436,8 +457,8 @@ def render(path: str,
         attackers = [n for n in all_agent_names if n.startswith("attacker_")]
 
         # Spread them around the circle
-        def_angles = distribute_angles(len(defenders), total_angle_degs=70)
-        atk_angles = distribute_angles(len(attackers), total_angle_degs=90)
+        def_angles = distribute_angles(len(defenders), total_angle_degs=15)
+        atk_angles = distribute_angles(len(attackers), total_angle_degs=25)
 
         # Draw defenders
         for i, def_name in enumerate(defenders):
@@ -449,7 +470,7 @@ def render(path: str,
                 node_idx = 0
             node_x, node_y = node_positions[node_idx]
 
-            base_offset = 110
+            base_offset = 60
             angle = def_angles[i]
             angle_radians = math.atan2(node_y - center_y, node_x - center_x) + angle
             dx = center_x + (circle_radius + base_offset) * math.cos(angle_radians)
@@ -504,17 +525,17 @@ def render(path: str,
                 target_idx = 0
 
             node_x, node_y = node_positions[target_idx]
-            base_offset = 185
+            base_offset = 25
             angle = atk_angles[i]
             angle_radians = math.atan2(node_y - center_y, node_x - center_x) + angle
-            ax = center_x + (circle_radius + base_offset) * math.cos(angle_radians)
-            ay = center_y + (circle_radius + base_offset) * math.sin(angle_radians)
+            ax = center_x + (circle_radius + base_offset*5) * math.cos(angle_radians)
+            ay = center_y + (circle_radius + base_offset*6) * math.sin(angle_radians)
 
             if attacker_img:
                 rect = attacker_img.get_rect(center=(ax, ay))
                 window.blit(attacker_img, rect)
             else:
-                pygame.draw.rect(window, (255, 0, 0), (ax - 20, ay - 20, 40, 40))
+                pygame.draw.rect(window, (255, 0, 0), (ax , ay , 40, 40))
 
             # Name + Reward
             name_surf = small_font.render(atk_name, True, (0, 0, 0))

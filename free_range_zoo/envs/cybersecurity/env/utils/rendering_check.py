@@ -2,13 +2,12 @@ import sys
 import imageio
 import numpy as np
 
-sys.path.append('/home/ali/repos/free-range-zoo/')
-
+sys.path.append('/home/alire/repos_wsl/free-range-zoo')
 from free_range_zoo.envs.cybersecurity.env.utils.rendering import render
 
 if __name__ == "__main__":
     # Path to the CSV file
-    csv_path = "/home/ali/repos/free-range-zoo/outputs/cyberSec_logging_test_0/1.csv"
+    csv_path = "/home/alire/repos_wsl/free-range-zoo/outputs/cyberSec_logging_test_0/0.csv"
 
     # Render mode options: 'human' or 'rgb_array'
     render_mode = "rgb_array"  # Change to "rgb_array" if you want frames

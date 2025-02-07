@@ -35,10 +35,9 @@ def main():
         configuration=configuration,
         device=device,
         buffer_size=0,
-        log_dir="outputs/cyberSec_logging_test_0",
+        log_directory="outputs/cyberSec_logging_test_0",
     )
     env = action_mapping_wrapper_v0(env)
-    env.render()
     observation, _ = env.reset()
 
     agents = {}

@@ -1,5 +1,6 @@
-from planning.experiments.configs.wildfire import setup3, single_agent_two_fires, single_agent_single_fire
 import termcolor
+
+from free_range_zoo.envs.wildfire.configs.aaai_2024 import aaai_2025_ol_config
 
 printg = lambda x: print(termcolor.colored(x, "green"))
 printr = lambda x: print(termcolor.colored(x, "red"))
@@ -11,9 +12,10 @@ import torch
 env = wildfire_v0.parallel_env(
     max_steps=100,
     parallel_envs=2,
-    configuration=setup3(),
+    configuration=aaai_2025_ol_config(3),
     device=torch.device('cpu'),
-    log_dir="outputs/wildfire_logging_test_0",
+    
+    log_directory="outputs/wildfire_logging_test_0",
 )
 
 obs = env.reset()
