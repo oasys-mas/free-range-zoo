@@ -14,7 +14,6 @@ env = wildfire_v0.parallel_env(
     parallel_envs=2,
     configuration=aaai_2025_ol_config(3),
     device=torch.device('cpu'),
-    
     log_directory="outputs/wildfire_logging_test_0",
 )
 

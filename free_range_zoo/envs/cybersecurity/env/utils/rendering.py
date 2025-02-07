@@ -176,10 +176,10 @@ def render(path: str,
                 node_idx = ns[1]
                 if isinstance(node_idx, int) and node_idx > max_node_index:
                     max_node_index = node_idx
-        total_nodes = max_node_index 
+        total_nodes = max_node_index
     # else:
-        # fallback if no network_state column => you can define a default or skip
-        # total_nodes = 5  # Just some fallback; or read from somewhere else
+    # fallback if no network_state column => you can define a default or skip
+    # total_nodes = 5  # Just some fallback; or read from somewhere else
 
     screen_size = 700
     bottom_ui_height = 120
@@ -241,12 +241,12 @@ def render(path: str,
             patched_list = row["patched"]
         else:
             patched_list = [False] * total_nodes
-        
+
         # Prepare node_info array
         for n_idx in range(total_nodes):
             e = bool(exploited_list[n_idx]) if n_idx < len(exploited_list) else False
             p = bool(patched_list[n_idx]) if n_idx < len(patched_list) else False
-            node_info.append({"exploited": e, "patched": p, "latency": 0,"adj_matrix":row["adj_matrix"]})
+            node_info.append({"exploited": e, "patched": p, "latency": 0, "adj_matrix": row["adj_matrix"]})
 
         # If network_state is present, parse out node + latency
         if "network_state" in df.columns:
@@ -289,8 +289,10 @@ def render(path: str,
             if isinstance(def_reward, str) and def_reward.strip().upper() == "NULL":
                 def_reward = 0.0
             else:
-                try: def_reward = float(def_reward)
-                except: def_reward = 0.0
+                try:
+                    def_reward = float(def_reward)
+                except:
+                    def_reward = 0.0
 
             # location for this defender
             d_loc = location_list[idx] if idx < len(location_list) else 0
@@ -312,13 +314,15 @@ def render(path: str,
             elif not isinstance(atk_action, (list, tuple)):
                 atk_action = []
             reward_col = atk_name + "_rewards"
-            
+
             atk_reward = row.get(reward_col, 0.0)
             if isinstance(atk_reward, str) and atk_reward.strip().upper() == "NULL":
                 atk_reward = 0.0
             else:
-                try: atk_reward = float(atk_reward)
-                except: atk_reward = 0.0
+                try:
+                    atk_reward = float(atk_reward)
+                except:
+                    atk_reward = 0.0
 
             agents_info[atk_name] = {
                 "present": is_present,
@@ -406,7 +410,7 @@ def render(path: str,
         node_data = current_data["nodes"]
         agent_data = current_data["agents"]
 
-        # Draw edges between nodes 
+        # Draw edges between nodes
         for n_idx, ninfo in enumerate(node_data):
             adj_matrix = ninfo.get("adj_matrix", [])
             for i in range(len(adj_matrix)):
@@ -528,14 +532,14 @@ def render(path: str,
             base_offset = 25
             angle = atk_angles[i]
             angle_radians = math.atan2(node_y - center_y, node_x - center_x) + angle
-            ax = center_x + (circle_radius + base_offset*5) * math.cos(angle_radians)
-            ay = center_y + (circle_radius + base_offset*6) * math.sin(angle_radians)
+            ax = center_x + (circle_radius + base_offset * 5) * math.cos(angle_radians)
+            ay = center_y + (circle_radius + base_offset * 6) * math.sin(angle_radians)
 
             if attacker_img:
                 rect = attacker_img.get_rect(center=(ax, ay))
                 window.blit(attacker_img, rect)
             else:
-                pygame.draw.rect(window, (255, 0, 0), (ax , ay , 40, 40))
+                pygame.draw.rect(window, (255, 0, 0), (ax, ay, 40, 40))
 
             # Name + Reward
             name_surf = small_font.render(atk_name, True, (0, 0, 0))
