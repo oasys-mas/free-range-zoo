@@ -1,7 +1,13 @@
 # Cybersecurity Simulation Renderer
 
 ## Overview
-This module provides a visualization tool for cybersecurity simulations. It processes a CSV log file containing network states and renders an interactive or video-based visualization using **Pygame**.
+This module provides a visualization tool for cybersecurity simulations. It processes a CSV log file containing network states and renders an interactive or video-based visualization using **Pygame**
+
+## A demo of the environment
+<p align="center">
+    <img src="assets/rendering.gif" width="400" height="400">
+</p>
+
 
 ## Features
 - **Renders cybersecurity simulations** based on logged network states and agent actions.
@@ -62,7 +68,7 @@ def render(
 - `checkpoint` *(optional)*: Filter frames by label (default: None).
 
 ## Implementation Details
-The renderer:
+The Renderer:
 1. **Parses the CSV file** to extract network node states, exploits, patches, and agent actions.
 2. **Loads assets** (network nodes, defenders, attackers) and color-codes them for easy distinction.
 3. **Renders each timestep** using Pygame, displaying network structure, exploits, and defenses.
