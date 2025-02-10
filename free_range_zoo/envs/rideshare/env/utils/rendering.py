@@ -10,6 +10,8 @@ import pandas as pd
 
 this_dir = os.path.dirname(__file__)
 
+raise NotImplementedError("This was likely broken in the rewrite.")
+
 
 def render_image(path, cell_size: int):
     """
