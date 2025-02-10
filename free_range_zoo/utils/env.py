@@ -253,13 +253,13 @@ class BatchedAECEnv(ABC, AECEnv):
             df['complete'] = None
         else:
             for agent in self.possible_agents:
-                df[f'{agent}_action'] = [str(action) for action in self.actions[agent].tolist()]
-                df[f'{agent}_rewards'] = self.rewards[agent]
+                df[f'{agent}_action'] = [str(action) for action in self.actions[agent].cpu().tolist()]
+                df[f'{agent}_rewards'] = self.rewards[agent].cpu()
                 df[f'{agent}_action_map'] = [str(mapping.tolist()) for mapping in self.agent_action_mapping[agent]]
                 df[f'{agent}_observation_map'] = [str(mapping.tolist()) for mapping in self.agent_observation_mapping[agent]]
 
-            df['step'] = self.num_moves
-            df['complete'] = self.finished
+            df['step'] = self.num_moves.cpu()
+            df['complete'] = self.finished.cpu()
 
         if extra is not None:
             df = pd.concat([df, extra], axis=1)

@@ -2,6 +2,7 @@
 from typing import Self
 from dataclasses import dataclass
 import torch
+import pandas as pd
 from free_range_zoo.utils.state import State
 from free_range_zoo.utils.caching import optimized_convert_hashable
 
@@ -45,3 +46,21 @@ class RideshareState(State):
         keys = (self.agents, self.passengers)
         hashables = tuple([optimized_convert_hashable(key) for key in keys])
         return hash(hashables)
+
+    def to_dataframe(self) -> int:
+        """Convert the state into a dataframe."""
+        shared = self.metadata.get('shared', ())
+        blacklist = ('initial_state', 'checkpoint', 'metadata', 'passengers') + shared
+        columns = [attribute for attribute in self.__dict__.keys() if attribute not in blacklist]
+        data = {column: [str(row.tolist()) for row in self.__dict__[column]] for column in columns}
+
+        passenger_data = []
+        for i in range(self.agents.size(0)):
+            passenger_data.append(str(self.passengers[self.passengers[:, 0] == i].tolist()))
+        data['passengers'] = passenger_data
+
+        df = pd.DataFrame(data)
+        for key in shared:
+            df[key] = str(self.__dict__[key].tolist())
+
+        return df
