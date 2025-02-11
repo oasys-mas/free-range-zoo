@@ -91,32 +91,4 @@ class PassengerStateTransition(nn.Module):
         state.passengers[:, 6][indices] = 2
         state.passengers[:, 10][indices] = timesteps[state.passengers[:, 0][indices]]
 
-        # <(batch, y, x, dest_x, dest_y, fare, state, association, entered_step, accepted_step, picked_step)>
-
-        # accept_targets = torch.where(accepts, targets, -100)
-        #
-        # indices = accept_targets[accept_targets != -100]
-        # state.passengers[:, 6][indices] = 1
-        #
-        #
-        # pick_targets = torch.where(picks, targets, -100)
-        # agent_locations = state.agents
-        #
-        # task_locations = state.passengers[:, 1:3][indices]
-
-        # print(agent_locations)
-        # print(task_locations)
-
-        # indices = pick_targets[pick_targets != -100]
-        #
-        # agent_locations = state.agents
-        #
-        # agent_locations = state.agents[pick_targets != -100]
-        #
-        #
-        # print(at_position)
-        # tasks_at_location = (state.passengers[:, [1, 2]] == state.agents[:, [3, 4]]).all(dim=1)
-        # location_mask = torch.zeros_like(targets, dtype=torch.bool, device=targets.device)
-        # location_mask[targets != -100] = tasks_at_location[targets[targets != -100]]
-
         return state

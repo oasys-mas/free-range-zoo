@@ -90,8 +90,6 @@ class TestMasking(unittest.TestCase, TestCaching):
         result = mask_observation('defender_1', True, False, True)
         expected = torch.tensor([True, False, True])
 
-        print(result, expected)
-
         self.assertTrue(
             torch.equal(result, expected), f"""
             \rResult should be equal to expected
@@ -111,8 +109,6 @@ class TestMasking(unittest.TestCase, TestCaching):
     def test_observe_other_location_masked_defender(self) -> None:
         result = mask_observation('defender_1', True, True, False)
         expected = torch.tensor([True, True, False])
-
-        print(result, expected)
 
         self.assertTrue(
             torch.equal(result, expected), f"""

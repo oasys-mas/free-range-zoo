@@ -164,10 +164,6 @@ class TestBuildSingleDefenderActionSpace(TestCaching, unittest.TestCase):
             Space.Discrete(1, start=-3),  # monitor
         ])
 
-        print(result)
-
-        print(expected)
-
         self.assertEqual(result, expected, 'Action space should match expected')
 
 
