@@ -72,6 +72,9 @@ class MovementTransition(nn.Module):
 
         state.agents += best_moves
 
+        # TODO: UPDATE THE TASKS OF AN AGENT TO MOVE WITH THEM
+        # TODO: CORRECTLY CALCULATE THE DISTANCE
+
         return state, torch.ones(
             (self.agent_range.size(0), self.env_range.size(0)),
             dtype=torch.float32,

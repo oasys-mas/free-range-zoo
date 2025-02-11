@@ -83,10 +83,12 @@ class PassengerStateTransition(nn.Module):
         distances = ((vectors[:, :, [0, 1]] - vectors[:, :, [2, 3]])**2).sum(dim=-1).sqrt()
         distances = torch.where((vectors == -100).all(dim=-1), torch.inf, distances)
 
+        # Determine the pick targets which are already at their destination
         pick_targets = torch.where(picks, targets, -100)
         pick_distances = torch.where(pick_targets != -100, distances, torch.inf)
         pick_targets = torch.where(pick_distances < 1e-6, pick_targets, -100)
 
+        # Update the association of those agents
         indices = pick_targets[pick_targets != -100]
         state.passengers[:, 6][indices] = 2
         state.passengers[:, 10][indices] = timesteps[state.passengers[:, 0][indices]]
