@@ -100,10 +100,9 @@ env.close()
 .. currentmodule:: free_range_zoo.envs.rideshare.env.structures.configuration
 
 .. autoclass:: AgentConfiguration
-.. autoclass:: GridConfiguration
 .. autoclass:: PassengerConfiguration
 .. autoclass:: RewardConfiguration
-.. autoclass:: RideShareConfiguration
+.. autoclass:: RideshareConfiguration
 
 ```
 
