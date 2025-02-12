@@ -43,7 +43,6 @@ class RewardConfiguration(Configuration):
 
     use_pooling_rewards: bool
     use_variable_move_cost: bool
-
     use_waiting_costs: bool
 
     wait_limit: torch.IntTensor = torch.tensor([1, 2, 3])
@@ -90,7 +89,7 @@ class AgentConfiguration(Configuration):
     Attributes:
         num_agents: int - Number of agents
         pool_limit: int - Maximum number of passengers that can be in a car
-        start_positions: torch.IntTensor - Starting positions of the agents (if not specified then random)
+        start_positions: torch.IntTensor - Starting positions of the agents
         driving_algorithm: str - Algorithm to use for driving (direct or A*)
     """
 
