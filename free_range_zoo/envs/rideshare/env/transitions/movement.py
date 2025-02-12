@@ -72,11 +72,10 @@ class MovementTransition(nn.Module):
 
         state.agents += best_moves
 
-        # TODO: UPDATE THE TASKS OF AN AGENT TO MOVE WITH THEM
-        # TODO: CORRECTLY CALCULATE THE DISTANCE
+        passenger_indices = state.passengers[:, [0, 7]].T.split(1, dim=0)
+        passenger_movements = best_moves[passenger_indices].squeeze(0)
+        passenger_movements[state.passengers[:, 7] == -1][:, 0] = 0
+        state.passengers[:, 1:3] += passenger_movements
 
-        return state, torch.ones(
-            (self.agent_range.size(0), self.env_range.size(0)),
-            dtype=torch.float32,
-            device=self.env_range.device,
-        )
+        distances = best_moves.float().norm(dim=2)
+        return state, distances
