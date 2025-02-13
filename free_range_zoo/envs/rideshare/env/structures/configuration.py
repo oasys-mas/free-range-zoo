@@ -1,5 +1,4 @@
 """Configuration classes for the rideshare domain."""
-from typing import Tuple, Union, Dict
 from dataclasses import dataclass
 import functools
 import torch
@@ -45,10 +44,10 @@ class RewardConfiguration(Configuration):
     use_variable_move_cost: bool
     use_waiting_costs: bool
 
-    wait_limit: torch.IntTensor = torch.tensor([1, 2, 3])
-    long_wait_time: int = 10
-    general_wait_cost: float = -.1
-    long_wait_cost: float = -.2
+    wait_limit: torch.IntTensor
+    long_wait_time: int
+    general_wait_cost: float
+    long_wait_cost: float
 
     def validate(self):
         """Validate the configuration."""
@@ -66,12 +65,11 @@ class PassengerConfiguration(Configuration):
     Task settings for rideshare.
 
     Attributes:
-        schedule: TensorDict - tensor dictionary keyed by either
-            (batch_index, timestep) of shape <#passengers, 5>
-            (timestep) of shape <#passengers, 5> #?where the schedule is duplicated across batches
+        schedule: torch.IntTensor: tensor in the shape of <tasks, (timestep, batch, y, x, y_dest, x_dest, fare)>
+            where batch can be set to -1 to indicate a wildcard for all batches
     """
 
-    schedule: Dict[Union[int, Tuple[int, int]], torch.FloatTensor]
+    schedule: torch.IntTensor
 
     def validate(self):
         """Validate the configuration."""
@@ -87,10 +85,10 @@ class AgentConfiguration(Configuration):
     Agent settings for rideshare.
 
     Attributes:
-        num_agents: int - Number of agents
-        pool_limit: int - Maximum number of passengers that can be in a car
         start_positions: torch.IntTensor - Starting positions of the agents
-        driving_algorithm: str - Algorithm to use for driving (direct or A*)
+        pool_limit: int - Maximum number of passengers that can be in a car
+        use_diagonal_travel: bool - whether to enable diagonal travel for agents
+        use_fast_travel: bool - whether to enable fast travel for agents
     """
 
     start_positions: torch.IntTensor
@@ -120,10 +118,11 @@ class RideshareConfiguration(Configuration):
         grid_height: int - grid height for the rideshare environment space.
         grid_width: int - grid width for the rideshare environment space.
 
-        passenger_config: PassengerConfiguration - Passenger settings for the rideshare environment.
         agent_config: AgentConfiguration - Agent settings for the rideshare environment.
+        passenger_config: PassengerConfiguration - Passenger settings for the rideshare environment.
         reward_config: RewardConfiguration - Reward configuration for the rideshare environment.
     """
+
     grid_height: int
     grid_width: int
 
@@ -132,15 +131,19 @@ class RideshareConfiguration(Configuration):
     reward_config: RewardConfiguration
 
     def passenger_entry_transition(self, parallel_envs: int) -> PassengerEntryTransition:
+        """Get the passenger entry transition configured for the specific environment."""
         return PassengerEntryTransition(self.passenger_config.schedule, parallel_envs)
 
     def passenger_exit_transition(self, parallel_envs: int) -> PassengerExitTransition:
+        """Get the passenger exit transition configured for the specific environment."""
         return PassengerExitTransition(parallel_envs)
 
     def passenger_state_transition(self, parallel_envs: int) -> PassengerStateTransition:
+        """Get the passenger state transition configured for the specific environment."""
         return PassengerStateTransition(self.agent_config.num_agents, parallel_envs)
 
     def movement_transition(self, parallel_envs: int) -> PassengerStateTransition:
+        """Get the movement transition configured for the specific environment."""
         return MovementTransition(
             self.agent_config.num_agents,
             parallel_envs,

@@ -27,7 +27,6 @@ class TestPassengerEntryTransition(unittest.TestCase):
     def test_all_movement_happens_in_the_correct_direction(self) -> None:
         result, distances = self.transition(
             state=self.state,
-            mask=torch.tensor([[1, 1]], dtype=torch.bool),
             vectors=torch.tensor([[[0, 0, 1, 1], [1, 1, 1, 1]]], dtype=torch.int32),
         )
 
@@ -48,7 +47,6 @@ class TestPassengerEntryTransition(unittest.TestCase):
 
         result, distances = self.transition(
             state=self.state,
-            mask=torch.tensor([[1, 1]], dtype=torch.bool),
             vectors=torch.tensor([[[0, 0, 1, 1], [1, 1, 1, 1]]], dtype=torch.int32),
         )
 
@@ -67,7 +65,6 @@ class TestPassengerEntryTransition(unittest.TestCase):
     def test_distances_are_correctly_calculated_for_movement(self) -> None:
         result, distances = self.transition(
             state=self.state,
-            mask=torch.tensor([[1, 1]], dtype=torch.bool),
             vectors=torch.tensor([[[0, 0, 1, 1], [1, 1, 1, 1]]], dtype=torch.int32),
         )
 
@@ -82,7 +79,6 @@ class TestPassengerEntryTransition(unittest.TestCase):
 
         result, distances = self.transition(
             state=self.state,
-            mask=torch.tensor([[1, 1]], dtype=torch.bool),
             vectors=torch.tensor([[[0, 0, 1, 1], [1, 1, 1, 1]]], dtype=torch.int32),
         )
 
@@ -96,7 +92,6 @@ class TestPassengerEntryTransition(unittest.TestCase):
         before = self.state.passengers.clone()
         result, distances = self.transition(
             state=self.state,
-            mask=torch.tensor([[1, 1]], dtype=torch.bool),
             vectors=torch.tensor([[[0, 0, 1, 1], [1, 1, 1, 1]]], dtype=torch.int32),
         )
 

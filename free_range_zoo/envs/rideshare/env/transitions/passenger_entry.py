@@ -6,14 +6,15 @@ from free_range_zoo.envs.rideshare.env.structures.state import RideshareState
 
 
 class PassengerEntryTransition(nn.Module):
-    """
-    """
+    """Transition for adding tasks to the environment according to schedule."""
 
     def __init__(self, schedule: torch.IntTensor, parallel_envs: int) -> None:
         """
         Initialize the transition function.
 
         Args:
+            parallel_envs: int - the number of parallel environments to vectorize operations over
+            schedule: torch.IntTensor - schedule from the environment configuration to determine task entry
         """
         super().__init__()
 
@@ -23,13 +24,13 @@ class PassengerEntryTransition(nn.Module):
     @torch.no_grad()
     def forward(self, state: RideshareState, timesteps: torch.IntTensor) -> RideshareState:
         """
-        Calculate the next presence states for all agents.
+        Calculate the next passengers to enter each environment using the schedule.
 
         Args:
             state: RideshareState - the current state of the environment
             timesteps: torch.IntTensor - the timestep of each of the parallel environments
         Returns:
-            RideshareState - the next state of the environment with the presence states transformed
+            RideshareState - the next state of the environment with new passengers added
         """
         # Determine which tasks within the environment enter this step
         task_start_times = self.schedule[:, 0]

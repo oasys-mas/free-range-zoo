@@ -227,7 +227,7 @@ class raw_env(BatchedAECEnv):
             torch.cat([self._state.agents[drop], self._state.passengers[task_targets[drop]][:, 3:5]], dim=1),
         )
 
-        self._state, distance = self.movement_transition(self._state, pick | drop, task_vectors)
+        self._state, distance = self.movement_transition(self._state, task_vectors)
 
         # NOTE: Passenger transitions must remain in the order of state, exit, entry due to have stable mutability
         self._state = self.passenger_state_transition(self._state, accept, pick, task_targets, task_vectors, self.num_moves)

@@ -14,15 +14,21 @@ def non_stochastic():
         use_diagonal_travel=False,
     )
 
-    reward_conf = RewardConfiguration(pick_cost=-0.1,
-                                      move_cost=-0.8,
-                                      drop_cost=0.0,
-                                      noop_cost=-1,
-                                      accept_cost=0.0,
-                                      pool_limit_cost=-2.0,
-                                      use_pooling_rewards=False,
-                                      use_variable_move_cost=True,
-                                      use_waiting_costs=False)
+    reward_conf = RewardConfiguration(
+        pick_cost=-0.1,
+        move_cost=-0.8,
+        drop_cost=0.0,
+        noop_cost=-1,
+        accept_cost=0.0,
+        pool_limit_cost=-2.0,
+        use_pooling_rewards=False,
+        use_variable_move_cost=True,
+        use_waiting_costs=False,
+        wait_limit=torch.tensor([1, 2, 3]),
+        long_wait_time=10,
+        general_wait_cost=-.1,
+        long_wait_cost=-.2,
+    )
 
     #simple batch independent schedule
     schedule = torch.tensor([

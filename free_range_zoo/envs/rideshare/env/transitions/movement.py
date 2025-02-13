@@ -7,14 +7,17 @@ from free_range_zoo.envs.rideshare.env.structures.state import RideshareState
 
 
 class MovementTransition(nn.Module):
-    """
-    """
+    """Movement transition for agents and tasks within the rideshare environment."""
 
     def __init__(self, parallel_envs: int, num_agents: int, fast_travel: bool, diagonal_travel: bool) -> None:
         """
         Initialize the transition function.
 
         Args:
+            parallel_envs: int - the number of parallel environments to vectorize operations over
+            num_agents: int - the number of agents to expect in each environment
+            fast_travel: bool - whether to enable fast travel for agents
+            diagonal_travel: bool - whether to enable diagonal 8 direction movement for agents
         """
         super().__init__()
 
@@ -83,15 +86,15 @@ class MovementTransition(nn.Module):
         return best_moves, distances
 
     @torch.no_grad()
-    def forward(self, state: RideshareState, mask: torch.BoolTensor, vectors: torch.IntTensor) -> RideshareState:
+    def forward(self, state: RideshareState, vectors: torch.IntTensor) -> RideshareState:
         """
         Calculate the next presence states for all agents.
 
         Args:
             state: RideshareState - the current state of the environment
-            timesteps: torch.IntTensor - the timestep of each of the parallel environments
+            vectors: torch.IntTensor - the point vectors for each agent in the form of (y, x, y_dest, x_dest)
         Returns:
-            RideshareState - the next state of the environment with the presence states transformed
+            RideshareState - the next state of the environment with the modified movement positions
         """
         current_positions = vectors[:, :, :2]
         target_positions = vectors[:, :, 2:]

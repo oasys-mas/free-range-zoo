@@ -35,6 +35,10 @@ class PassengerStateTransition(nn.Module):
 
         Args:
             state: RideshareState - the current state of the environment
+            accepts: torch.BoolTensor - a mask over agents which dictates which agents have taken the accept action
+            picks: torch.BoolTensor - a mask over agents which dictates which agents have taken the pick action
+            targets: torch.IntTensor - the task targets of all agents for all environments
+            vectors: torch.IntTensor - the point vectors for each agent movement in the form of (y, x, y_dest, x_dest)
             timesteps: torch.IntTensor - the timestep of each of the parallel environments
         Returns:
             RideshareState - the next state of the environment with the presence states transformed
