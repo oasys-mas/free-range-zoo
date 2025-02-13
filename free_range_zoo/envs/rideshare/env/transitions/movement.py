@@ -49,6 +49,40 @@ class MovementTransition(nn.Module):
         else:
             self.register_buffer('directions', cardinal_directions)
 
+
+    @torch.no_grad()
+    def distance(self, starts: torch.IntTensor, goals: torch.IntTensor) -> torch.IntTensor:
+        """
+        Calculate the distance between two sets of positions.
+        Args:
+            starts: torch.IntTensor - The starting positions of the agents
+            goals: torch.IntTensor - The goal positions of the agents
+        Returns:
+            best_moves: torch.IntTensor - The best moves for each agent
+            distances: torch.IntTensor - The distance traveled for each agent
+        """
+        candidate_positions = starts.unsqueeze(2) + self.directions.view(1, 1, -1, 2)
+        distances = torch.norm((candidate_positions - goals.unsqueeze(2)).float(), dim=3)
+
+        if self.fast_travel:
+            best_moves = starts - goals
+        else:
+            best_moves = torch.argmin(distances, dim=2, keepdim=True)
+            best_moves = self.directions[best_moves.squeeze(-1)]
+        best_moves[starts == -100] = 0
+
+        # Calculate the movement distances so that these can be used to calculate costs later
+        distances = best_moves.float()
+        match self.directions.size(0):
+            case 9:
+                distances = distances.norm(dim=2)
+            case 5:
+                distances = distances.abs().sum(dim=2)
+
+        return best_moves, distances
+
+    
+
     @torch.no_grad()
     def forward(self, state: RideshareState, mask: torch.BoolTensor, vectors: torch.IntTensor) -> RideshareState:
         """
@@ -62,16 +96,7 @@ class MovementTransition(nn.Module):
         """
         current_positions = vectors[:, :, :2]
         target_positions = vectors[:, :, 2:]
-
-        candidate_positions = current_positions.unsqueeze(2) + self.directions.view(1, 1, -1, 2)
-        distances = torch.norm((candidate_positions - target_positions.unsqueeze(2)).float(), dim=3)
-
-        if self.fast_travel:
-            best_moves = current_positions - target_positions
-        else:
-            best_moves = torch.argmin(distances, dim=2, keepdim=True)
-            best_moves = self.directions[best_moves.squeeze(-1)]
-        best_moves[current_positions == -100] = 0
+        best_moves, distances = self.distance(current_positions, target_positions)
 
         state.agents += best_moves
 
@@ -79,13 +104,5 @@ class MovementTransition(nn.Module):
         passenger_movements = best_moves[passenger_indices].squeeze(0)
         passenger_movements[state.passengers[:, 7] == -1][:, 0] = 0
         state.passengers[:, 1:3] += passenger_movements
-
-        # Calculate the movement distances so that these can be used to calculate costs later
-        distances = best_moves.float()
-        match self.directions.size(0):
-            case 9:
-                distances = distances.norm(dim=2)
-            case 5:
-                distances = distances.abs().sum(dim=2)
 
         return state, distances
