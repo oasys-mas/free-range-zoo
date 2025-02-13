@@ -25,11 +25,11 @@ def non_stochastic():
                                       use_waiting_costs=False)
 
     #simple batch independent schedule
-    schedule =  torch.tensor([
-                [0, -1, 1, 1, 1, 1, 1],
-                [1, -1, 1, 1, 1, 1, 2],
-                [2, 1, 1, 1, 1, 1, 3],
-            ], dtype=torch.int)
+    schedule = torch.tensor([
+        [0, -1, 1, 1, 1, 1, 1],
+        [1, -1, 1, 1, 1, 1, 2],
+        [2, 1, 1, 1, 1, 1, 3],
+    ], dtype=torch.int)
 
     passenger_conf = PassengerConfiguration(schedule=schedule)
 
