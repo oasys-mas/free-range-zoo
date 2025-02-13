@@ -75,9 +75,7 @@ class RideshareState(State):
             try:
                 os.mkdir(path)
             except FileExistsError:
-                assert not os.path.exists(os.path.join(
-                    path, "0.csv")), "path already exists and files found, check path. Don't waste experiments!"
-
+                print('file exists')
         batch_size = torch.max((self.agents[:, 0] + 1).reshape(-1)).to(torch.int).item()
 
         if isinstance(actions, dict):

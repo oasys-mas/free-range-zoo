@@ -223,3 +223,8 @@ pip-selfcheck.json
 # End of https://www.toptal.com/developers/gitignore/api/virtualenv,python,visualstudiocode
 
 .vscode/*
+
+#exclude rendering gifs
+!free_range_zoo/envs/wildfire/env/utils/assets/rendering.gif
+!free_range_zoo/envs/cybersecurity/env/utils/assets/rendering.gif
+!free_range_zoo/envs/rideshare/env/utils/assets/rendering.gif

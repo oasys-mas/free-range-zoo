@@ -2,7 +2,7 @@
 name = "free-range-zoo"
 version = "0.1.10"
 description = ""
-authors = ["C4 Patino <cpatino2@huskers.unl.edu>", "Daniel Redder <daniel.redder@uga.edu>"]
+authors = ["C4 Patino <cpatino2@huskers.unl.edu>", "Daniel Redder <daniel.redder@uga.edu>", "Alireza Saleh Abadi <asalehabadi2@huskers.unl.edu>"]
 license = "AGPL-3.0-or-later"
 readme = "README.md"
 
@@ -21,6 +21,9 @@ networkx = "^3.4.2"
 free-range-rust = "^0.1.2"
 torchviz = "^0.0.3"
 graphviz = "^0.20.3"
+pygame = "^2.6.1"
+pandas = "^2.2.3"
+imageio = "^2.37.0"
 
 [tool.poetry.group.scripts.dependencies]
 jupyter = "^1.0.0"
@@ -30,15 +33,15 @@ optuna = "^4.0.0"
 termcolor = "^2.4.0"
 pygame = "^2.6.0"
 rich = "^13.9.1"
-slurm_tuner = { git = "https://github.com/C4theBomb/slurm-tuner" }
 
 [tool.poetry.group.docs.dependencies]
 free-range-zoo-docs = { path = "docs", develop = true }
 
-[tool.poetry.group.models]
+[tool.poetry.group.oasys]
 optional = true
 
-[tool.poetry.group.models.dependencies]
+[tool.poetry.group.oasys.dependencies]
+slurm_tuner = { git = "https://github.com/C4theBomb/slurm-tuner" }
 planning = { path = "models/planning", develop = true }
 heterographs = { path = "models/heterographs", develop = true }
 

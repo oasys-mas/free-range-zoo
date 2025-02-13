@@ -130,6 +130,7 @@ python -c "import torch; print(torch.cuda.is_available())"
 
 - [Ceferino Patino](https://www.github.com/C4theBomb)[^1]
 - [Daniel Redder](https://github.com/daniel-redder)[^1]
+- [Alireza Saleh Abadi](https://github.com/bboyfury)[^1]
 
 [^1]: Primary Maintainers
 

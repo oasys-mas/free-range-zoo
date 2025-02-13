@@ -88,6 +88,11 @@ class BatchedAECEnv(ABC, AECEnv):
         if options is not None and options.get('max_steps') is not None:
             self.max_steps = options['max_steps']
 
+        if options is not None and options.get('log_label') is not None:
+            self._log_label = options['log_label']
+        else:
+            self._log_label = None
+
         # Set seeding if given (prepares for the next random number generation i.e. self._make_randoms())
         self.seeds = torch.zeros((self.parallel_envs), dtype=torch.int32, device=self.device)
 
@@ -146,6 +151,9 @@ class BatchedAECEnv(ABC, AECEnv):
             options: Optional[Dict[str, Any]] - the options for the reset
         """
         self.generator.seed(seed, partial_seeding=batch_indices)
+
+        if options is not None and options.get('log_label') is not None:
+            self._log_label = options['log_label']
 
         for agent in self.agents:
             self.rewards[agent][batch_indices] = 0
