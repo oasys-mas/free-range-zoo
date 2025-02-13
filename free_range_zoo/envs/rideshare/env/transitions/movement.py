@@ -66,8 +66,11 @@ class MovementTransition(nn.Module):
         candidate_positions = current_positions.unsqueeze(2) + self.directions.view(1, 1, -1, 2)
         distances = torch.norm((candidate_positions - target_positions.unsqueeze(2)).float(), dim=3)
 
-        best_moves = torch.argmin(distances, dim=2, keepdim=True)
-        best_moves = self.directions[best_moves.squeeze(-1)]
+        if self.fast_travel:
+            best_moves = current_positions - target_positions
+        else:
+            best_moves = torch.argmin(distances, dim=2, keepdim=True)
+            best_moves = self.directions[best_moves.squeeze(-1)]
         best_moves[current_positions == -100] = 0
 
         state.agents += best_moves
@@ -77,5 +80,12 @@ class MovementTransition(nn.Module):
         passenger_movements[state.passengers[:, 7] == -1][:, 0] = 0
         state.passengers[:, 1:3] += passenger_movements
 
-        distances = best_moves.float().norm(dim=2)
+        # Calculate the movement distances so that these can be used to calculate costs later
+        distances = best_moves.float()
+        match self.directions.size(0):
+            case 9:
+                distances = distances.norm(dim=2)
+            case 5:
+                distances = distances.abs().sum(dim=2)
+
         return state, distances
