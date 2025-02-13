@@ -1,4 +1,5 @@
 """Transition function for agent presence."""
+from typing import Tuple
 import torch
 from torch import nn
 
@@ -50,9 +51,10 @@ class MovementTransition(nn.Module):
             self.register_buffer('directions', cardinal_directions)
 
     @torch.no_grad()
-    def distance(self, starts: torch.IntTensor, goals: torch.IntTensor) -> torch.IntTensor:
+    def distance(self, starts: torch.IntTensor, goals: torch.IntTensor) -> Tuple[torch.IntTensor, torch.FloatTensor]:
         """
         Calculate the distance between two sets of positions.
+
         Args:
             starts: torch.IntTensor - The starting positions of the agents
             goals: torch.IntTensor - The goal positions of the agents
@@ -93,13 +95,19 @@ class MovementTransition(nn.Module):
         """
         current_positions = vectors[:, :, :2]
         target_positions = vectors[:, :, 2:]
-        best_moves, distances = self.distance(current_positions, target_positions)
 
+        # Figure out where agents should be moving
+        best_moves, distances = self.distance(current_positions, target_positions)
         state.agents += best_moves
 
-        passenger_indices = state.passengers[:, [0, 7]].T.split(1, dim=0)
-        passenger_movements = best_moves[passenger_indices].squeeze(0)
-        passenger_movements[state.passengers[:, 7] == -1][:, 0] = 0
+        # Move passengers along with their agents
+        passenger_indices = state.passengers[:, [0, 7]].unbind(1)
+        passenger_movements = best_moves[passenger_indices].squeeze(1)
+
+        # Figure out which passengers should not be moving
+        no_movement = (state.passengers[:, 6] == 0) | (state.passengers[:, 6] == 1)
+        passenger_movements[no_movement] = 0
+
         state.passengers[:, 1:3] += passenger_movements
 
         return state, distances
