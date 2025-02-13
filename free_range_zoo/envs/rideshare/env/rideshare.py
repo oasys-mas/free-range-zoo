@@ -373,13 +373,13 @@ class raw_env(BatchedAECEnv):
 
             self.observations[agent_name] = TensorDict(
                 {
-                    'self': agent_observations[:, agent_index],
-                    'others': agent_observations[:, agent_mask],
-                    'tasks': nested_observation,
+                    'self': agent_observations[:, agent_index].clone(),
+                    'others': agent_observations[:, agent_mask].clone(),
+                    'tasks': nested_observation.clone(),
                 },
                 batch_size=[self.parallel_envs],
                 device=self.device,
-            ).clone()
+            )
 
     @torch.no_grad()
     def action_space(self, agent: str) -> List[gymnasium.Space]:
