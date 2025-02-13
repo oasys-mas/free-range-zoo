@@ -2,7 +2,7 @@
 name = "free-range-zoo"
 version = "0.1.10"
 description = ""
-authors = ["C4 Patino <cpatino2@huskers.unl.edu>", "Daniel Redder <daniel.redder@uga.edu>"]
+authors = ["C4 Patino <cpatino2@huskers.unl.edu>", "Daniel Redder <daniel.redder@uga.edu>", "Alireza Saleh Abadi <asalehabadi2@huskers.unl.edu>"]
 license = "AGPL-3.0-or-later"
 readme = "README.md"
 
