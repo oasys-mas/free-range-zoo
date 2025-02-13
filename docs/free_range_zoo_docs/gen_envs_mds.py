@@ -93,8 +93,8 @@ def main():
             with open(f"{docs_dir}/code_examples/usage_parallel.py") as f:
                 usage_parallel = f.read()
 
-            usage_parallel = usage_parallel.replace("pistonball_v6", env_name_version)
-            usage_parallel = usage_parallel.replace("butterfly", "free_range_zoo")
+            usage_parallel = usage_parallel.replace("space_invaders_v2", env_name_version)
+            usage_parallel = usage_parallel.replace("atari", "free_range_zoo")
             usage_parallel = usage_parallel.replace("pettingzoo", "free_range_zoo")
             usage_parallel = usage_parallel.strip()
 
@@ -145,7 +145,7 @@ def main():
 ```
 """
 
-            docs_env_path = os.path.join(docs_dir, "environments", env_type, env_name + ".md")
+            docs_env_path = os.path.join(docs_dir, "environments", env_type, env_name, "specification.md")
             _create_docs_md(docs_env_path, docs_text, frontmatter_options)
 
 

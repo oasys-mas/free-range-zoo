@@ -257,7 +257,7 @@ class StochasticConfiguration(Configuration):
     """
     Configuration for the stochastic components of the cybersecurity simulation.
 
-    Stochastic Network Attributes:
+    Attributes:
         network_state: bool - Whether the subnetwork states degrade / repair stochastically
     """
 

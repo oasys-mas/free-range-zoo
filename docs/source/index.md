@@ -5,32 +5,34 @@ lastpage:
 ---
 
 ```{toctree}
-:hidden:
 :caption: Introduction
-
-content/basic_usage
-content/environment_creation
-content/environment_tests
+:hidden:
+introduction/installation
+introduction/basic_usage
 ```
 
 ```{toctree}
+:caption: API
 :hidden:
+api/environments
+```
+
+```{toctree}
 :caption: Environments
-
-environments/cybersecurity
-environments/rideshare
-environments/wildfire
+:hidden:
+environments/wildfire/index
+environments/cybersecurity/index
+environments/rideshare/index
 ```
 
 ```{toctree}
-:hidden:
 :caption: Development
-
+:hidden:
 Github <https://github.com/oasys-mas/free-range-zoo>
 ```
 
 ```{project-logo} _static/img/darkgoat.png
-:alt: PettingZoo Logo
+:alt: free-range-zoo Logo
 ```
 
 ```{project-heading}
@@ -42,13 +44,13 @@ This repository provides a collection of PyTorch implementations for various rei
 and **open-frame** systems. These systems are designed to allow dynamic changes in the environment, such as the entry and exit of agents, tasks, and types, simulating more realistic and flexible scenarios. 
 The implementations are designed to facilitate experimentation, comparison, and the development of new techniques in RL and planning. 
 
- There are extensions for each environment to handle batching for updating the trajectories of multiples states simulataneously. Pettingzoo partially supports agent-open environments through its distinction between `agents` and `possible_agents`, but has no built-in support for task or frame openness.
+ There are extensions for each environment to handle batching for updating the trajectories of multiple states simulataneously. Pettingzoo partially supports agent-open environments through its distinction between `agents` and `possible_agents`, but has no built-in support for task or frame openness.
 
 # Core Research Applications
 All forms of openness should have the ability to be completely removed the from the environment. Allowing for testing with each form in complete isolatioAll forms of openness should have the ability to be completely removed 
 the from the environment. Allowing for testing with each form in complete isolation.
 
-- **agent openness**: Environments where agents can dynamically enter and leave, enabling ad-hoc teamwork and multi-agent scenarios with evolving participants.
+- **agent openness**: Environments where agents can dynamically enter and leave, enabling dynamic cooperation and multi-agent scenarios with evolving participants.
     - Environments:
         - `wildfire`: Agents can run out of suppressant and leave the environment, removing their contributions to existing fires. Agents must reason about their collaborators leaving, or new collaborators entering.
         - `cybersecurity`: Agents can lose access to the network, disallowing them from taking actions within the environment for a period of time. Agents must reason about how many collaborators are within the environment

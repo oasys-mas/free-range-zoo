@@ -13,7 +13,7 @@ has no built-in support for task or frame openness.
 All forms of openness should have the ability to be completely removed the from the environment. Allowing for testing with each form in complete isolatioAll forms of openness should have the ability to be completely removed 
 the from the environment. Allowing for testing with each form in complete isolation.
 
-- **agent openness**: Environments where agents can dynamically enter and leave, enabling ad-hoc teamwork and multi-agent scenarios with evolving participants.
+- **agent openness**: Environments where agents can dynamically enter and leave, enabling dynamic cooperation and multi-agent scenarios with evolving participants.
     - Environments:
         - `wildfire`: Agents can run out of suppressant and leave the environment, removing their contributions to existing fires. Agents must reason about their collaborators leaving, or new collaborators entering.
         - `cybersecurity`: Agents can lose access to the network, disallowing them from taking actions within the environment for a period of time. Agents must reason about how many collaborators are within the environment
@@ -111,10 +111,10 @@ git clone git@github.com:oasys-mas/free-range-zoo.git
 cd free-range-zoo
 
 # Install dependency packages
-poetry install --with models
+poetry install [[--with models]] # NOTE: `--with model` option is intended only for internal OASYS-MAS use.
 
 # Verify that CUDA drivers are present and working
-# Note: Only necessary if you are expecting to run on CUDA / GPU 
+# NOTE: Only necessary if you are expecting to run on CUDA / GPU
 python -c "import torch; print(torch.cuda.is_available())"
 ```
 

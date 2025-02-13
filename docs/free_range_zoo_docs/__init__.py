@@ -42,7 +42,7 @@ def watch():
             makefile_dir = root
             break
 
-    subprocess.run(["sphinx-autobuild", "-b", "html", "./source", "_build"], cwd=makefile_dir)
+    subprocess.run(["sphinx-autobuild", "-b", "html", "./source", "build"], cwd=makefile_dir)
 
 
 def test():
