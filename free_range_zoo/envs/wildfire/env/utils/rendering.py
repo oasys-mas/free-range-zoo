@@ -24,7 +24,7 @@ def render_image(path, cell_size: int):
     Loads an image from the local 'assets' folder,
     scales it to fit a given cell_size.
     """
-    image = pygame.image.load(os.path.join(this_dir, "assets", path))
+    image = pygame.image.load(os.path.join(this_dir, "..", "assets", path))
     return pygame.transform.scale(image, (cell_size, cell_size))
 
 

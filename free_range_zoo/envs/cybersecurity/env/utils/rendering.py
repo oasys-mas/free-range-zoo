@@ -195,17 +195,17 @@ def render(path: str,
 
     # Try loading images
     try:
-        node_img_exploited = render_image(os.path.join("assets", "node_exploited.png"), 40)
-        node_img_patched = render_image(os.path.join("assets", "node_patched.png"), 40)
-        node_img_normal = render_image(os.path.join("assets", "node_normal.png"), 40)
+        node_img_exploited = render_image(os.path.join(this_dir, "..", "assets", "node_exploited.png"), 40)
+        node_img_patched = render_image(os.path.join(this_dir, "..", "assets", "node_patched.png"), 40)
+        node_img_normal = render_image(os.path.join(this_dir, "..", "assets", "node_normal.png"), 40)
     except:
         node_img_exploited = None
         node_img_patched = None
         node_img_normal = None
 
     try:
-        attacker_img = render_image(os.path.join(this_dir, "assets", "attacker.png"), 40)
-        defender_img = render_image(os.path.join(this_dir, "assets", "defender.png"), 40)
+        attacker_img = render_image(os.path.join(this_dir, this_dir, "..", "assets", "attacker.png"), 40)
+        defender_img = render_image(os.path.join(this_dir, this_dir, "..", "assets", "defender.png"), 40)
     except:
         attacker_img = None
         defender_img = None
