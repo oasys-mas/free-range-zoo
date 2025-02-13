@@ -151,9 +151,6 @@ class DefenderConfiguration(Configuration):
         mitigation: torch.FloatTensor - mitigation values for each defending agent
         persist_probs: torch.FloatTensor - Probability for each defending agent to leave the environment
         return_probs: torch.FloatTensor - Probability for each defending agent to return to the environment
-
-        sigma_away: float - Reduction of noise given to a defenders monitor action when noop for observing all nodes
-        sigma_at: float - Reduction of noise given to a defenders monitor action when they are at a specific node
     """
 
     initial_location: torch.IntTensor
@@ -162,9 +159,6 @@ class DefenderConfiguration(Configuration):
     mitigation: torch.FloatTensor
     persist_probs: torch.FloatTensor
     return_probs: torch.FloatTensor
-
-    sigma_away: float
-    sigma_at: float
 
     @functools.cached_property
     def num_defenders(self) -> int:
@@ -204,11 +198,7 @@ class NetworkConfiguration(Configuration):
 
         temperature: float - Temperature for the softmax function for the danger score
 
-        danger_chi: int - Parameter for defining how much the danger score affects the speed at which the node gets exploited
-        lambda_multiplier: float - Parameter for determining how much the exploited state of other subnetworks affects another
-
         initial_state: torch.IntTensor - Subnetwork-parallel array representing the exploitment state of each subnetwork
-        latency: torch.FloatTensor - Subnetwork-parallel array representing the latency of each node
         adj_matrix: torch.BoolTensor - 2D array representing adjacency matrix for all subnetwork connections
     """
 
@@ -218,11 +208,7 @@ class NetworkConfiguration(Configuration):
 
     temperature: float
 
-    danger_chi: int
-    lambda_multiplier: float
-
     initial_state: torch.IntTensor
-    latency: torch.FloatTensor
     adj_matrix: torch.BoolTensor
 
     @functools.cached_property
@@ -244,8 +230,6 @@ class NetworkConfiguration(Configuration):
         """Validate the configuration."""
         if self.initial_state.size(0) != self.num_nodes:
             raise ValueError("The size of initial state must match the number of nodes.")
-        if self.latency.size(0) != self.num_nodes:
-            raise ValueError("The size of latency must match the number of nodes.")
         if self.adj_matrix.size(0) != self.adj_matrix.size(1):
             raise ValueError("The adjacency matrix must be square.")
 

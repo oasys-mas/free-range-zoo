@@ -13,7 +13,6 @@ def non_stochastic() -> WildfireConfiguration:
     Returns:
         WildfireConfiguration: The configuration.
     """
-
     reward_configuration = RewardConfiguration(
         fire_rewards=torch.tensor([[0, 0, 0], [20.0, 50.0, 20.0]], dtype=torch.float32),
         bad_attack_penalty=-100.0,

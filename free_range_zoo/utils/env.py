@@ -138,10 +138,12 @@ class BatchedAECEnv(ABC, AECEnv):
         self.agent_task_count = torch.empty((self.num_agents, self.parallel_envs), dtype=torch.int32, device=self.device)
 
     @torch.no_grad()
-    def reset_batches(self,
-                      batch_indices: List[int],
-                      seed: Optional[List[int]] = None,
-                      options: Optional[Dict[str, Any]] = None) -> None:
+    def reset_batches(
+        self,
+        batch_indices: List[int],
+        seed: Optional[List[int]] = None,
+        options: Optional[Dict[str, Any]] = None,
+    ) -> None:
         """
         Reset a batch of environments.
 

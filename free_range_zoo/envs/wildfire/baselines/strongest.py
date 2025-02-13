@@ -23,7 +23,7 @@ class StrongestBaseline(Agent):
         Returns:
             List[List[int]] - List of actions, one for each parallel environment.
         """
-        return action_space.sample_nested()
+        return self.actions
 
     def observe(self, observation: Dict[str, Any]) -> None:
         """

@@ -5,6 +5,7 @@ import sys
 sys.path.append('.')
 
 import argparse
+import logging
 import torch
 import cProfile
 from pstats import Stats
@@ -17,6 +18,8 @@ def main():
     """Profile the cybersecurity environment."""
     args = parse_args()
     device = torch.device('cuda' if args.cuda and torch.cuda.is_available() else 'cpu')
+
+    setup_logger(logger)
 
     match args.environment:
         case 'wildfire':
@@ -55,7 +58,7 @@ def main():
 
     current_step = 1
     while not torch.all(env.finished):
-        action = {}
+        agent_actions = {}
 
         for agent in env.agents:
             profiler.enable()
@@ -63,15 +66,13 @@ def main():
             profiler.disable()
 
             actions = env.action_space(agent).sample_nested()
-            actions = torch.tensor(actions, device=device, dtype=torch.int32)
-
-            action[agent] = actions
+            agent_actions[agent] = torch.tensor(actions, device=device, dtype=torch.int32)
 
         profiler.enable()
-        observation, reward, term, trunc, info = env.step(action)
+        observation, reward, term, trunc, info = env.step(agent_actions)
         profiler.disable()
 
-        print(f'Completed step {current_step}')
+        logger.info(f'Completed step {current_step}')
         current_step += 1
 
     profiler.create_stats()
@@ -113,6 +114,25 @@ def parse_args() -> argparse.Namespace:
 
     return parser.parse_args()
 
+
+def setup_logger(logger: logging.Logger):
+    """
+    Set up the loggers for the experiment.
+
+    Args:
+        logger: logging.Logger - The logger to set up.
+        output: str - The path to the results file.
+    """
+    log_format = logging.Formatter("[%(asctime)s] [%(levelname)s] [%(name)s] [%(filename)s:%(lineno)03d] %(message)s")
+
+    logger.setLevel(logging.INFO)
+
+    stream_handler = logging.StreamHandler()
+    stream_handler.setFormatter(log_format)
+    logger.addHandler(stream_handler)
+
+
+logger = logging.getLogger('main')
 
 if __name__ == '__main__':
     main()

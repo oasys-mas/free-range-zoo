@@ -27,8 +27,6 @@ def non_stochastic():
         mitigation=torch.tensor([1.0, 1.0], dtype=torch.float32),
         persist_probs=torch.tensor([1.0, 1.0], dtype=torch.float32),
         return_probs=torch.tensor([1.0, 1.0], dtype=torch.float32),
-        sigma_away=0.1,
-        sigma_at=0.1,
     )
 
     network_config = NetworkConfiguration(
@@ -36,10 +34,7 @@ def non_stochastic():
         vulnerable_states=1,
         exploited_states=3,
         temperature=1.0,
-        danger_chi=1.0,
-        lambda_multiplier=0.02,
         initial_state=torch.tensor([0, 0, 0], dtype=torch.int32),
-        latency=torch.tensor([0.1, 0.1, 0.1], dtype=torch.float32),
         adj_matrix=torch.tensor([
             [0, 1, 1],
             [1, 0, 1],

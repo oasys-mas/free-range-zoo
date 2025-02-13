@@ -134,7 +134,8 @@ class RandomGenerator:
                     output[index] = torch.rand((self.buffer_size, events, *shape), device=self.device, generator=self.generator)
                     self.generator_states[index] = self.generator.get_state()
                 output = output.transpose(0, 1)
-                output = output.transpose(1, 2)
+
+            output = output.transpose(1, 2)
 
             self.buffers[buffer_key] = output
             self.buffer_count[buffer_key] = 0
@@ -143,3 +144,33 @@ class RandomGenerator:
         output = self.buffers[buffer_key][self.buffer_count[buffer_key]]
         self.buffer_count[buffer_key] += 1
         return output
+
+    def state_dict(self) -> dict:
+        """Save the state of the random generator."""
+        return {
+            'parallel_envs': self.parallel_envs,
+            'buffer_size': self.buffer_size,
+            'single_seeding': self.single_seeding,
+            'device': str(self.device),
+            'generator_state': self.generator.get_state(),
+            'seeds': self.seeds.cpu() if self.seeds.is_cuda else self.seeds.clone(),
+            'generator_states': self.generator_states.clone(),
+            'buffer_count': self.buffer_count,
+            'buffers': self.buffers,
+            'has_been_seeded': self.has_been_seeded
+        }
+
+    def load_state_dict(self, state: dict) -> None:
+        """Load the state of the random generator."""
+        self.parallel_envs = state['parallel_envs']
+        self.buffer_size = state['buffer_size']
+        self.single_seeding = state['single_seeding']
+        self.device = torch.device(state['device'])
+
+        self.generator.set_state(state['generator_state'])
+
+        self.seeds = state['seeds'].to(self.device)
+        self.generator_states = state['generator_states'].clone()
+        self.buffer_count = state['buffer_count']
+        self.buffers = state['buffers']
+        self.has_been_seeded = state['has_been_seeded']
