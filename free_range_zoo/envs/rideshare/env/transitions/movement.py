@@ -49,7 +49,6 @@ class MovementTransition(nn.Module):
         else:
             self.register_buffer('directions', cardinal_directions)
 
-
     @torch.no_grad()
     def distance(self, starts: torch.IntTensor, goals: torch.IntTensor) -> torch.IntTensor:
         """
@@ -80,8 +79,6 @@ class MovementTransition(nn.Module):
                 distances = distances.abs().sum(dim=2)
 
         return best_moves, distances
-
-    
 
     @torch.no_grad()
     def forward(self, state: RideshareState, mask: torch.BoolTensor, vectors: torch.IntTensor) -> RideshareState:
