@@ -281,7 +281,7 @@ class raw_env(BatchedAECEnv):
             # Distribute movement penalties
             distance_rewards = distance[:, agent_index] * self.reward_config.move_cost
             if self.reward_config.use_variable_move_cost:
-                distance_rewards /= accepted
+                distance_rewards /= accepted + 1
             rewards[agent_name] += distance_rewards
 
             # Distribute the global rewards
