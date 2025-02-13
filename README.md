@@ -111,7 +111,7 @@ git clone git@github.com:oasys-mas/free-range-zoo.git
 cd free-range-zoo
 
 # Install dependency packages
-poetry install [[--with models]] # NOTE: `--with model` option is intended only for internal OASYS-MAS use.
+poetry install [[--with oasys]] # NOTE: `--with oasys` option is intended only for internal OASYS-MAS use.
 
 # Verify that CUDA drivers are present and working
 # NOTE: Only necessary if you are expecting to run on CUDA / GPU

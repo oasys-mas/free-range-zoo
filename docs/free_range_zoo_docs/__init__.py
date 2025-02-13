@@ -43,9 +43,3 @@ def watch():
             break
 
     subprocess.run(["sphinx-autobuild", "-b", "html", "./source", "build"], cwd=makefile_dir)
-
-
-def test():
-    """Test the documentation."""
-    # subprocess.run(["pytest", ".", "--markdown-docs", "-m", "markdown-docs"])
-    raise NotImplementedError("This function is not implemented.")

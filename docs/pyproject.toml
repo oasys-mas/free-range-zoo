@@ -1,27 +1,29 @@
-[tool.poetry]
+[project]
 name = "free-range-zoo-docs"
 version = "0.1.0"
-description = "Sphinx documentation package for free-range-zoo"
-authors = ["Daniel Redder <daniel.redder@uga.edu>", "C4 Patino <cpatino2@huskers.unl.edu>"]
-license = "GPL-3.0-or-later"
+description = ""
+authors = [
+    { name = "C4 Patino", email = "cpatino2@huskers.unl.edu" },
+    { name = "Daniel Redder", email = "daniel.redder@uga.edu" }
+]
+license = {text = "AGPL-3.0-or-later"}
+readme = "README.md"
+
+requires-python = "^3.10.0"
+dependencies = [
+	"furo @ git+https://github.com/oasys-mas/Celshast.git",
+	"myst-parser (>=4.0.1,<5.0.0)",
+	"sphinx (>=7.4.7,<8.0.0)",
+	"sphinx-autobuild (>=2024.10.3,<2025.0.0)",
+	"sphinx-github-changelog (>=1.4.0,<2.0.0)",
+]
 
 [tool.poetry.scripts]
 gen = "free_range_zoo_docs:gen"
 sync = "free_range_zoo_docs:sync"
 build = "free_range_zoo_docs:build"
 watch = "free_range_zoo_docs:watch"
-test = "free_range_zoo_docs:test"
-
-[tool.poetry.dependencies]
-python = "^3.10"
-sphinx = "^7.4.7"
-sphinx-autobuild = "^2024.10.3"
-myst-parser = "^4.0.0"
-sphinx-github-changelog = "^1.4.0"
-furo = { git = "https://github.com/oasys-mas/Celshast#egg=furo" }
-pytest = "^8.3.3"
-pytest-markdown-docs = "^0.6.0"
 
 [build-system]
-requires = ["poetry-core"]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
 build-backend = "poetry.core.masonry.api"

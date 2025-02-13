@@ -1,60 +1,55 @@
-[tool.poetry]
+[project]
 name = "free-range-zoo"
 version = "0.1.11"
 description = ""
-authors = ["C4 Patino <cpatino2@huskers.unl.edu>", "Daniel Redder <daniel.redder@uga.edu>", "Alireza Saleh Abadi <asalehabadi2@huskers.unl.edu>"]
-license = "AGPL-3.0-or-later"
+authors = [
+    { name = "C4 Patino", email = "cpatino2@huskers.unl.edu" },
+    { name = "Daniel Redder", email = "daniel.redder@uga.edu" },
+    { name = "Alireza Saleh Abadi", email = "asalehabadi2@huskers.unl.edu" }
+]
+license = {text = "AGPL-3.0-or-later"}
 readme = "README.md"
 
-[tool.poetry.dependencies]
-python = "^3.12"
-gymnasium = "1.0.0a2"
-pettingzoo = "^1.24.3"
-torch-geometric = "^2.5.3"
-supersuit = "^3.9.3"
-tensordict = "^0.5.0"
-torchaudio = "^2.4.0"
-torchvision = "^0.19.0"
-xxhash = "^3.5.0"
-yapf = "^0.40.2"
-networkx = "^3.4.2"
-free-range-rust = "^0.1.2"
-torchviz = "^0.0.3"
-graphviz = "^0.20.3"
-pygame = "^2.6.1"
-pandas = "^2.2.3"
-imageio = "^2.37.0"
-
-[tool.poetry.group.scripts.dependencies]
-jupyter = "^1.0.0"
-neptune = "^1.11.1"
-neptune-optuna = "^1.3.0"
-optuna = "^4.0.0"
-termcolor = "^2.4.0"
-pygame = "^2.6.0"
-rich = "^13.9.1"
-
-[tool.poetry.group.docs.dependencies]
-free-range-zoo-docs = { path = "docs", develop = true }
+requires-python = "^3.12.0"
+dependencies = [
+    "free-range-rust (>=0.1.8,<0.2.0)",
+    "graphviz (>=0.20.3,<0.21.0)",
+    "gymnasium (>=1.0.0,<2.0.0)",
+    "imageio (>=2.37.0,<3.0.0)",
+    "jupyter (>=1.1.1,<2.0.0)",
+    "neptune (>=1.13.0,<2.0.0)",
+    "networkx (>=3.4.2,<4.0.0)",
+    "optuna (>=4.2.1,<5.0.0)",
+    "pandas (>=2.2.3,<3.0.0)",
+    "pettingzoo (>=1.24.3,<2.0.0)",
+    "pygame (>=2.6.1,<3.0.0)",
+    "pygame (>=2.6.1,<3.0.0)",
+    "rich (>=13.9.4,<14.0.0)",
+    "supersuit (>=3.9.3,<4.0.0)",
+    "tensordict (>=0.7.0,<0.8.0)",
+    "termcolor (>=2.5.0,<3.0.0)",
+    "torch-geometric (>=2.6.1,<3.0.0)",
+    "torchaudio (>=2.6.0,<3.0.0)",
+    "torchvision (>=0.21.0,<0.22.0)",
+    "torchviz (>=0.0.3,<0.0.4)",
+    "xxhash (>=3.5.0,<4.0.0)",
+]
 
 [tool.poetry.group.oasys]
 optional = true
 
 [tool.poetry.group.oasys.dependencies]
-slurm_tuner = { git = "https://github.com/C4theBomb/slurm-tuner" }
-planning = { path = "models/planning", develop = true }
+free-range-zoo-docs = { path = "docs", develop = true }
 heterographs = { path = "models/heterographs", develop = true }
+planning = { path = "models/planning", develop = true }
+slurm_tuner = { git = "https://github.com/C4theBomb/slurm-tuner" }
 
-[tool.pycodestyle]
-max-line-length = 130
-ignore = ["E402", "W503"]
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
 
 [tool.flake8]
 max-complexity = 25
 
 [tool.yapf]
 COLUMN_LIMIT = 130
-
-[build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
