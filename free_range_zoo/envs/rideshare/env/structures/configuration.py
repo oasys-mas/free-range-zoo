@@ -148,6 +148,11 @@ class RideshareConfiguration(Configuration):
             self.agent_config.use_fast_travel,
         )
 
+    @functools.cached_property
+    def max_fare(self) -> int:
+        """Get the maximum fare out of passengers."""
+        return self.passenger_config.schedule[:, 6].max().item()
+
     def validate(self) -> bool:
         """Validate the configuration."""
         super().validate()

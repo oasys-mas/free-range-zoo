@@ -95,6 +95,7 @@ class raw_env(BatchedAECEnv):
             self.max_x,
             self.agent_config.num_agents,
             self.agent_config.num_agents,
+            self.config.max_fare,
             self.max_steps,
         ])
 
@@ -325,7 +326,7 @@ class raw_env(BatchedAECEnv):
         Observations consist of the following:
             - Agent observation format: (batch, 1, (y, x, num_accepted, num_riding))
             - Others observation format: (batch, agents - 1, (y, x, num_accepted, num_riding))
-            - Passenger observation format: (batch, passengers, (y, x, y_dest, x_dest, accepted_by, riding_by, entered_step))
+            - Passenger observation format: (batch, tasks, (y, x, y_dest, x_dest, accepted_by, riding_by, fare, entered_step))
         """
         self.environment_task_count = self._state.passengers[:, 0].bincount(minlength=self.parallel_envs)
 
@@ -338,7 +339,9 @@ class raw_env(BatchedAECEnv):
         riding = self._state.passengers[:, [6]] == 2
         riding_info = torch.where(riding, self._state.passengers[:, [7]], -100)
 
-        task_observations = torch.cat([task_positional_info, accepted_info, riding_info, entered_info], dim=1)
+        fare_info = self._state.passengers[:, [5]]
+
+        task_observations = torch.cat([task_positional_info, accepted_info, riding_info, fare_info, entered_info], dim=1)
         self.task_store = torch.nested.as_nested_tensor(task_observations.split(self.environment_task_count.tolist()))
 
         # Aggregate all of the informations for the agent observations

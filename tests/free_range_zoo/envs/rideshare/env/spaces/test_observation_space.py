@@ -158,7 +158,7 @@ class TestBuildSinglePassengerObservationSpace(TestCaching, unittest.TestCase):
     def setUp(self) -> None:
         self.cache_clear()
 
-        self.high = (10, 5, 10, 5, 2, 2, 5)
+        self.high = (10, 5, 10, 5, 2, 2, 30, 5)
         self.initial_args = (self.high, 3)
         self.different_args = (self.high, 4)
 

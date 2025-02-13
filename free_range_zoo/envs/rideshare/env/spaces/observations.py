@@ -77,7 +77,7 @@ def build_single_passenger_observation_space(high: Tuple[int], num_tasks: int):
     Build the observation space for the fire.
 
     The passenger observation space is defined as follows:
-        - If the task observation space includes the (y, x, y_dest, x_dest, accepted_by, riding_by, entered_step)
+        - If the task observation space includes the (y, x, y_dest, x_dest, accepted_by, riding_by, fare, entered_step)
 
     Args:
         high: Tuple[int] - The high values for the passenger observation space (follows defined structure above)
