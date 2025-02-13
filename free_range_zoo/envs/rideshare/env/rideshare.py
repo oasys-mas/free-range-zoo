@@ -272,6 +272,9 @@ class raw_env(BatchedAECEnv):
             accepted = self._state.passengers[mask][:, 0].bincount(minlength=self.parallel_envs)
             rewards[agent_name] += torch.where(accepted > self.agent_config.pool_limit, self.reward_config.pool_limit_cost, 0)
 
+            # Distribute noop penalty
+            rewards[agent_name] += noop[:, agent_index].int() * self.reward_config.noop_cost
+
             # Distribute accept costs
             rewards[agent_name] += accept[:, agent_index].int() * self.reward_config.accept_cost
 
