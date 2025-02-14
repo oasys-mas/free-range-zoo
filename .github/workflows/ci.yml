@@ -33,7 +33,7 @@ jobs:
       (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
       (github.event_name == 'pull_request' && github.event.pull_request.merged == true && github.ref == 'refs/heads/main')
     uses: oasys-mas/free-range-zoo/.github/workflows/increment.yml@main
-  # docs:
-  #   needs: [test, test-docs]
-  #   uses: oasys-mas/free-range-zoo/.github/workflows/docs.yml@main
-  #   secrets: inherit
+  docs:
+    needs: [test, test-docs]
+    uses: oasys-mas/free-range-zoo/.github/workflows/docs.yml@main
+    secrets: inherit
