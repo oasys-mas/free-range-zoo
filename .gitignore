@@ -1,18 +1,25 @@
-.envrc
-*.pth
-
 my_secrets.py
-.neptune
 **/plotting/*-paper*
 *.csv
 *.gif
 *.pkl
 *.prof
+*.pth
 
+.neptune
 unittest_logs
 
-# Created by https://www.toptal.com/developers/gitignore/api/virtualenv,python,visualstudiocode
-# Edit at https://www.toptal.com/developers/gitignore?templates=virtualenv,python,visualstudiocode
+#exclude rendering gifs
+!free_range_zoo/envs/wildfire/env/utils/assets/rendering.gif
+!free_range_zoo/envs/cybersecurity/env/utils/assets/rendering.gif
+!free_range_zoo/envs/rideshare/env/utils/assets/rendering.gif
+
+# Created by https://www.toptal.com/developers/gitignore/api/visualstudiocode,vim,direnv,virtualenv,python
+# Edit at https://www.toptal.com/developers/gitignore?templates=visualstudiocode,vim,direnv,virtualenv,python
+
+### direnv ###
+.direnv
+.envrc
 
 ### Python ###
 # Byte-compiled / optimized / DLL files
@@ -22,15 +29,6 @@ __pycache__/
 
 # C extensions
 *.so
-
-*.pdf 
-*.aux
-*.fdb_latexmk
-*.fls
-*.tar.gz
-*.synctex.gz
-
-docs/environments/*
 
 # Distribution / packaging
 .Python
@@ -146,8 +144,13 @@ celerybeat.pid
 *.sage.py
 
 # Environments
-.venv/
+.env
+.venv
+env/
 venv/
+ENV/
+env.bak/
+venv.bak/
 
 # Spyder project settings
 .spyderproject
@@ -190,6 +193,27 @@ poetry.toml
 # LSP config files
 pyrightconfig.json
 
+### Vim ###
+# Swap
+[._]*.s[a-v][a-z]
+!*.svg  # comment out if you don't need vector files
+[._]*.sw[a-p]
+[._]s[a-rt-v][a-z]
+[._]ss[a-gi-z]
+[._]sw[a-p]
+
+# Session
+Session.vim
+Sessionx.vim
+
+# Temporary
+.netrwhist
+*~
+# Auto-generated tag files
+tags
+# Persistent undo
+[._]*.un~
+
 ### VirtualEnv ###
 # Virtualenv
 # http://iamzed.com/2009/05/07/a-primer-on-virtualenv/
@@ -221,11 +245,5 @@ pip-selfcheck.json
 .history
 .ionide
 
-# End of https://www.toptal.com/developers/gitignore/api/virtualenv,python,visualstudiocode
+# End of https://www.toptal.com/developers/gitignore/api/visualstudiocode,vim,direnv,virtualenv,python
 
-.vscode/*
-
-#exclude rendering gifs
-!free_range_zoo/envs/wildfire/env/utils/assets/rendering.gif
-!free_range_zoo/envs/cybersecurity/env/utils/assets/rendering.gif
-!free_range_zoo/envs/rideshare/env/utils/assets/rendering.gif
