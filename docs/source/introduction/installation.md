@@ -90,9 +90,6 @@ Go to [Rust Install](https://www.rust-lang.org/tools/install) select your os, an
 > `pip install poetry`: Install poetry, the dependency tool we use.
 > `poetry install`: Install all dependencies with poetry
 
-Sometimes two packages give issues here `neptune` and `neptune-optuna`. If these fail to install manually install them
-with pip `pip install neptune neptune-optuna` then rerun the poetry install. 
-
 ## Test
 
 > `python -m unittest -b`: To see if everything is working try running our unit tests. This will build a local copy of 

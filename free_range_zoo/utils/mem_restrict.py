@@ -9,6 +9,7 @@ logger = logging.getLogger('free_range_zoo')
 def limit_memory(memory_limit: float) -> None:
     """
     Limit memory usage to the given limit.
+    Does not function on Windows.
 
     Args:
         memory_limit: float - percentage of memory to be used
