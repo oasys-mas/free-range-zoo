@@ -60,7 +60,7 @@ class FirstInFirstOutBaseline(Agent):
 
             #dropoff
             if riding[batch][self.actions[batch, 0]]:
-                self.actions[batch, 0] = 2
+                self.actions[batch, 1] = 2
 
             #pickup
             elif accepted[batch][self.actions[batch, 0]]:

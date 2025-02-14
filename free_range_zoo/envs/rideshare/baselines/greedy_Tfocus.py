@@ -84,11 +84,9 @@ class GreedyTaskFocus(Agent):
 
             self.actions[batch, 0] = argmin_store[batch].argmin(dim=0)
 
-            print(argmin_store[batch][self.actions[batch, 0]])
-
             #dropoff
             if riding[batch][self.actions[batch, 0]]:
-                self.actions[batch, 0] = 2
+                self.actions[batch, 1] = 2
 
             #pickup
             elif accepted[batch][self.actions[batch, 0]]:
