@@ -1,0 +1,39 @@
+name: ci
+
+on:
+  push:
+    branches: ["**"]
+    tags: ["v*.*.*"]
+  pull_request:
+    types: [opened, reopened, synchronize]
+    branches: ["*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "ci-${{ github.ref }}"
+  cancel-in-progress: true
+
+jobs:
+  format:
+    uses: oasys-mas/free-range-zoo/.github/workflows/format.yml@main
+  test:
+    uses: oasys-mas/free-range-zoo/.github/workflows/test.yml@main
+    secrets: inherit
+  test-docs:
+    uses: oasys-mas/free-range-zoo/.github/workflows/test-docs.yml@main
+    secrets: inherit
+  increment:
+    needs: [format, test]
+    if: >
+      (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
+      (github.event_name == 'pull_request' && github.event.pull_request.merged == true && github.ref == 'refs/heads/main')
+    uses: oasys-mas/free-range-zoo/.github/workflows/increment.yml@main
+  # docs:
+  #   needs: [test, test-docs]
+  #   uses: oasys-mas/free-range-zoo/.github/workflows/docs.yml@main
+  #   secrets: inherit

@@ -1,0 +1,25 @@
+name: test-docs
+
+on:
+  workflow_call:
+    secrets:
+      CI_TOKEN:
+        required: true
+
+jobs:
+  docs:
+    timeout-minutes: 15
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          token: ${{ secrets.CI_TOKEN }}
+          ref: ${{ github.ref }}
+      - name: Set up environment
+        uses: ./.github/actions/setup-env
+      - name: Install dependencies
+        run: poetry install --with oasys
+      - name: Run tests for building the documentation
+        run: (source $(poetry env info --path)/bin/activate && cd ./docs && python -m unittest -b)
