@@ -33,12 +33,8 @@ dependencies = [
     "xxhash (>=3.5.0,<4.0.0)",
 ]
 
-[tool.poetry.group.oasys]
-optional = true
-
 [tool.poetry.group.oasys.dependencies]
 free-range-zoo-docs = { path = "docs", develop = true }
-slurm_tuner = { git = "https://github.com/C4theBomb/slurm-tuner" }
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
