@@ -17,9 +17,7 @@ dependencies = [
     "gymnasium (>=1.0.0,<2.0.0)",
     "imageio (>=2.37.0,<3.0.0)",
     "jupyter (>=1.1.1,<2.0.0)",
-    "neptune (>=1.13.0,<2.0.0)",
     "networkx (>=3.4.2,<4.0.0)",
-    "optuna (>=4.2.1,<5.0.0)",
     "pandas (>=2.2.3,<3.0.0)",
     "pettingzoo (>=1.24.3,<2.0.0)",
     "pygame (>=2.6.1,<3.0.0)",
@@ -40,9 +38,6 @@ optional = true
 
 [tool.poetry.group.oasys.dependencies]
 free-range-zoo-docs = { path = "docs", develop = true }
-heterographs = { path = "models/heterographs", develop = true }
-mohito = { path = "models/mohito", develop = true }
-planning = { path = "models/planning", develop = true }
 slurm_tuner = { git = "https://github.com/C4theBomb/slurm-tuner" }
 
 [build-system]
