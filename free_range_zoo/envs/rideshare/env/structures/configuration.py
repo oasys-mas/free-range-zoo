@@ -1,10 +1,13 @@
 """Configuration classes for the rideshare domain."""
-from typing import Tuple, Optional, Union, Dict
 from dataclasses import dataclass
+import functools
+import torch
 
 from free_range_zoo.utils.configuration import Configuration
-
-import torch
+from free_range_zoo.envs.rideshare.env.transitions.passenger_entry import PassengerEntryTransition
+from free_range_zoo.envs.rideshare.env.transitions.passenger_exit import PassengerExitTransition
+from free_range_zoo.envs.rideshare.env.transitions.passenger_state import PassengerStateTransition
+from free_range_zoo.envs.rideshare.env.transitions.movement import MovementTransition
 
 
 @dataclass
@@ -20,7 +23,6 @@ class RewardConfiguration(Configuration):
         accept_cost: torch.FloatTensor - Cost of accepting a passenger
         pool_limit_cost: torch.FloatTensor - Cost of exceeding the pool limit
 
-        use_no_pass_cost: torch.BoolTensor - Whether to use the "no passenger" cost
         use_variable_move_cost: torch.BoolTensor - Whether to use the variable move cost
         use_variable_pick_cost: torch.BoolTensor - Whether to use the variable pick cost
         use_waiting_costs: torch.BoolTensor - Whether to use waiting costs
@@ -31,66 +33,30 @@ class RewardConfiguration(Configuration):
         long_wait_cost: torch.FloatTensor - Cost of waiting for a passenger for a long time (added to wait cost)
     """
 
-    pick_cost: torch.FloatTensor
-    move_cost: torch.FloatTensor
-    drop_cost: torch.FloatTensor
-    noop_cost: torch.FloatTensor
-    accept_cost: torch.FloatTensor
-    pool_limit_cost: torch.FloatTensor
+    pick_cost: float
+    move_cost: float
+    drop_cost: float
+    noop_cost: float
+    accept_cost: float
+    pool_limit_cost: float
 
-    use_no_pass_cost: torch.BoolTensor
-    use_variable_move_cost: torch.BoolTensor
-    use_variable_pick_cost: torch.BoolTensor
-    use_waiting_costs: torch.BoolTensor
+    use_pooling_rewards: bool
+    use_variable_move_cost: bool
+    use_waiting_costs: bool
 
-    wait_limit: Tuple[int] = (5, 5, 10)
-    long_wait_time: int = 10
-    general_wait_cost: torch.FloatTensor = -.1
-    long_wait_cost: torch.FloatTensor = -.2
-
-    def validate(self):
-        """Validate the configuration."""
-        assert len(self.wait_limit) == 3, "Wait limit should have 3 elements"
-        assert all([wait_limit > 0 for wait_limit in self.wait_limit]), "All wait limits should be greater than 0"
-        assert self.long_wait_time > 0, "Long wait time should be greater than 0"
-
-        costs_to_check = [
-            self.pick_cost, self.move_cost, self.drop_cost, self.noop_cost, self.accept_cost, self.pool_limit_cost,
-            self.general_wait_cost, self.long_wait_cost
-        ]
-        assert all([
-            cost.shape == torch.Size([1]) if not isinstance(cost, Union[float, int]) else True for cost in costs_to_check
-        ]), "All costs should be tensors of shape [1] or []"
-
-        bools_to_check = [self.use_no_pass_cost, self.use_variable_move_cost, self.use_variable_pick_cost, self.use_waiting_costs]
-        assert all([flag.shape == torch.Size([1]) if not isinstance(flag, bool) else True
-                    for flag in bools_to_check]), "All bools should be tensors of shape [1] or []"
-
-
-@dataclass()
-class GridConfiguration(Configuration):
-    """
-    Grid settings for rideshare.
-
-    Attributes:
-        grid_height: int - Height of the grid
-        grid_width: int - Width of the grid
-        allow_diagonal: bool - Whether diagonal movement is allowed
-        fast_travel: bool - Whether time shifts differently for different agents (instantly move to destinations, but incur the same costs)
-    """
-
-    grid_height: int
-    grid_width: int
-    allow_diagonal: bool
-    fast_travel: bool
+    wait_limit: torch.IntTensor
+    long_wait_time: int
+    general_wait_cost: float
+    long_wait_cost: float
 
     def validate(self):
         """Validate the configuration."""
-        assert self.grid_height > 0, "Grid height must be greater than 0"
-        assert self.grid_width > 0, "Grid width must be greater than 0"
-
-        assert isinstance(self.allow_diagonal, bool), "Allow diagonal must be a boolean"
-        assert isinstance(self.fast_travel, bool), "Fast travel must be a boolean"
+        if len(self.wait_limit) != 3:
+            raise ValueError('Wait limit should have three elements.')
+        if not self.wait_limit.min() > 0:
+            raise ValueError('Wait limit elements should all be greater than 0.')
+        if not self.long_wait_time > 0:
+            raise ValueError('Long wait time should be greater than 0.')
 
 
 @dataclass
@@ -99,18 +65,18 @@ class PassengerConfiguration(Configuration):
     Task settings for rideshare.
 
     Attributes:
-        schedule: TensorDict - tensor dictionary keyed by either
-            (batch_index, timestep) of shape <#passengers, 5>
-            (timestep) of shape <#passengers, 5> #?where the schedule is duplicated across batches 
+        schedule: torch.IntTensor: tensor in the shape of <tasks, (timestep, batch, y, x, y_dest, x_dest, fare)>
+            where batch can be set to -1 to indicate a wildcard for all batches
     """
-    schedule: Dict[Union[int, Tuple[int, int]], torch.FloatTensor]
+
+    schedule: torch.IntTensor
 
     def validate(self):
         """Validate the configuration."""
-        assert all([len(schedule.shape) == 2
-                    for schedule in self.schedule.values()]), "All instances within a schedule should be 2D tensors"
-        assert all([schedule.shape[1] == 5 for schedule in self.schedule.values()
-                    ]), "All instances within a schedule should have 5 columns <start_x, start_y, end_x, end_y, fare>"
+        if len(self.schedule.shape) != 2:
+            raise ValueError("Schedule should be a 2D tensor")
+        if self.schedule.shape[-1] != 7:
+            raise ValueError("Schedule should have 7 elements in the last dimesion.")
 
 
 @dataclass()
@@ -119,52 +85,84 @@ class AgentConfiguration(Configuration):
     Agent settings for rideshare.
 
     Attributes:
-        num_agents: int - Number of agents
+        start_positions: torch.IntTensor - Starting positions of the agents
         pool_limit: int - Maximum number of passengers that can be in a car
-        start_positions: torch.IntTensor - Starting positions of the agents (if not specified then random)
-        driving_algorithm: str - Algorithm to use for driving (direct or A*)
+        use_diagonal_travel: bool - whether to enable diagonal travel for agents
+        use_fast_travel: bool - whether to enable fast travel for agents
     """
 
-    num_agents: int
+    start_positions: torch.IntTensor
     pool_limit: int
-    start_positions: Optional[torch.IntTensor] = None
-    driving_algorithm: Optional[str] = 'direct'
-    use_relative_distance: Optional[bool] = False
+    use_diagonal_travel: bool
+    use_fast_travel: bool
 
-    def validate(self):
+    @functools.cached_property
+    def num_agents(self) -> int:
+        """Return the number of agents within the configuration."""
+        return self.start_positions.shape[0]
+
+    def validate(self) -> bool:
         """Validate the configuration."""
-        assert self.num_agents > 0, "Number of agents must be greater than 0"
-        assert self.pool_limit > 0, "Pool limit must be greater than 0"
-        assert self.driving_algorithm in ['direct', 'A*'], "Driving algorithm must be either 'direct' or 'A*'"
-        assert isinstance(self.use_relative_distance, bool), "Use relative distance must be a boolean"
+        if self.pool_limit <= 0:
+            raise ValueError("Pool limit must be greater than 0")
 
-        if self.start_positions is not None:
-            assert len(
-                self.start_positions) == self.num_agents, "Number of start positions should be equal to the number of agents"
-            assert all([pos.shape == torch.Size([2])
-                        for pos in self.start_positions]), "All start positions should be tensors of shape [2]"
+        return True
 
 
 @dataclass()
-class RideShareConfiguration(Configuration):
+class RideshareConfiguration(Configuration):
     """
     Configuration settings for rideshare environment.
 
     Attributes:
-        grid_conf: GridConfiguration - Grid settings
-        passenger_conf: PassengerConfiguration - Passenger settings
-        agent_conf: AgentConfiguration - Agent settings
-        reward_conf: RewardConfiguration - Reward
+        grid_height: int - grid height for the rideshare environment space.
+        grid_width: int - grid width for the rideshare environment space.
+
+        agent_config: AgentConfiguration - Agent settings for the rideshare environment.
+        passenger_config: PassengerConfiguration - Passenger settings for the rideshare environment.
+        reward_config: RewardConfiguration - Reward configuration for the rideshare environment.
     """
 
-    grid_conf: GridConfiguration
-    passenger_conf: PassengerConfiguration
-    agent_conf: AgentConfiguration
-    reward_conf: RewardConfiguration
+    grid_height: int
+    grid_width: int
 
-    def validate(self):
+    agent_config: AgentConfiguration
+    passenger_config: PassengerConfiguration
+    reward_config: RewardConfiguration
+
+    def passenger_entry_transition(self, parallel_envs: int) -> PassengerEntryTransition:
+        """Get the passenger entry transition configured for the specific environment."""
+        return PassengerEntryTransition(self.passenger_config.schedule, parallel_envs)
+
+    def passenger_exit_transition(self, parallel_envs: int) -> PassengerExitTransition:
+        """Get the passenger exit transition configured for the specific environment."""
+        return PassengerExitTransition(parallel_envs)
+
+    def passenger_state_transition(self, parallel_envs: int) -> PassengerStateTransition:
+        """Get the passenger state transition configured for the specific environment."""
+        return PassengerStateTransition(self.agent_config.num_agents, parallel_envs)
+
+    def movement_transition(self, parallel_envs: int) -> PassengerStateTransition:
+        """Get the movement transition configured for the specific environment."""
+        return MovementTransition(
+            self.agent_config.num_agents,
+            parallel_envs,
+            self.agent_config.use_diagonal_travel,
+            self.agent_config.use_fast_travel,
+        )
+
+    @functools.cached_property
+    def max_fare(self) -> int:
+        """Get the maximum fare out of passengers."""
+        return self.passenger_config.schedule[:, 6].max().item()
+
+    def validate(self) -> bool:
         """Validate the configuration."""
-        self.grid_conf.validate()
-        self.passenger_conf.validate()
-        self.agent_conf.validate()
-        self.reward_conf.validate()
+        super().validate()
+
+        if self.grid_width < 1:
+            raise ValueError('grid_width should be greater than 0')
+        if self.grid_height < 1:
+            raise ValueError('grid_height should be greater than 0')
+
+        return True

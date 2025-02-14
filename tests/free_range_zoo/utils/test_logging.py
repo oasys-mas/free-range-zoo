@@ -43,7 +43,6 @@ class TestConfiguration(unittest.TestCase):
         # Confirm that reset logging is working
         for i in range(self.env.aec_env.parallel_envs):
             df = pd.read_csv(os.path.join('unittest_logs', f'{i}.csv'))
-            print(df)
             self.assertEqual(
                 len(df[(df.step == -1)]), 2, f'''Environment logs must include a row indicating a reset
                     \rExpected:\n\t{2}
