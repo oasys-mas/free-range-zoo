@@ -41,6 +41,7 @@ optional = true
 [tool.poetry.group.oasys.dependencies]
 free-range-zoo-docs = { path = "docs", develop = true }
 heterographs = { path = "models/heterographs", develop = true }
+mohito = { path = "models/mohito", develop = true }
 planning = { path = "models/planning", develop = true }
 slurm_tuner = { git = "https://github.com/C4theBomb/slurm-tuner" }
 
