@@ -134,14 +134,6 @@ python -c "import torch; print(torch.cuda.is_available())"
 
 [^1]: Primary Maintainers
 
-## Published Works
-
-Each paper's code is stored as a release. We maintain old configurations for experiments for these works in [experiments](experiments/) for comparison purposes, however
-with development changes we cannot guarantee complete backwards compatibility. For complete repoducibility, see each paper's respective release
-
-- [AAAI-2025](https://github.com/oasys-mas/free-range-zoo/releases/tag/AAAI-2025-1.0) - Note the parameters listed and parameters describe in our technical appendix
-    - [training scripts](experiments/mohito/)
-    - [plotting](notebooks/plotting/plotting_readme.md)
 
 ## Used By
 
