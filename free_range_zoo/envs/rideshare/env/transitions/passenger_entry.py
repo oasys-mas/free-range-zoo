@@ -60,8 +60,8 @@ class PassengerEntryTransition(nn.Module):
         task_store[:, 6] = 0  # Task state: unaccepted
         task_store[:, 7] = -1  # Driver association: None
         task_store[:, 8] = timesteps[task_store[:, 0]]  # Task entry timestep
-        task_store[:, 9] = -1  # Task accpeted timestep
-        task_store[:, 10] = -1  # Task dropped timestep
+        task_store[:, 9] = -1  # Task accepted timestep
+        task_store[:, 10] = -1  # Task picked timestep
 
         state.passengers = task_store if state.passengers is None else torch.cat([state.passengers, task_store], dim=0)
         state.passengers = state.passengers[torch.argsort(state.passengers[:, 0], stable=True)]
