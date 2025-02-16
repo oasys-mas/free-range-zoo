@@ -20,7 +20,9 @@ concurrency:
 
 jobs:
   format:
-    uses: oasys-mas/free-range-zoo/.github/workflows/format.yml@main
+    uses: c4patino/actions/.github/workflows/format.yml@main
+    with:
+      language: python
   test:
     uses: oasys-mas/free-range-zoo/.github/workflows/test.yml@main
     secrets: inherit
@@ -32,8 +34,10 @@ jobs:
     if: >
       (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
       (github.event_name == 'pull_request' && github.event.pull_request.merged == true && github.ref == 'refs/heads/main')
-    uses: oasys-mas/free-range-zoo/.github/workflows/increment.yml@main
-  docs:
-    needs: [test, test-docs]
-    uses: oasys-mas/free-range-zoo/.github/workflows/docs.yml@main
-    secrets: inherit
+    uses: c4patino/actions/.github/workflows/increment.yml@main
+    with:
+      language: python
+  # docs:
+  #   needs: [test, test-docs]
+  #   uses: ./.github/workflows/docs.yml
+  #   secrets: inherit

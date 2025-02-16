@@ -11,15 +11,16 @@ jobs:
     timeout-minutes: 15
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
+      - name: checkout code
         uses: actions/checkout@v4
         with:
           submodules: recursive
           token: ${{ secrets.CI_TOKEN }}
-          ref: ${{ github.ref }}
-      - name: Set up environment
-        uses: ./.github/actions/setup-env
-      - name: Install dependencies
-        run: poetry install --with oasys
-      - name: Run tests for building the documentation
-        run: (source $(poetry env info --path)/bin/activate && cd ./docs && python -m unittest -b)
+      - name: set up environment
+        uses: c4patino/actions/.github/actions/setup-python@main
+        with:
+          language: python
+      - name: install dependencies
+        run: poetry install
+      - name: run documentation tests
+        run: (eval $(poetry env activate) && cd ./docs && python -m unittest -b)
