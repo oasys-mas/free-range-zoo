@@ -18,8 +18,6 @@ jobs:
           token: ${{ secrets.CI_TOKEN }}
       - name: set up environment
         uses: c4patino/actions/.github/actions/setup-python@main
-        with:
-          language: python
       - name: install dependencies
         run: poetry install
       - name: run documentation tests

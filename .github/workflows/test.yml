@@ -35,7 +35,7 @@ jobs:
         - /nix:/nix
     steps:
       - name: Update container
-        run: apt update && apt upgrade -y && apt install -y git make curl wget build-essential
+        run: apt update && apt upgrade -y && apt install -y git make curl wget build-essential libssl-dev pkg-config cmake
       - name: Checkout code
         uses: actions/checkout@v4
         with:
@@ -43,8 +43,8 @@ jobs:
           token: ${{ secrets.CI_TOKEN }}
       - name: set up environment
         uses: c4patino/actions/.github/actions/setup-python@main
-        with:
-          language: python
+      - name: set up environment
+        uses: c4patino/actions/.github/actions/setup-rust@main
       - name: install dependencies
         run: poetry install
       - name: run tests
