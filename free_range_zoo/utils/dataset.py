@@ -1,7 +1,6 @@
 """Dataset class for generating environment configurations and splitting configs into training, validation, and test sets."""
 from typing import List, Callable, Dict, Any, Optional
 import torch
-import math
 import itertools
 import copy
 
