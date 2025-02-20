@@ -79,6 +79,27 @@ class ConfigurationDataset:
         self.val_seed = val_seed
         self.test_seed = test_seed
 
+        self.train_iterator = self._train_generator()
+
+    @torch.no_grad()
+    def train(self):
+        """Return the next configuration instance from the infinite train dataset."""
+        return next(self.train_iterator)
+
+    @torch.no_grad()
+    def val(self):
+        """Return an iterator over the validation dataset."""
+        generator = torch.Generator().manual_seed(self.val_seed)
+        for data_item in self.val_data:
+            yield self._apply_transforms(_deep_clone(data_item), generator)
+
+    @torch.no_grad()
+    def test(self):
+        """Return an iterator over the test dataset."""
+        generator = torch.Generator().manual_seed(self.test_seed)
+        for data_item in self.test_data:
+            yield self._apply_transforms(_deep_clone(data_item), generator)
+
     @torch.no_grad()
     def _apply_transforms(self, data_item: Dict[str, Any], generator: torch.Generator):
         transformed_item = data_item
@@ -87,24 +108,9 @@ class ConfigurationDataset:
         return transformed_item
 
     @torch.no_grad()
-    def train(self):
-        """Return an iterator over the training data."""
+    def _train_generator(self):
         while True:
             indices = torch.randperm(len(self.train_data), generator=self.generator)
             for idx in indices:
                 datum = self.train_data[idx]
                 yield self._apply_transforms(_deep_clone(datum), self.generator)
-
-    @torch.no_grad()
-    def val(self):
-        """Return an iterator over the validation data."""
-        generator = torch.Generator().manual_seed(self.val_seed)
-        for data_item in self.val_data:
-            yield self._apply_transforms(_deep_clone(data_item), generator)
-
-    @torch.no_grad()
-    def test(self):
-        """Return an iterator over the test data."""
-        generator = torch.Generator().manual_seed(self.test_seed)
-        for data_item in self.test_data:
-            yield self._apply_transforms(_deep_clone(data_item), generator)
