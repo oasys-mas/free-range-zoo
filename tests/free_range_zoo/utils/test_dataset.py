@@ -40,7 +40,7 @@ class TestConfigurationDataset(unittest.TestCase):
         dataset = ConfigurationDataset(self.data, self.transforms, seed=self.seed)
 
         # Fetch first transformed item from train, val, and test
-        train_item = next(dataset.train())
+        train_item = dataset.train()
         self.assertIn('random_value', train_item)
 
         val_item = next(dataset.val())
@@ -52,8 +52,8 @@ class TestConfigurationDataset(unittest.TestCase):
     def test_val_set_consistency(self) -> None:
         dataset = ConfigurationDataset(self.data, self.transforms, seed=self.seed)
 
-        val1 = [next(dataset.val()) for _ in range(len(dataset.val_data))]
-        val2 = [next(dataset.val()) for _ in range(len(dataset.val_data))]
+        val1 = [data for data in dataset.val()]
+        val2 = [data for data in dataset.val()]
 
         # Validation sets should be identical
         self.assertEqual(len(val1), len(val2))
@@ -63,8 +63,8 @@ class TestConfigurationDataset(unittest.TestCase):
     def test_test_set_consistency(self) -> None:
         dataset = ConfigurationDataset(self.data, self.transforms, seed=self.seed)
 
-        test1 = [next(dataset.test()) for _ in range(len(dataset.val_data))]
-        test2 = [next(dataset.test()) for _ in range(len(dataset.val_data))]
+        test1 = [data for data in dataset.test()]
+        test2 = [data for data in dataset.test()]
 
         # Validation sets should be identical
         self.assertEqual(len(test1), len(test2))
@@ -74,8 +74,8 @@ class TestConfigurationDataset(unittest.TestCase):
     def test_train_shuffling(self) -> None:
         dataset = ConfigurationDataset(self.data, self.transforms, seed=self.seed)
 
-        epoch1 = [next(dataset.train()) for _ in range(len(dataset.train_data))]
-        epoch2 = [next(dataset.train()) for _ in range(len(dataset.train_data))]
+        epoch1 = [dataset.train() for _ in range(len(dataset.train_data))]
+        epoch2 = [dataset.train() for _ in range(len(dataset.train_data))]
 
         self.assertEqual(len(epoch1), len(epoch2))
         self.assertNotEqual([item['random_value'] for item in epoch1], [item['random_value'] for item in epoch2])
