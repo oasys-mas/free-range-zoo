@@ -1,6 +1,6 @@
 [project]
 name = "free-range-zoo"
-version = "0.1.16"
+version = "0.1.17"
 description = ""
 authors = [
     { name = "C4 Patino", email = "cpatino2@huskers.unl.edu" },
