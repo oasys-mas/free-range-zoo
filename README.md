@@ -1,17 +1,18 @@
 # free-range-zoo
 
-This repository provides a collection of PyTorch implementations for various reinforcement learning / planning environments. It includes both [environments](free_range_zoo/free_range_zoo/envs) and links 
-[reasoning models](models/) used for decision-making in these domains. The contained domains (`wildfire`, `rideshare`, `cybersecurity`), are designed with a special emphasis on **open-agent**, **open-task**, 
+This repository provides a collection of PyTorch implementations for various reinforcement learning / planning environments. It includes [environments](free_range_zoo/free_range_zoo/envs) used for decision-making in these domains. The contained domains (`wildfire`, `rideshare`, `cybersecurity`), are designed with a special emphasis on **open-agent**, **open-task**, 
 and **open-frame** systems. These systems are designed to allow dynamic changes in the environment, such as the entry and exit of agents, tasks, and types, simulating more realistic and flexible scenarios. 
-The implementations are designed to facilitate experimentation, comparison, and the development of new techniques in RL and planning. 
+This api is designed to facilitate experimentation, comparison, and the development of new techniques in RL and planning. 
 
-The existing environments in this repository all utilize the same AEC environment API as the conventional MARL environments provided by [pettingzoo](https://github.com/Farama-Foundation/PettingZoo). There are extensions for
-each environment to handle batching for updating the trajectories of multiples states simulataneously. Pettingzoo partially supports agent-open environments through its distinction between `agents` and `possible_agents`, but 
-has no built-in support for task or frame openness.
+The existing environments in this repository all utilize the same AEC/Parallel environment API as the conventional MARL environments provided by [pettingzoo](https://github.com/Farama-Foundation/PettingZoo). However we provide three main features convenient for openness, 
+- **(1) Batched training**, mulitple independent environments can be executed in parallel via vectorized operations.
+- **(2) Fast spaces**, courtesy of [free-range-rust](https://github.com/c4patino/free-range-rust) we use `rust` based vectorized spaces. These significantly increase the speed of representing changing spaces in openness.
+- **(3) Easy GPU execution**, are environments can all be used on gpu by simply providing a `torch.Device` on environment construction.
+> [!note]
+> Due to the nature of RL domains, a large number of small sequential calculations, generally cpu execution is faster except when using a large number of parallel environments, as possible with (1). 
 
 ### Core Research Applications
-All forms of openness should have the ability to be completely removed the from the environment. Allowing for testing with each form in complete isolatioAll forms of openness should have the ability to be completely removed 
-the from the environment. Allowing for testing with each form in complete isolation.
+All forms of openness should have the ability to be completely removed the from the environment. Allowing for testing with each form in complete isolation. 
 
 - **agent openness**: Environments where agents can dynamically enter and leave, enabling dynamic cooperation and multi-agent scenarios with evolving participants.
     - Environments:
@@ -54,7 +55,7 @@ The structure of the repository described below:
 
 ```
 free_range_zoo
-├── experiments                         # Experimental code
+├── experiments                         # put your experiments here.
 ├── free_range_zoo
 │   ├── envs                            # Environment implementations
 │   │   ├── cybersecurity               #   Cybersecurity
@@ -63,7 +64,6 @@ free_range_zoo
 │   ├── utils                           # Converters / environment abstract classes
 │   └── wrappers                        # Model wrappers and utilities
 ├── models                              # Model code (planning / MOHITO / ddqn)
-├── notebooks                           # Environment runtime notebooks (primarily for development)
 ├── tests                               # Tests
 │   ├── free_range_zoo
 │   │   ├── envs                        #   Tests for all environment utilities
@@ -99,24 +99,6 @@ while not torch.all(env.finished):
     main_logger.info(f"Step {current_step}: {rewards}")
 ```
 
-## Installation
-
-Prerequisites:
-- python=^3.12
-- cargo=^1.82.0
-
-```sh
-# Pull down the repository
-git clone git@github.com:oasys-mas/free-range-zoo.git
-cd free-range-zoo
-
-# Install dependency packages
-poetry install [[--with oasys]] # NOTE: `--with oasys` option is intended only for internal OASYS-MAS use.
-
-# Verify that CUDA drivers are present and working
-# NOTE: Only necessary if you are expecting to run on CUDA / GPU
-python -c "import torch; print(torch.cuda.is_available())"
-```
 
 ## Roadmap
 
