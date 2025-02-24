@@ -1,18 +1,17 @@
 # free-range-zoo
 
 This repository provides a collection of PyTorch implementations for various reinforcement learning / planning environments. It includes [environments](free_range_zoo/free_range_zoo/envs) used for decision-making in these domains. The contained domains (`wildfire`, `rideshare`, `cybersecurity`), are designed with a special emphasis on **open-agent**, **open-task**, 
-and **open-frame** systems. These systems are designed to allow dynamic changes in the environment, such as the entry and exit of agents, tasks, and types, simulating more realistic and flexible scenarios. 
-This api is designed to facilitate experimentation, comparison, and the development of new techniques in RL and planning. 
+and **open-frame** systems. These systems are designed to allow dynamic changes in the environment, such as the entry and exit of agents, tasks, and types, simulating more realistic and flexible scenarios. Such environments are illustrated in this [AI magazine article](https://onlinelibrary.wiley.com/doi/full/10.1002/aaai.12131). This api is designed to facilitate experimentation, comparison, and the development of new techniques in RL and planning for open environments. 
 
-The existing environments in this repository all utilize the same AEC/Parallel environment API as the conventional MARL environments provided by [pettingzoo](https://github.com/Farama-Foundation/PettingZoo). However we provide three main features convenient for openness, 
+The existing environments in this repository all utilize the same AEC/Parallel environment API as the conventional MARL environments provided by [pettingzoo](https://github.com/Farama-Foundation/PettingZoo). However, we provide three main features convenient for openness: 
 - **(1) Batched training**, mulitple independent environments can be executed in parallel via vectorized operations.
 - **(2) Fast spaces**, courtesy of [free-range-rust](https://github.com/c4patino/free-range-rust) we use `rust` based vectorized spaces. These significantly increase the speed of representing changing spaces in openness.
-- **(3) Easy GPU execution**, are environments can all be used on gpu by simply providing a `torch.Device` on environment construction.
+- **(3) Easy GPU execution**, our environments can be used on gpu by simply providing a `torch.Device` on environment construction.
 > [!note]
-> Due to the nature of RL domains, a large number of small sequential calculations, generally cpu execution is faster except when using a large number of parallel environments, as possible with (1). 
+> Due to the nature of RL domains, a large number of small sequential calculations, CPU execution is faster except when using a large number of parallel environments, as possible with (1). 
 
 ### Core Research Applications
-All forms of openness should have the ability to be completely removed the from the environment. Allowing for testing with each form in complete isolation. 
+All forms of openness can be enabled or disabled in each environment through settings defined in `<environment>/env/structures/configuration.py`
 
 - **agent openness**: Environments where agents can dynamically enter and leave, enabling dynamic cooperation and multi-agent scenarios with evolving participants.
     - Environments:
@@ -30,7 +29,7 @@ All forms of openness should have the ability to be completely removed the from 
 
 ## Documentation
 
-A description of repository and domain structures are given below. For more comprehensive documentation visit our [documentation]() page.
+A description of this repository structure is given below. **For a quick start guide and documentation visit our [documentation]() page.**
 
 ### Domain structure
 
