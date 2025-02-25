@@ -31,7 +31,7 @@ environments/rideshare/index
 Github <https://github.com/oasys-mas/free-range-zoo>
 ```
 
-```{project-logo} _static/img/darkgoat.png
+```{project-logo} _static/img/goat_main_logo.png
 :alt: free-range-zoo Logo
 ```
 
