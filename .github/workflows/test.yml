@@ -47,5 +47,5 @@ jobs:
         uses: c4patino/actions/.github/actions/setup-rust@main
       - name: install dependencies
         run: poetry install
-      - name: run tests
+      - name: run gpu tests
         run: poetry run python -m unittest -b

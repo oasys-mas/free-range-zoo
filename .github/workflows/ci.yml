@@ -32,12 +32,14 @@ jobs:
   increment:
     needs: [format, test]
     if: >
-      (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
-      (github.event_name == 'pull_request' && github.event.pull_request.merged == true && github.ref == 'refs/heads/main')
+      (github.event.repository.private) &&
+      ((github.event_name == 'push' && github.ref == 'refs/heads/main') ||
+      (github.event_name == 'pull_request' && github.event.pull_request.merged == true && github.ref == 'refs/heads/main'))
     uses: c4patino/actions/.github/workflows/increment.yml@main
     with:
       language: python
-  # docs:
-  #   needs: [test, test-docs]
-  #   uses: ./.github/workflows/docs.yml
-  #   secrets: inherit
+  docs:
+    needs: [test, test-docs]
+    if: github.event.repository.private == false
+    uses: ./.github/workflows/docs.yml
+    secrets: inherit
