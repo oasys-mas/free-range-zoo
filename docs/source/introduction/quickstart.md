@@ -1,0 +1,105 @@
+# Quickstart
+
+---
+
+## Overview 
+
+Here we show a brief introduction on how to use a free-range-zoo environment, and how to use our baselines. For further detail see [Basic Usage]() and [Logging]().
+
+Here we use [Rideshare]() as a example domain, and we use `Random` and `noop` as example agents. We provide the full script of this tutorial at the bottom of this page for convenient copy and pasting. 
+
+
+## Environment Configuration
+
+Environments are located in `free_range_zoo/envs`. Each environment has a set of configuration dataclasses in `envs/<env_name>/env/structures/configuration.py`. 
+
+For rideshare: `RewardConfiguration`, `PassengerConfiguration`, `AgentConfiguration`, and `RideshareConfiguration`. The `<env_name>Configuration` class holds the remaining configurations.
+
+> Unless otherwise specified each setting applies to all parallel environments constructed with `parallel_envs`
+
+
+For example we define a configuration below, 
+
+```py
+from free_range_zoo.envs.rideshare.env.structures.configuration import RewardConfiguration, PassengerConfiguration, AgentConfiguration, RideshareConfiguration
+```
+
+### Reward Function - `RewardConfiguration`
+
+Here we define the reward function. In Rideshare there are various penalties that are applied for each action, making passenger wait, and going over the limit of passengers in one agent/car.
+
+```py
+reward_config = RewardConfiguration(
+    pick_cost = -0.1,
+    move_cost = -0.02,
+    drop_cost = 0.0,
+    noop_cost = -0.1,
+    accept_cost = -0.1,
+    pool_limit_cost = -4.0,
+
+    use_pooling_rewards = False,
+    use_variable_move_cost = False,
+    use_waiting_costs = False,
+
+    wait_limit = 3,
+    long_wait_time = 5,
+    general_wait_cost = -0.1,
+    long_wait_cost = -0.5
+)
+```
+
+### Task Schedule - `PassengerConfiguration`
+
+Here we define the schedule of passengers entering the environment. This is a tensor of shape: `<#passengers, 7>`. Where we indicate `<entry timestep, which batch, y, x position, y,x destination, fare earned>`
+
+```py
+passenger_config = PassengerConfiguration(
+    schedule = torch.tensor([2,0, 0,0, 1,1, 3])
+)
+```
+
+The above creates one passenger in batch 0, which enters at timestep 2. 
+
+### Agent Count/Position - `AgentConfiguration`
+
+Here we define the starting position, number of agents, pooling limit, and method of travel for agents.
+
+
+```py
+
+agent_config = AgentConfiguration(
+    start_positions = torch.tensor([
+        [1,1],
+        [2,2]
+    ]),
+    pool_limit = 2,
+
+    use_diagonal_travel = False,
+    use_fast_travel = True
+)
+```
+With these settings, there are two agents, and these agents will "teleport" to their destination of choice on taking a action (still incurring cost for distance traveled).
+
+### Environment Config - `RideshareConfiguration`
+
+Here we define the size of the grid, and we provide the other configurations.
+
+```py
+rideshare_config = RideshareConfiguration(
+    grid_height = 5
+    grid_width = 5
+
+    reward_config = reward_config,
+    passenger_config = passenger_config
+    agent_config = agent_config
+)
+```
+
+## Environment Creation
+
+Now we create our environment giving it the configuration, and a number of parallel environments to create.
+
+```py
+from free_range_zoo.envs import rideshare_v0
+
+```
