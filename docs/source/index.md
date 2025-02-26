@@ -35,10 +35,6 @@ Github <https://github.com/oasys-mas/free-range-zoo>
 :alt: free-range-zoo Logo
 ```
 
-```{project-heading}
-An extension of PettingZoo for openness in multi-agent systems.
-```
-
 This repository provides a collection of PyTorch implementations for various reinforcement learning / planning environments. It includes both [environments](https://github.com/oasys-mas/free_range_zoo/free_range_zoo/envs) and links 
 [reasoning models](https://github.com/oasys-mas/free_range_zoo/models/) used for decision-making in these domains. The contained domains (`wildfire`, `rideshare`, `cybersecurity`), are designed with a special emphasis on **open-agent**, **open-task**, 
 and **open-frame** systems. These systems are designed to allow dynamic changes in the environment, such as the entry and exit of agents, tasks, and types, simulating more realistic and flexible scenarios. 
