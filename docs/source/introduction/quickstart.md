@@ -97,9 +97,51 @@ rideshare_config = RideshareConfiguration(
 
 ## Environment Creation
 
-Now we create our environment giving it the configuration, and a number of parallel environments to create.
+Now we create our environment giving it the configuration, and a number of parallel environments to create. Here `log_directory` is the location of a empty or nonexistant directory which environment logs will be saved. If not given (or if None) automatic logging will not occur.
 
 ```py
 from free_range_zoo.envs import rideshare_v0
-
+env = rideshare_v0.parallel_env(
+    max_steps = 100,
+    parallel_envs = 1,
+    configuration = rideshare_config,
+    device=torch.device('cpu'),
+    log_directory = "tests"
+)
 ```
+
+Our baselines use the `action_mapping_wrapper`. This modifies the output `observation` to be a uple `space.Dict -> (space.Dict, space.Dict)`. The second dictionary, `t_mapping` allow us to identify which task is associated with which observation in cases where all agents do not observe the same tasks. Like with accepted passengers in rideshare.
+
+```py
+from free_range_zoo.wrappers.action_task import action_mapping_wrapper_v0
+env = action_mapping_wrapper_v0(env)
+```
+
+## Environment Step
+
+Now we can create our baseline agents and execute our policy. Here each `agent` must perform `observe` before each `act` which stores and process the prior observation. 
+
+```py
+from free_range_zoo.envs.rideshare.baselines import NoopBaseline, RandomBaseline
+
+agents = [
+    NoopBaseline(agent_name = "agent_0", parallel_envs = 1),
+    RandomBaseline(agent_name = "agent_1", parallel_envs = 1)
+]
+
+while not torch.all(env.finished):
+    
+    for agent_name, agent in agents.items():
+        agent.observe(observations[agent_name][0])  # Policy observation 
+
+    agent_actions = {
+        agent_name: torch.stack([agents[agent_name].act()])
+        for agent_name in env.agents
+    }  # Policy action determination here
+
+    observations, rewards, terminations, truncations, infos = env.step(agent_actions)
+
+env.close()
+```
+
+Now you should see the directory `tests` with `tests/0.csv` where the number indicates the `parallel_env` index.

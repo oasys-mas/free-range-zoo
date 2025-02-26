@@ -8,13 +8,16 @@ lastpage:
 :caption: Introduction
 :hidden:
 introduction/installation
+introduction/quickstart
 introduction/basic_usage
+introduction/moasei
 ```
 
 ```{toctree}
 :caption: API
 :hidden:
 api/environments
+api/logging
 ```
 
 ```{toctree}
