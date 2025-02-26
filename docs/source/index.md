@@ -8,13 +8,16 @@ lastpage:
 :caption: Introduction
 :hidden:
 introduction/installation
+introduction/quickstart
 introduction/basic_usage
+introduction/moasei
 ```
 
 ```{toctree}
 :caption: API
 :hidden:
 api/environments
+api/logging
 ```
 
 ```{toctree}
@@ -33,10 +36,6 @@ Github <https://github.com/oasys-mas/free-range-zoo>
 
 ```{project-logo} _static/img/goat_main_logo.png
 :alt: free-range-zoo Logo
-```
-
-```{project-heading}
-An extension of PettingZoo for openness in multi-agent systems.
 ```
 
 This repository provides a collection of PyTorch implementations for various reinforcement learning / planning environments. It includes both [environments](https://github.com/oasys-mas/free_range_zoo/free_range_zoo/envs) and links 
