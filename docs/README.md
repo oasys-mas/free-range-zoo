@@ -14,6 +14,8 @@ Note that if you have already installed the dependencies for `free-range-zoo` th
 ## Scripts
 ### 1a. Generating Environment Documentation Files
 
+Here we show one direct way to build our documentation. For the following make sure you are in the `docs` directory before running these. Try below if `python -m unittest` in the `docs` directory fails to update the documentation. 
+
 Generate the pages for each environment from environment docstrings you need to execute the following command.
 ```sh
 poetry run gen

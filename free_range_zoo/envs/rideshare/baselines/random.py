@@ -2,7 +2,7 @@
 from typing import List
 import free_range_rust
 from free_range_zoo.utils.agent import Agent
-
+import torch
 
 class RandomBaseline(Agent):
     """Agent that samples actions avaialable to it in a uniform distribution."""
@@ -16,4 +16,4 @@ class RandomBaseline(Agent):
         Returns:
             List[List[int]] - List of actions, one for each parallel environment.
         """
-        return action_space.sample_nested()
+        return torch.tensor(action_space.sample_nested(), dtype=torch.int16)
