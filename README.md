@@ -31,7 +31,7 @@ All forms of openness can be enabled or disabled in each environment through set
 
 ## Documentation
 
-A description of this repository structure is given below. **For a quick start guide and documentation visit our [documentation]() page.**
+A description of this repository structure is given below. **For a quick start guide and documentation visit our [documentation](https://oasys-mas.github.io/free-range-zoo/) page.**
 
 ### Domain structure
 
