@@ -65,7 +65,7 @@ main_logger.info("Custom log message")
 This allows logging of custom information at any timestep.
 
 ## Integration with Rendering
-The logged data is also used for rendering wildfire simulations. The `Wildfire Simulation Renderer` processes these logs to generate visualizations, including interactive and video-based outputs. See the [Wildfire Simulation Renderer Guide](#) for details.
+The logged data is also used for rendering wildfire simulations. The `Wildfire Simulation Renderer` processes these logs to generate visualizations, including interactive and video-based outputs. See `rendering.py` files in `env/<environment name>/env/utils/` for details.
 
 ## Notes
 - Ensure that the `log_directory` does not exist before execution.
