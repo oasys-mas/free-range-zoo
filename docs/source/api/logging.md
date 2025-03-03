@@ -1,10 +1,10 @@
-# Free-Range-Zoo Logging Guide
+# Logging Guide
 
 ## Overview
 Logging in Free-Range-Zoo enables tracking of environment states, which can be used for both debugging and rendering. This guide outlines how to use the built-in logging functionality, configure logging paths, and interpret logged data.
 
 ## Logging Setup
-To enable logging, specify the `log_directory` parameter when initializing an environment. This directory will store log files containing state information for each independent environment instance.
+To enable logging, specify the `log_directory` parameter when initializing an environment. This directory will store log files containing state information for each independent environment instance. You can bypass this check by setting `override_initialization_check=True` on environment creation.
 
 ### Example Usage
 To enable logging, construct an environment and pass the `log_directory` parameter:
