@@ -44,6 +44,9 @@ class PassengerEntryTransition(nn.Module):
 
         entry_mask = starts_now & valid_env
         if not entry_mask.any():
+            if state.passengers is None:
+                state.passengers = torch.empty((0, 11), dtype=torch.int32, device=self.schedule.device)
+
             return state
 
         task_indices, batch_indices = torch.where(entry_mask)
