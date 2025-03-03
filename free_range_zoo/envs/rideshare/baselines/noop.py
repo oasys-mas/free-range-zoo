@@ -13,7 +13,7 @@ class NoopBaseline(Agent):
         """Initialize the agent."""
         super().__init__(*args, **kwargs)
 
-        self.actions = torch.zeros((self.parallel_envs, 2), dtype=torch.int32)
+        self.actions = torch.zeros((self.parallel_envs, 2), dtype=torch.int16)
 
     def act(self, action_space: free_range_rust.Space) -> List[List[int]]:
         """

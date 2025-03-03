@@ -1,3 +1,5 @@
+![Free-Range-Zoo logo, a goat standing on a hill.](https://github.com/oasys-mas/free-range-zoo/blob/main/docs/source/_static/img/goat_main_logo.png)
+
 # free-range-zoo
 
 This repository provides a collection of PyTorch implementations for various reinforcement learning / planning environments. It includes [environments](free_range_zoo/free_range_zoo/envs) used for decision-making in these domains. The contained domains (`wildfire`, `rideshare`, `cybersecurity`), are designed with a special emphasis on **open-agent**, **open-task**, 
@@ -29,7 +31,7 @@ All forms of openness can be enabled or disabled in each environment through set
 
 ## Documentation
 
-A description of this repository structure is given below. **For a quick start guide and documentation visit our [documentation]() page.**
+A description of this repository structure is given below. **For a quick start guide and documentation visit our [documentation](https://oasys-mas.github.io/free-range-zoo/) page.**
 
 ### Domain structure
 
