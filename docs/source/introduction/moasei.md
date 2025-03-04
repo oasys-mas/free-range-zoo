@@ -42,4 +42,4 @@ env = cybersecurity_v0.parallel_env(
 
 ### Environment Configurations
 
-Configurations for each environment can be found at this [Kaggle link]().
+Configurations for each environment can be found at this [Kaggle link](https://www.kaggle.com/datasets/picklecat/moasei-aamas-2025-competition-configurations).

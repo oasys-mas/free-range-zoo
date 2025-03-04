@@ -164,14 +164,14 @@ reward_config = RewardConfiguration(
     use_variable_move_cost = False,
     use_waiting_costs = False,
 
-    wait_limit = torch.tensor([5,3,3], dtype=torch.int16),
+    wait_limit = torch.tensor([5,3,3], dtype=torch.int32),
     long_wait_time = 5,
     general_wait_cost = -0.1,
     long_wait_cost = -0.5
 )
 
 passenger_config = PassengerConfiguration(
-    schedule = torch.tensor([[0,0, 0,0, 1,1, 3],], dtype=torch.int16)
+    schedule = torch.tensor([[0,0, 0,0, 1,1, 3],], dtype=torch.int32)
 )
 
 agent_config = AgentConfiguration(
