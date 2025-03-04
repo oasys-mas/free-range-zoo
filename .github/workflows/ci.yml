@@ -40,6 +40,9 @@ jobs:
       language: python
   docs:
     needs: [test, test-docs]
-    if: github.event.repository.private == false
+    if: >
+      (!github.event.repository.private) &&
+      ((github.event_name == 'push' && github.ref == 'refs/heads/main') ||
+      (github.event_name == 'pull_request' && github.event.pull_request.merged == true && github.ref == 'refs/heads/main'))
     uses: ./.github/workflows/docs.yml
     secrets: inherit
