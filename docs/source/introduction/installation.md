@@ -61,6 +61,8 @@ Go to [Rust Install](https://www.rust-lang.org/tools/install) select your os, an
 
 > `cargo --version`: Verify that cargo was properly installed.
 
+If `cargo --version` or `rustc --version` do not work, manually add `rust` to your path.
+
 ## Clone Free-Range-Zoo
 
 <!--TODO: Correct this URL to the competition repository.-->
@@ -83,11 +85,13 @@ Go to [Rust Install](https://www.rust-lang.org/tools/install) select your os, an
 ## Create Python env
 
 > `conda create -n three12 python=3.12`: Create a python 3.12 environment
+
 > `conda activate three12`: Activate the created python environment
 
 ## Install Dependencies
 
 > `pip install poetry`: Install poetry, the dependency tool we use.
+
 > `poetry install`: Install all dependencies with poetry
 
 ## Test
