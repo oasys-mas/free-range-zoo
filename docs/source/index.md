@@ -7,10 +7,10 @@ lastpage:
 ```{toctree}
 :caption: Introduction
 :hidden:
+introduction/moasei
 introduction/installation
 introduction/quickstart
 introduction/basic_usage
-introduction/moasei
 ```
 
 ```{toctree}
