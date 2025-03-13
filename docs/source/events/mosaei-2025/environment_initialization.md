@@ -1,8 +1,9 @@
-# MOASEI 2025 - AAMAS
+# Environment Initialization
 
 ## Environment Initialization Parameters
 
-The competition will be operating on specific environment initialization parameters. The initializations for each environment are detailed below.
+The competition will be operating on specific environment initialization parameters. The initializations for each 
+environment are detailed below.
 
 ### Wildfire
 ```python
@@ -42,4 +43,14 @@ env = cybersecurity_v0.parallel_env(
 
 ### Environment Configurations
 
-Configurations for each environment can be found at this [Kaggle link](https://www.kaggle.com/datasets/picklecat/moasei-aamas-2025-competition-configurations).
+Configurations for each environment can be found at this 
+[Kaggle link](https://www.kaggle.com/datasets/picklecat/moasei-aamas-2025-competition-configurations).
+Configurations must be loaded using `pickle`. An example loading is shown below.
+
+```python
+import pickle
+
+configuration = pickle.load(<path to configuration>)
+```
+
+This configuration can then be directly input to the environment configuration parameter of its respective domain.
