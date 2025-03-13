@@ -9,7 +9,7 @@ Here we show a brief introduction on how to use a free-range-zoo environment, an
 Here we use [Rideshare](https://oasys-mas.github.io/free-range-zoo/environments/rideshare/index.html) as a example domain, and we use `Random` and `noop` as example agents. We provide the full script of this tutorial at the bottom of this page for convenient copy and pasting. 
 
 
-## Environment Configuration
+## Step #1: Environment Configuration
 
 Environments are located in `free_range_zoo/envs`. Each environment has a set of configuration dataclasses in `envs/<env_name>/env/structures/configuration.py`. 
 
@@ -24,7 +24,7 @@ For example we define a configuration below,
 from free_range_zoo.envs.rideshare.env.structures.configuration import RewardConfiguration, PassengerConfiguration, AgentConfiguration, RideshareConfiguration
 ```
 
-### Reward Function - `RewardConfiguration`
+### Step #2: Reward Function - `RewardConfiguration`
 
 Here we define the reward function. In Rideshare there are various penalties that are applied for each action, making passenger wait, and going over the limit of passengers in one agent/car.
 
@@ -48,7 +48,7 @@ reward_config = RewardConfiguration(
 )
 ```
 
-### Task Schedule - `PassengerConfiguration`
+### Step #3: Task Schedule - `PassengerConfiguration`
 
 Here we define the schedule of passengers entering the environment. This is a tensor of shape: `<#passengers, 7>`. Where we indicate `<entry timestep, which batch, y, x position, y,x destination, fare earned>`
 
@@ -60,7 +60,7 @@ passenger_config = PassengerConfiguration(
 
 The above creates one passenger in batch 0, which enters at timestep 2. 
 
-### Agent Count/Position - `AgentConfiguration`
+### Step #4: Agent Count/Position - `AgentConfiguration`
 
 Here we define the starting position, number of agents, pooling limit, and method of travel for agents.
 
@@ -79,7 +79,7 @@ agent_config = AgentConfiguration(
 ```
 With these settings, there are two agents, and these agents will "teleport" to their destination of choice on taking a action (still incurring cost for distance traveled).
 
-### Environment Config - `RideshareConfiguration`
+### Step #5: Environment Config - `RideshareConfiguration`
 
 Here we define the size of the grid, and we provide the other configurations.
 
@@ -94,7 +94,7 @@ rideshare_config = RideshareConfiguration(
 )
 ```
 
-## Environment Creation
+## Step #6: Environment Creation
 
 Now we create our environment giving it the configuration, and a number of parallel environments to create. Here `log_directory` is the location of a empty or nonexistant directory which environment logs will be saved. If not given (or if None) automatic logging will not occur.
 
@@ -116,7 +116,7 @@ from free_range_zoo.wrappers.action_task import action_mapping_wrapper_v0
 env = action_mapping_wrapper_v0(env)
 ```
 
-## Environment Step
+## Step #7: Environment Step
 
 Now we can create our baseline agents and execute our policy. Here each `agent` must perform `observe` before each `act` which stores and process the prior observation. 
 
