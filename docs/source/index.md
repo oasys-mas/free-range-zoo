@@ -13,6 +13,7 @@ events/mosaei-2025/index
 ```{toctree}
 :caption: Introduction
 :hidden:
+introduction/moasei
 introduction/installation
 introduction/quickstart
 introduction/basic_usage
