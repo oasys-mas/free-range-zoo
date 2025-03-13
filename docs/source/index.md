@@ -15,7 +15,6 @@ events/mosaei-2025/index
 :hidden:
 introduction/moasei
 introduction/installation
-introduction/quickstart
 introduction/basic_usage
 ```
 

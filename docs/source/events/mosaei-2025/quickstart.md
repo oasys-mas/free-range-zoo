@@ -8,93 +8,19 @@ Here we show a brief introduction on how to use a free-range-zoo environment, an
 
 Here we use [Rideshare](https://oasys-mas.github.io/free-range-zoo/environments/rideshare/index.html) as a example domain, and we use `Random` and `noop` as example agents. We provide the full script of this tutorial at the bottom of this page for convenient copy and pasting. 
 
+## Step #1: Environment Configurations
 
-## Environment Configuration
+Configurations for each environment can be found at this 
+[Kaggle link](https://www.kaggle.com/datasets/picklecat/moasei-aamas-2025-competition-configurations).
+Configurations must be loaded using `pickle`. An example loading is shown below.
 
-Environments are located in `free_range_zoo/envs`. Each environment has a set of configuration dataclasses in `envs/<env_name>/env/structures/configuration.py`. 
+```python
+import pickle
 
-For rideshare: `RewardConfiguration`, `PassengerConfiguration`, `AgentConfiguration`, and `RideshareConfiguration`. The `<env_name>Configuration` class holds the remaining configurations.
-
-> Unless otherwise specified each setting applies to all parallel environments constructed with `parallel_envs`
-
-
-For example we define a configuration below, 
-
-```py
-from free_range_zoo.envs.rideshare.env.structures.configuration import RewardConfiguration, PassengerConfiguration, AgentConfiguration, RideshareConfiguration
+configuration = pickle.load(<path to configuration>)
 ```
 
-### Reward Function - `RewardConfiguration`
-
-Here we define the reward function. In Rideshare there are various penalties that are applied for each action, making passenger wait, and going over the limit of passengers in one agent/car.
-
-```py
-reward_config = RewardConfiguration(
-    pick_cost = -0.1,
-    move_cost = -0.02,
-    drop_cost = 0.0,
-    noop_cost = -0.1,
-    accept_cost = -0.1,
-    pool_limit_cost = -4.0,
-
-    use_pooling_rewards = False,
-    use_variable_move_cost = False,
-    use_waiting_costs = False,
-
-    wait_limit = torch.tensor([5,3,3], dtype=int),
-    long_wait_time = 5,
-    general_wait_cost = -0.1,
-    long_wait_cost = -0.5
-)
-```
-
-### Task Schedule - `PassengerConfiguration`
-
-Here we define the schedule of passengers entering the environment. This is a tensor of shape: `<#passengers, 7>`. Where we indicate `<entry timestep, which batch, y, x position, y,x destination, fare earned>`
-
-```py
-passenger_config = PassengerConfiguration(
-    schedule = torch.tensor([[2,0, 0,0, 1,1, 3],])
-)
-```
-
-The above creates one passenger in batch 0, which enters at timestep 2. 
-
-### Agent Count/Position - `AgentConfiguration`
-
-Here we define the starting position, number of agents, pooling limit, and method of travel for agents.
-
-
-```py
-agent_config = AgentConfiguration(
-    start_positions = torch.tensor([
-        [1,1],
-        [2,2]
-    ]),
-    pool_limit = 2,
-
-    use_diagonal_travel = False,
-    use_fast_travel = True
-)
-```
-With these settings, there are two agents, and these agents will "teleport" to their destination of choice on taking a action (still incurring cost for distance traveled).
-
-### Environment Config - `RideshareConfiguration`
-
-Here we define the size of the grid, and we provide the other configurations.
-
-```py
-rideshare_config = RideshareConfiguration(
-    grid_height = 5,
-    grid_width = 5,
-
-    reward_config = reward_config,
-    passenger_config = passenger_config,
-    agent_config = agent_config
-)
-```
-
-## Environment Creation
+## Step #2: Environment Creation
 
 Now we create our environment giving it the configuration, and a number of parallel environments to create. Here `log_directory` is the location of a empty or nonexistant directory which environment logs will be saved. If not given (or if None) automatic logging will not occur.
 
@@ -103,7 +29,7 @@ from free_range_zoo.envs import rideshare_v0
 env = rideshare_v0.parallel_env(
     max_steps = 100,
     parallel_envs = 1,
-    configuration = rideshare_config,
+    configuration = rideshare_configuration,
     device=torch.device('cpu'),
     log_directory = "test_logging"
 )
@@ -116,7 +42,7 @@ from free_range_zoo.wrappers.action_task import action_mapping_wrapper_v0
 env = action_mapping_wrapper_v0(env)
 ```
 
-## Environment Step
+## step #3: Environment Step
 
 Now we can create our baseline agents and execute our policy. Here each `agent` must perform `observe` before each `act` which stores and process the prior observation. 
 
@@ -147,58 +73,17 @@ Now you should see the directory `test_logging` with `test_logging/0.csv` where 
 
 ## Full Quickstart Script
 ```py
-from free_range_zoo.envs.rideshare.env.structures.configuration import RewardConfiguration, PassengerConfiguration, AgentConfiguration, RideshareConfiguration
 from free_range_zoo.envs import rideshare_v0
 from free_range_zoo.wrappers.action_task import action_mapping_wrapper_v0
 import torch
+import pickle
 
-reward_config = RewardConfiguration(
-    pick_cost = -0.1,
-    move_cost = -0.02,
-    drop_cost = 0.0,
-    noop_cost = -0.1,
-    accept_cost = -0.1,
-    pool_limit_cost = -4.0,
-
-    use_pooling_rewards = False,
-    use_variable_move_cost = False,
-    use_waiting_costs = False,
-
-    wait_limit = torch.tensor([5,3,3], dtype=torch.int32),
-    long_wait_time = 5,
-    general_wait_cost = -0.1,
-    long_wait_cost = -0.5
-)
-
-passenger_config = PassengerConfiguration(
-    schedule = torch.tensor([[0,0, 0,0, 1,1, 3],], dtype=torch.int32)
-)
-
-agent_config = AgentConfiguration(
-    start_positions = torch.tensor([
-        [1,1],
-        [2,2]
-    ]),
-    pool_limit = 2,
-
-    use_diagonal_travel = False,
-    use_fast_travel = True
-)
-
-rideshare_config = RideshareConfiguration(
-    grid_height = 5,
-    grid_width = 5,
-
-    reward_config = reward_config,
-    passenger_config = passenger_config,
-    agent_config = agent_config
-)
-
+rideshare_configuration = pickle.load(<path to configuration>)
 
 env = rideshare_v0.parallel_env(
     max_steps = 100,
     parallel_envs = 1,
-    configuration = rideshare_config,
+    configuration = rideshare_configuration,
     device=torch.device('cpu'),
     log_directory = "test_logging"
 )
