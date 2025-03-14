@@ -20,6 +20,7 @@ concurrency:
 
 jobs:
   format:
+    if: github.event.repository.private
     uses: c4patino/actions/.github/workflows/format.yml@main
     with:
       language: python
