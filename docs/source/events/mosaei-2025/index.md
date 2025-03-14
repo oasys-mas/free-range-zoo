@@ -22,4 +22,5 @@ You must submit the following:
 
 1. The source code of your `Agent` class with a list of all dependencies.
 2. The source code used to train/update your `Agent`.
-3. The learned weights of your `Agent`.
+3. A modified version of the code shown in [evaluation](https://oasys-mas.github.io/free-range-zoo/events/mosaei-2025/evaluation.html) which initializes, loads, and evaluates your model.
+4. The learned weights of your `Agent`.

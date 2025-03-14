@@ -1,6 +1,6 @@
 # Evaluation
 
-Below is a example evaluation script for the wildfire domain which will be used to evaluate submitted policies.
+Below is a example evaluation script for the wildfire domain which will be used to evaluate submitted policies. You will submit a variant of this script for us to evaluate your policy. Please comment your code so it is easy for us to see where you are initializing and loading your model/ weight files.
 
 The evaluation script can be used by running.
 ```sh
