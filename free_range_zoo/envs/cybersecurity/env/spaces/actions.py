@@ -77,13 +77,6 @@ def build_single_defender_action_space(num_tasks_in_environment: int, current_lo
         Space.Discrete(1, start=-3),  # monitor
     ])
 
-    return Space.OneOf([
-        *[Space.Discrete(1, start=0) for _ in range(num_tasks_in_environment - 1)],  # move to connected nodes
-        Space.Discrete(1, start=-1),  # noop
-        Space.Discrete(1, start=-2),  # patch current node
-        Space.Discrete(1, start=-3),  # monitor
-    ])
-
 
 @functools.lru_cache(maxsize=100)
 def build_single_attacker_action_space(num_tasks_in_environment: int) -> free_range_rust.Space:
