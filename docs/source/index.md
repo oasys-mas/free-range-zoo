@@ -5,12 +5,17 @@ lastpage:
 ---
 
 ```{toctree}
+:caption: Events
+:hidden:
+events/mosaei-2025/index
+```
+
+```{toctree}
 :caption: Introduction
 :hidden:
-introduction/installation
-introduction/quickstart
-introduction/basic_usage
 introduction/moasei
+introduction/installation
+introduction/basic_usage
 ```
 
 ```{toctree}

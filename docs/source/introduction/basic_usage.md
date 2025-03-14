@@ -11,7 +11,7 @@ This document explains:
 ---
 
 ## 1. **Agent Interface**
-Agents interacting with the environment must follow a standard interface defined by the `Agent` abstract class. Here's a breakdown of its structure:
+Agents interacting with the environment must follow a standard interface defined by the `Agent` abstract class, see [agent.py](https://github.com/oasys-mas/free-range-zoo/blob/main/free_range_zoo/utils/agent.py). Here's a breakdown of its structure:
 
 ### Initialization
 ```python

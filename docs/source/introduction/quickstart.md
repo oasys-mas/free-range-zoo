@@ -9,7 +9,7 @@ Here we show a brief introduction on how to use a free-range-zoo environment, an
 Here we use [Rideshare](https://oasys-mas.github.io/free-range-zoo/environments/rideshare/index.html) as a example domain, and we use `Random` and `noop` as example agents. We provide the full script of this tutorial at the bottom of this page for convenient copy and pasting. 
 
 
-## Environment Configuration
+## Step #1: Environment Configuration
 
 Environments are located in `free_range_zoo/envs`. Each environment has a set of configuration dataclasses in `envs/<env_name>/env/structures/configuration.py`. 
 
@@ -79,7 +79,7 @@ agent_config = AgentConfiguration(
 ```
 With these settings, there are two agents, and these agents will "teleport" to their destination of choice on taking a action (still incurring cost for distance traveled).
 
-### Environment Config - `RideshareConfiguration`
+### Step #2: Environment Config - `RideshareConfiguration`
 
 Here we define the size of the grid, and we provide the other configurations.
 
@@ -94,7 +94,7 @@ rideshare_config = RideshareConfiguration(
 )
 ```
 
-## Environment Creation
+## Step #3: Environment Creation
 
 Now we create our environment giving it the configuration, and a number of parallel environments to create. Here `log_directory` is the location of a empty or nonexistant directory which environment logs will be saved. If not given (or if None) automatic logging will not occur.
 
@@ -116,7 +116,7 @@ from free_range_zoo.wrappers.action_task import action_mapping_wrapper_v0
 env = action_mapping_wrapper_v0(env)
 ```
 
-## Environment Step
+## Step #4: Environment Step
 
 Now we can create our baseline agents and execute our policy. Here each `agent` must perform `observe` before each `act` which stores and process the prior observation. 
 
