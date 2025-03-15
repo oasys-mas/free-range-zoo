@@ -17,7 +17,8 @@ Configurations must be loaded using `pickle`. An example loading is shown below.
 ```python
 import pickle
 
-configuration = pickle.load(<path to configuration>)
+with open('<path to configuration>.pkl', 'rb') as f:
+    configuration = pickle.load(f)
 ```
 
 ## Step #2: Environment Creation
@@ -78,7 +79,8 @@ from free_range_zoo.wrappers.action_task import action_mapping_wrapper_v0
 import torch
 import pickle
 
-rideshare_configuration = pickle.load(<path to configuration>)
+with open('<path to configuration>.pkl','rb') as f:
+    rideshare_configuration = pickle.load(f)
 
 env = rideshare_v0.parallel_env(
     max_steps = 100,
