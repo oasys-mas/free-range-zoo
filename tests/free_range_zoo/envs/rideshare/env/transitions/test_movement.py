@@ -62,6 +62,26 @@ class TestPassengerEntryTransition(unittest.TestCase):
                 \rExpected:\n{torch.tensor([1, 1], dtype=torch.int32)}
                 \rActual:\n{result.agents[0, 1]}''')
 
+    def test_all_movement_happens_in_the_correct_direction_with_fast_travel(self) -> None:
+        self.transition = MovementTransition(1, 2, True, False)
+
+        result, distances = self.transition(
+            state=self.state,
+            vectors=torch.tensor([[[0, 0, 1, 1], [1, 1, 1, 1]]], dtype=torch.int32),
+        )
+
+        self.assertTrue(
+            torch.equal(torch.tensor([1, 1], dtype=torch.int32), result.agents[0, 0]),
+            f'''First agent should move directly to the target with fast travel.
+                \rExpected:\n{torch.tensor([1, 1], dtype=torch.int32)}
+                \rActual:\n{result.agents[0, 0]}''')
+
+        self.assertTrue(
+            torch.equal(torch.tensor([1, 1], dtype=torch.int32), result.agents[0, 1]),
+            f'''Second agent should remain in current position since it is already at the target.
+                \rExpected:\n{torch.tensor([1, 1], dtype=torch.int32)}
+                \rActual:\n{result.agents[0, 1]}''')
+
     def test_distances_are_correctly_calculated_for_movement(self) -> None:
         result, distances = self.transition(
             state=self.state,
@@ -86,6 +106,20 @@ class TestPassengerEntryTransition(unittest.TestCase):
             torch.equal(torch.tensor([[math.sqrt(2), 0]], dtype=torch.float32), distances),
             f'''Distances should be properly representative of the distance an agent moved.
                 \rExpected:\n{torch.tensor([[math.sqrt(2), 0]], dtype=torch.float32)}
+                \rActual:\n{distances}''')
+
+    def test_that_distance_is_correctly_calculated_fast_travel(self) -> None:
+        self.transition = MovementTransition(1, 2, True, False)
+
+        result, distances = self.transition(
+            state=self.state,
+            vectors=torch.tensor([[[0, 0, 1, 1], [1, 1, 1, 1]]], dtype=torch.int32),
+        )
+
+        self.assertTrue(
+            torch.equal(torch.tensor([[2, 0]], dtype=torch.float32), distances),
+            f'''Distances should be properly representative of the distance an agent moved.
+                \rExpected:\n{torch.tensor([[2, 0]], dtype=torch.float32)}
                 \rActual:\n{distances}''')
 
     def test_tasks_of_agent_move_with_them(self) -> None:
