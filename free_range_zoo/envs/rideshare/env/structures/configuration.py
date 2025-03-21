@@ -132,23 +132,29 @@ class RideshareConfiguration(Configuration):
 
     def passenger_entry_transition(self, parallel_envs: int) -> PassengerEntryTransition:
         """Get the passenger entry transition configured for the specific environment."""
-        return PassengerEntryTransition(self.passenger_config.schedule, parallel_envs)
+        return PassengerEntryTransition(
+            schedule=self.passenger_config.schedule,
+            parallel_envs=parallel_envs,
+        )
 
     def passenger_exit_transition(self, parallel_envs: int) -> PassengerExitTransition:
         """Get the passenger exit transition configured for the specific environment."""
-        return PassengerExitTransition(parallel_envs)
+        return PassengerExitTransition(parallel_envs=parallel_envs)
 
     def passenger_state_transition(self, parallel_envs: int) -> PassengerStateTransition:
         """Get the passenger state transition configured for the specific environment."""
-        return PassengerStateTransition(self.agent_config.num_agents, parallel_envs)
+        return PassengerStateTransition(
+            parallel_envs=parallel_envs,
+            num_agents=self.agent_config.num_agents,
+        )
 
     def movement_transition(self, parallel_envs: int) -> PassengerStateTransition:
         """Get the movement transition configured for the specific environment."""
         return MovementTransition(
-            self.agent_config.num_agents,
-            parallel_envs,
-            self.agent_config.use_diagonal_travel,
-            self.agent_config.use_fast_travel,
+            parallel_envs=parallel_envs,
+            num_agents=self.agent_config.num_agents,
+            diagonal_travel=self.agent_config.use_diagonal_travel,
+            fast_travel=self.agent_config.use_fast_travel,
         )
 
     @functools.cached_property
