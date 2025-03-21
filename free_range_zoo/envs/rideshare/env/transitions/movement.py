@@ -69,7 +69,7 @@ class MovementTransition(nn.Module):
         distances = torch.norm((candidate_positions - goals.unsqueeze(2)).float(), dim=3)
 
         if self.fast_travel:
-            best_moves = starts - goals
+            best_moves = goals - starts
         else:
             best_moves = torch.argmin(distances, dim=2, keepdim=True)
             best_moves = self.directions[best_moves.squeeze(-1)]
