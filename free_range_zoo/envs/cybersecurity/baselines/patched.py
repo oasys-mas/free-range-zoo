@@ -17,14 +17,14 @@ class PatchedAttackerBaseline(Agent):
         self.time_focused = torch.zeros((self.parallel_envs, ), dtype=torch.int32)
         self.actions = torch.zeros((self.parallel_envs, 2), dtype=torch.int32)
 
-    def act(self, action_space: free_range_rust.Space) -> List[List[int]]:
+    def act(self, action_space: free_range_rust.Space) -> torch.IntTensor:
         """
         Return a list of actions, one for each parallel environment.
 
         Args:
             action_space: free_range_rust.Space - Current action space available to the agent.
         Returns:
-            List[List[int]] - List of actions, one for each parallel environment.
+            torch.IntTensor - List of actions, one for each parallel environment.
         """
         return self.actions
 
@@ -39,13 +39,13 @@ class PatchedAttackerBaseline(Agent):
         self.t_mapping = self.t_mapping['agent_action_mapping']
         self.t_mapping = self.t_mapping.to_padded_tensor(padding=-100)
 
-        new_targets = self.observation['tasks'].argmin(dim=1).flatten()
+        new_targets = self.observation['tasks'][:, 0].argmin(dim=1).flatten()
         self.target_node = torch.where(self.target_node == -1, new_targets, self.target_node)
 
         absent = self.observation['self'][:, 1] == 0
         targeted = (self.target_node != -1) & ~absent
 
-        # # Any agents that are targeted attack their target
+        # Any agents that are targeted attack their target
         self.actions[:, 0] = self.target_node
         self.actions[:, 1].masked_fill_(targeted, 0)
 
@@ -91,11 +91,11 @@ class PatchedDefenderBaseline(Agent):
         self.t_mapping = self.t_mapping['agent_action_mapping']
         self.t_mapping = self.t_mapping.to_padded_tensor(padding=-100)
 
-        last_monitor = (self.observation['tasks'] != -100).all(dim=1).flatten()
+        last_monitor = (self.observation['tasks'][:, 0] != -100).all(dim=1).flatten()
 
-        task_mask = self.observation['tasks']
-        task_mask = torch.where(self.observation['tasks'] == 0, 1000, task_mask)
-        task_mask = torch.where(self.observation['tasks'] == -100, 1000, task_mask)
+        task_mask = self.observation['tasks'][:, 0]
+        task_mask = torch.where(self.observation['tasks'][:, 0] == 0, 1000, task_mask)
+        task_mask = torch.where(self.observation['tasks'][:, 0] == -100, 1000, task_mask)
         new_targets = task_mask.argmin(dim=1).flatten()
 
         self.target_node = torch.where(last_monitor, new_targets, self.target_node)

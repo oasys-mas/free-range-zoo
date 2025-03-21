@@ -400,12 +400,12 @@ class raw_env(BatchedAECEnv):
         Observations for defenders consist of the following:
             - Self: (batch, 1, (mitigation, presence, location))
             - Others: (batch, num_defenders - 1, (mitigation, presence, location))
-            - Subnetworks: (batch, num_subnetworks, (state))
+            - Subnetworks: (batch, num_subnetworks, (state, connectivity))
 
         Observations for attackers consist of the following:
             - Self: (batch, 1, (threat, presence))
             - Others: (batch, nun_attackers - 1, (threat, presence))
-            - Subnetworks: (batch, num_subnetworks, (state))
+            - Subnetworks: (batch, num_subnetworks, (state, connectivity))
         """
         # Build the defender observations
         defender_mitigation = self.defender_config.mitigation.unsqueeze(0).expand(self.parallel_envs, -1).unsqueeze(2)
