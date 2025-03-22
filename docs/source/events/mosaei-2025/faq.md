@@ -9,7 +9,10 @@
 
 ### How do the number of `patched`, `exploited`, and `vulnerable` states affect the simulation?
 
-![Diagram a tensor split into three sections, patched -> vulnerable -> exploited](https://oasys-mas.github.io/free-range-zoo/docs/source/_static/img/CybersecurityDrawing_network_state_rewards.png)
+```{eval-rst}
+.. image:: /_static/img/CybersecurityDrawing_network_state_rewards.png
+   :alt: Diagram of a tensor split into three sections (patched -> vulnerable -> exploited)
+```
 
 
 These are three kinds of states that each node can be in. Nodes transition from state to state as defenders patch, and attackers exploit. This will shift nodes between these states, and accordingly shift rewards. 
@@ -20,6 +23,10 @@ These are three kinds of states that each node can be in. Nodes transition from 
 ### What does `importance` mean?
 
 ![Diagram that shows importance being a multiple of the number of outgoing edges from nodes on the reward of that node](https://oasys-mas.github.io/free-range-zoo/docs/source/_static/img/cybersecurity_rewards.png)
+```{eval-rst}
+.. image:: /_static/img/cybersecurity_rewards.png   
+   :alt: Diagram that shows importance being a multiple of the number of outgoing edges from nodes on the reward of that node
+```
 
 `Importance` is a measure of the number of outgoing edges from each node. This multiplies the reward of that node, so a node with zero outgoing edges doesn't impact the rewards at all.
 

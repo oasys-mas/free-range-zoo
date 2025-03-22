@@ -294,7 +294,7 @@ class raw_env(BatchedAECEnv):
                         raise ValueError('Invalid attack target')
 
                     # Check that agents are not taking actions while not present in the environment
-                    if not self.show_bad_actions and torch.any(agent_actions[:, 0][~presence] != -1):
+                    if not self.show_bad_actions and torch.any(agent_actions[:, -1][~presence] != -1):
                         raise ValueError('Invalid action for non-present agent')
 
                     agent_threat = self.attacker_config.threat[agent_index]
@@ -311,7 +311,7 @@ class raw_env(BatchedAECEnv):
                         raise ValueError('Invalid movement target')
 
                     # Check that agents are not taking actions while not present in the environment
-                    if not self.show_bad_actions and torch.any(agent_actions[:, 0][~presence] != -1):
+                    if not self.show_bad_actions and torch.any(agent_actions[:, -1][~presence] != -1):
                         raise ValueError('Invalid action for non-present agent')
 
                     # Process agent movements
@@ -474,7 +474,7 @@ class raw_env(BatchedAECEnv):
         if self.show_bad_actions:
             num_tasks_in_environment = self.environment_task_count
         else:
-            num_tasks_in_environment = self.agent_task_count[self.agent_name_mapping[agent]]
+            num_tasks_in_environment = self.agent_task_count[self.offset_agent_name_mapping[agent]]
 
         agent_type = agent.split('_')[0]
         agent_index = self.agent_name_mapping[agent]

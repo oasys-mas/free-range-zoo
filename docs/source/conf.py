@@ -64,7 +64,7 @@ html_theme_options = {
     "description": "A FreeRangeZoo extension for Openness"
 }
 
-html_static_path = ["_static"]
+html_static_path = ["source/_static"]
 html_css_files = []
 
 # -- Options for MyST parser -------------------------------------------------
