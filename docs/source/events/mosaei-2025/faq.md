@@ -2,6 +2,7 @@
 
 *have a question? Open a issue on our [git](https://github.com/oasys-mas/free-range-zoo/issues/new)*, or send a email to us (see MOASEI webpage for contact info).
 
+
 ## Competition Logistics
 
 ## Track #1 Cybersecurity
@@ -21,6 +22,7 @@ These are three kinds of states that each node can be in. Nodes transition from 
 ![Diagram that shows importance being a multiple of the number of outgoing edges from nodes on the reward of that node](https://oasys-mas.github.io/free-range-zoo/docs/source/_static/img/cybersecurity_rewards.png)
 
 `Importance` is a measure of the number of outgoing edges from each node. This multiplies the reward of that node, so a node with zero outgoing edges doesn't impact the rewards at all.
+
 
 ### What does `include_x` mean?
 

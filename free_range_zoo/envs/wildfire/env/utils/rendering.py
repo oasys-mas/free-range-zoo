@@ -313,23 +313,6 @@ def render(path: str,
     base_burnt = render_image("burnt_out.png", cell_size)
     base_agent = render_image("firefighter.png", cell_size)
 
-    # ----------------------------------------------------------------
-    # Precompute a row-major list of cell positions for "fire_number"
-    # For example, if we have a grid:
-    #   row=0 => cells 0..(x-1)
-    #   row=1 => cells x..(2x-1)
-    # etc.
-    # ----------------------------------------------------------------
-    fire_positions = []
-    for fy, row in enumerate(fires_grid_0):
-        for fx, fvalue in enumerate(row):
-            if fvalue != 0:  # Fire exists
-                fire_positions.append({
-                    "fire": fx,  # Fire ID = column index
-                    "y": fy,  # Row position
-                    "x": fx,  # Column position
-                    "intensity": fvalue  # Fire intensity
-                })
 
     # ----------------------------------------------------------------
     # Build a per-step record of "objects" to render:
@@ -485,6 +468,9 @@ def render(path: str,
         window.blit(episode_info_surf, (slider_x, screen_size + 5))
 
         # -------------------- Render the state for this time-step --------------------
+            # ----------------------------------------------------------------
+
+        fire_positions=[]
         fire_index = 0  # Just for labeling fires
         for obj in state_record[t]:
             cell_x = x_offset + obj["col"] * cell_size
@@ -530,6 +516,12 @@ def render(path: str,
                     f"Intensity: {obj['intensity']} - {fire_tag}",
                     f"Fuel: {obj['fuel']}"
                 ]
+                fire_positions.append({
+                    "fire": fire_index,  # Fire ID = column index
+                    "y": obj["row"],  # Row position
+                    "x": obj["col"],  # Column position
+                    "intensity": obj["intensity"]  # Fire intensity
+                })
                 fire_index += 1
 
                 small_font = pygame.font.SysFont(None, 20)
@@ -580,6 +572,7 @@ def render(path: str,
                         # if 0 <= fire_num <= len(fire_positions):
                         # Get the (row, col) of that fire from row-major list
                         fire_to_supress = next((fire for fire in fire_positions if fire.get("fire") == fire_num), None)
+                        if fire_to_supress == None : continue
                         fire_row = fire_to_supress['y']
                         fire_col = fire_to_supress['x']
 
