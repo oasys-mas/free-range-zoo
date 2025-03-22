@@ -123,6 +123,7 @@ env.close()
    ```
    - Each agent determines an action using its policy.
    - Actions are grouped into `agent_actions`, which is then passed to the environment.
+   - All actions must be output as `Tensor`. Some of our environments use `torch.int16` and others use `torch.int32` action tensors. Sample from one of our spaces to see which datatype.
 
 4. **Environment Step**:
    ```python

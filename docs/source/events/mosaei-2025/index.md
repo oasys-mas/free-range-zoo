@@ -3,9 +3,12 @@
 :caption: MOSAEI 2025 - AAMAS
 :hidden:
 
-quickstart
 environment_initialization
 evaluation
+faq
+quickstart_fire
+quickstart_cyber
+quickstart_ride
 ```
 
 Hello welcome to the MOASEI 2025 docs! MOASEI is a competition to see which policies can perform the best in open multi-agent systems. See competition details on the [MOASEI 2025 website](https://oasys-mas.github.io/moasei.html). Here we will discuss expectations on submissions, and the evaluation procedure.
@@ -16,7 +19,7 @@ Your objective is to construct a `Agent` class for your selected track which wil
 
 ## Instructions
 
-We recommend you follow the [installation guide](https://oasys-mas.github.io/free-range-zoo/introduction/installation.html) to install free-range-zoo, then run the full [quickstart](https://oasys-mas.github.io/free-range-zoo/events/mosaei-2025/quickstart.html) script to verify your installation, and see the [basic usage guide](https://oasys-mas.github.io/free-range-zoo/introduction/basic_usage.html) to see a example of making an `Agent`.
+We recommend you follow the [installation guide](https://oasys-mas.github.io/free-range-zoo/introduction/installation.html) to install free-range-zoo, then run one of the full [quickstart](https://oasys-mas.github.io/free-range-zoo/events/mosaei-2025/quickstart_ride.html) (rideshare here) scripts to verify your installation, and see the [basic usage guide](https://oasys-mas.github.io/free-range-zoo/introduction/basic_usage.html) to see a example of making an `Agent`.
 
 ## Submission
 
