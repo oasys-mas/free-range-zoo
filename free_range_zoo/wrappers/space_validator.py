@@ -52,13 +52,17 @@ class ActionSpaceValidatorModifier(BaseModifier):
             try:
                 discrete = space.spaces[task_channel]
             except IndexError as e:
-                logger.critical(f'{self.subject_agent} in batch {index} attempted to take an action on a undefined task.\nAction: %s\nSpace: %s',action, space)
+                logger.critical(
+                    f'{self.subject_agent} in batch {index} attempted to take an action on a undefined task.\nAction: %s\nSpace: %s',
+                    action, space)
                 raise e
             try:
                 if action_channel < discrete.start or action_channel > discrete.start + discrete.n:
                     raise IndexError
             except IndexError as e:
-                logger.critical(f'{self.subject_agent} in batch {index} attempted to take an action that is not defined for a defined task.\nAction: %s\nSpace: %s',action, space)
+                logger.critical(
+                    f'{self.subject_agent} in batch {index} attempted to take an action that is not defined for a defined task.\nAction: %s\nSpace: %s',
+                    action, space)
                 raise e
 
         return actions
