@@ -56,19 +56,25 @@ class ActionSpaceValidatorModifier(BaseModifier):
                 # in_any_task = any([action_channel > space.start and action_channel < space.start + space.n for space in space.spaces])
                 task_agnostic_task = space.spaces[-1]
                 if action_channel < task_agnostic_task.start or action_channel > task_agnostic_task.start + task_agnostic_task.n:
-                    logger.critical(f'{self.subject_agent} in batch {index} attempted to take an task-agnostic action that is not defined.\nAction: %s\nSpace: %s',action, task_agnostic_task)
+                    logger.critical(
+                        f'{self.subject_agent} in batch {index} attempted to take an task-agnostic action that is not defined.\nAction: %s\nSpace: %s',
+                        action, task_agnostic_task)
                     raise IndexError
             else:
                 try:
                     discrete = space.spaces[task_channel]
                 except IndexError as e:
-                    logger.critical(f'{self.subject_agent} in batch {index} attempted to take an action on a undefined task.\nAction: %s\nSpace: %s',action, space)
+                    logger.critical(
+                        f'{self.subject_agent} in batch {index} attempted to take an action on a undefined task.\nAction: %s\nSpace: %s',
+                        action, space)
                     raise e
                 try:
                     if action_channel < discrete.start or action_channel > discrete.start + discrete.n:
                         raise IndexError
                 except IndexError as e:
-                    logger.critical(f'{self.subject_agent} in batch {index} attempted to take an action that is not defined for a defined task.\nAction: %s\nSpace: %s',action, space)
+                    logger.critical(
+                        f'{self.subject_agent} in batch {index} attempted to take an action that is not defined for a defined task.\nAction: %s\nSpace: %s',
+                        action, space)
                     raise e
 
         return actions
