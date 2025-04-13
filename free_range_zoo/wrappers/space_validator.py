@@ -83,7 +83,7 @@ class ActionSpaceValidatorModifier(BaseModifier):
         return actions
 
 
-def space_validator_wrapper_v0(env: BatchedAECEnv, allow_flexible_task_tags: bool = False) -> BatchedAECEnv:
+def space_validator_wrapper_v0(env: BatchedAECEnv, allow_flexible_task_tags: bool = True) -> BatchedAECEnv:
     """
     Apply the ActionSpaceValidatorModifier to the environment.
 
