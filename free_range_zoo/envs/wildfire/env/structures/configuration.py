@@ -20,13 +20,17 @@ class RewardConfiguration(Configuration):
         fire_rewards: torch.FloatTensor - Reward for extinguishing a fire
         bad_attack_penalty: float - Penalty for attacking a tile that is not on fire
         burnout_penalty: float - Penalty for attacking a burned out fire
+
         termination_reward: float - Reward for terminating the environment
+        termination_kappa: float - Reward for scaling sensitivity to burned-out fires
     """
 
     fire_rewards: torch.FloatTensor
     bad_attack_penalty: float
     burnout_penalty: float
+
     termination_reward: float
+    termination_kappa: float
 
     def validate(self) -> bool:
         """

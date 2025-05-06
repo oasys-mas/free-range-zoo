@@ -480,10 +480,13 @@ class raw_env(BatchedAECEnv):
             batch_is_dead = fires_are_out
 
         newly_terminated = torch.logical_xor(self.terminated, batch_is_dead)
-        termination_reward = self.reward_config.termination_reward / (self.num_burnouts + 1)
+
+        termination_penalty = self.reward_config.termination_kappa * torch.log(torch.tensor(self.num_burnouts + 1.0))
+        termination_reward = self.reward_config.termination_reward - termination_penalty
+        termination_reward = torch.clamp(termination_reward, min=0)
+
         for agent in self.agents:
             rewards[agent][newly_terminated] += termination_reward[newly_terminated]
-
             terminations[agent] = batch_is_dead
 
         return rewards, terminations, infos
