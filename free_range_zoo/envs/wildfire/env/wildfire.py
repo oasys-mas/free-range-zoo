@@ -58,6 +58,7 @@ from typing import Tuple, Dict, Any, Union, List, Optional, Callable
 import torch
 from tensordict.tensordict import TensorDict
 import gymnasium
+import pandas as pd
 from pettingzoo.utils.wrappers import OrderEnforcingWrapper
 
 from free_range_zoo.utils.env import BatchedAECEnv
@@ -461,6 +462,9 @@ class raw_env(BatchedAECEnv):
 
         self.num_burnouts += just_burned_out.int().sum(dim=(1, 2))
 
+        infos['burnouts'] = just_burned_out.int().sum(dim=(1, 2))
+        infos['putouts'] = just_put_out.int().sum(dim=(1, 2))
+
         # Assign rewards
         for agent in self.agents:
             rewards[agent] += fire_rewards_per_batch
@@ -642,3 +646,12 @@ class raw_env(BatchedAECEnv):
             include_suppressant=self.observe_other_suppressant,
             include_power=self.observe_other_power,
         )
+
+    def _log_environment(self, *args, **kwargs) -> None:
+        """Log the environment state to a csv."""
+        df = pd.DataFrame({
+            'burnouts': self.infos.get('burnouts', [None] * self.parallel_envs),
+            'putouts': self.infos.get('putouts', [None] * self.parallel_envs),
+        })
+
+        super()._log_environment(*args, **kwargs, extra=df)
