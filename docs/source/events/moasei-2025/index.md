@@ -1,6 +1,6 @@
-# MOSAEI 2025 - AAMAS
+# MOASEI 2025 - AAMAS
 ```{toctree}
-:caption: MOSAEI 2025 - AAMAS
+:caption: MOASEI 2025 - AAMAS
 :hidden:
 
 environment_initialization
@@ -19,7 +19,7 @@ Your objective is to construct a `Agent` class for your selected track which wil
 
 ## Instructions
 
-We recommend you follow the [installation guide](https://oasys-mas.github.io/free-range-zoo/introduction/installation.html) to install free-range-zoo, then run one of the full [quickstart](https://oasys-mas.github.io/free-range-zoo/events/mosaei-2025/quickstart_ride.html) (rideshare here) scripts to verify your installation, and see the [basic usage guide](https://oasys-mas.github.io/free-range-zoo/introduction/basic_usage.html) to see a example of making an `Agent`.
+We recommend you follow the [installation guide](https://oasys-mas.github.io/free-range-zoo/introduction/installation.html) to install free-range-zoo, then run one of the full [quickstart](https://oasys-mas.github.io/free-range-zoo/events/moasei-2025/quickstart_ride.html) (rideshare here) scripts to verify your installation, and see the [basic usage guide](https://oasys-mas.github.io/free-range-zoo/introduction/basic_usage.html) to see a example of making an `Agent`.
 
 ## Submission
 
@@ -27,5 +27,5 @@ You must submit the following:
 
 1. The source code of your `Agent` class with a list of all dependencies.
 2. The source code used to train/update your `Agent`.
-3. A modified version of the code shown in [evaluation](https://oasys-mas.github.io/free-range-zoo/events/mosaei-2025/evaluation.html) which initializes, loads, and evaluates your model.
+3. A modified version of the code shown in [evaluation](https://oasys-mas.github.io/free-range-zoo/events/moasei-2025/evaluation.html) which initializes, loads, and evaluates your model.
 4. The learned weights of your `Agent`.

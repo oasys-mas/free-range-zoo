@@ -7,7 +7,7 @@ lastpage:
 ```{toctree}
 :caption: Events
 :hidden:
-events/mosaei-2025/index
+events/moasei-2025/index
 ```
 
 ```{toctree}
