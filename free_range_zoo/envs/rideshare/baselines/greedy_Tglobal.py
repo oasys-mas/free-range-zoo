@@ -11,8 +11,7 @@ from free_range_zoo.envs.rideshare.env.structures.configuration import AgentConf
 class GreedyTaskGlobal(Agent):
     """Agent that acts on the soonest to completion passenger. i.e. minimum total distance to completion. (works on a task until completion)"""
 
-    def __init__(self, *args, agent_configuration: AgentConfiguration,
-                 **kwargs) -> None:
+    def __init__(self, *args, agent_configuration: AgentConfiguration, **kwargs) -> None:
         """Initialize the agent."""
         super().__init__(*args, **kwargs)
 
@@ -49,29 +48,20 @@ class GreedyTaskGlobal(Agent):
         self.t_mapping = self.t_mapping['agent_action_mapping']
 
         #no passengers, (all accepted by other agents)
-        if all([
-                self.observation['tasks'][i].size(0) == 0
-                for i in range(self.parallel_envs)
-        ]):
+        if all([self.observation['tasks'][i].size(0) == 0 for i in range(self.parallel_envs)]):
             self.actions.fill_(-1)
             return
 
-        accepted = self.observation['tasks'].to_padded_tensor(-100)[:, :,
-                                                                    4] >= 0
+        accepted = self.observation['tasks'].to_padded_tensor(-100)[:, :, 4] >= 0
         riding = self.observation['tasks'].to_padded_tensor(-100)[:, :, 5] >= 0
         unaccepted = ~accepted & ~riding
 
-        passenger_current = self.observation['tasks'].to_padded_tensor(
-            -100)[:, :, [0, 1]]
-        passenger_destination = self.observation['tasks'].to_padded_tensor(
-            -100)[:, :, [2, 3]]
-        my_location = self.observation['self'][:, [0, 1]].unsqueeze(1).repeat(
-            1, passenger_current.size(1), 1)
+        passenger_current = self.observation['tasks'].to_padded_tensor(-100)[:, :, [0, 1]]
+        passenger_destination = self.observation['tasks'].to_padded_tensor(-100)[:, :, [2, 3]]
+        my_location = self.observation['self'][:, [0, 1]].unsqueeze(1).repeat(1, passenger_current.size(1), 1)
 
-        _, passenger_distance = self.movement_transition.distance(
-            starts=passenger_current, goals=passenger_destination)
-        _, my_distance = self.movement_transition.distance(
-            starts=my_location, goals=passenger_current)
+        _, passenger_distance = self.movement_transition.distance(starts=passenger_current, goals=passenger_destination)
+        _, my_distance = self.movement_transition.distance(starts=my_location, goals=passenger_current)
         passengers = passenger_distance + my_distance
 
         argmin_store = torch.empty_like(self.t_mapping)
@@ -82,9 +72,7 @@ class GreedyTaskGlobal(Agent):
                 argmin_store[batch][element] = passengers[batch][element]
 
             if len(argmin_store[batch]) == 0:
-                self.actions[batch].fill_(
-                    -1
-                )  # There are no passengers seen in the environment so this agent (batch) must noop
+                self.actions[batch].fill_(-1)  # There are no passengers seen in the environment so this agent (batch) must noop
                 continue
 
             self.actions[batch, 0] = argmin_store[batch].argmin(dim=0)
@@ -104,6 +92,4 @@ class GreedyTaskGlobal(Agent):
             #noop
             else:
                 raise ValueError(
-                    "Invalid Observation, if this is reached there exists >=1 passenger, but that passenger has no features"
-                )
-
+                    "Invalid Observation, if this is reached there exists >=1 passenger, but that passenger has no features")

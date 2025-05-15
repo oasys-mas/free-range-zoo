@@ -37,16 +37,12 @@ class FirstInFirstOutBaseline(Agent):
         self.t_mapping = self.t_mapping['agent_action_mapping']
 
         #no passengers, (all accepted by other agents)
-        if all([
-                self.observation['tasks'][i].size(0) == 0
-                for i in range(self.parallel_envs)
-        ]):
+        if all([self.observation['tasks'][i].size(0) == 0 for i in range(self.parallel_envs)]):
             self.actions.fill_(-1)
             return
 
         passengers = self.observation['tasks'].to_padded_tensor(-100)[:, :, -1]
-        accepted = self.observation['tasks'].to_padded_tensor(-100)[:, :,
-                                                                    4] >= 0
+        accepted = self.observation['tasks'].to_padded_tensor(-100)[:, :, 4] >= 0
         riding = self.observation['tasks'].to_padded_tensor(-100)[:, :, 5] >= 0
         unaccepted = ~accepted & ~riding
 
@@ -57,9 +53,7 @@ class FirstInFirstOutBaseline(Agent):
                 argmin_store[batch][element] = passengers[batch][element]
 
             if len(argmin_store[batch]) == 0:
-                self.actions[batch].fill_(
-                    -1
-                )  # There are no passengers seen in the environment so this agent (batch) must noop
+                self.actions[batch].fill_(-1)  # There are no passengers seen in the environment so this agent (batch) must noop
                 continue
 
             self.actions[batch, 0] = argmin_store[batch].argmax(dim=0)
@@ -79,6 +73,4 @@ class FirstInFirstOutBaseline(Agent):
             #noop
             else:
                 raise ValueError(
-                    "Invalid Observation, if this is reached there exists >=1 passenger, but that passenger has no features"
-                )
-
+                    "Invalid Observation, if this is reached there exists >=1 passenger, but that passenger has no features")
