@@ -242,12 +242,13 @@ class BatchedAECEnv(ABC, AECEnv):
         if extra is not None and len(extra) != self.parallel_envs:
             raise ValueError('The number of elements in extras must match the number of parallel environments.')
 
+        if reset:
+            self._are_logs_initialized = False
+
         df = self._state.to_dataframe()
         if reset:
             for agent in self.possible_agents:
                 df[[f'{agent}_action', f'{agent}_rewards']] = None
-                df[f'{agent}_action_map'] = [str(mapping.tolist()) for mapping in self.agent_action_mapping[agent]]
-                df[f'{agent}_observation_map'] = [str(mapping.tolist()) for mapping in self.agent_observation_mapping[agent]]
 
             df['step'] = -1
             df['complete'] = None
@@ -255,11 +256,13 @@ class BatchedAECEnv(ABC, AECEnv):
             for agent in self.possible_agents:
                 df[f'{agent}_action'] = [str(action) for action in self.actions[agent].cpu().tolist()]
                 df[f'{agent}_rewards'] = self.rewards[agent].cpu()
-                df[f'{agent}_action_map'] = [str(mapping.tolist()) for mapping in self.agent_action_mapping[agent]]
-                df[f'{agent}_observation_map'] = [str(mapping.tolist()) for mapping in self.agent_observation_mapping[agent]]
 
             df['step'] = self.num_moves.cpu()
             df['complete'] = self.finished.cpu()
+
+        for agent in self.possible_agents:
+            df[f'{agent}_action_map'] = [str(mapping.tolist()) for mapping in self.agent_action_mapping[agent]]
+            df[f'{agent}_observation_map'] = [str(mapping.tolist()) for mapping in self.agent_observation_mapping[agent]]
 
         if extra is not None:
             df = pd.concat([df, extra], axis=1)
