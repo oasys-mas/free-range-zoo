@@ -481,7 +481,7 @@ class raw_env(BatchedAECEnv):
 
         newly_terminated = torch.logical_xor(self.terminated, batch_is_dead)
 
-        termination_penalty = self.reward_config.termination_kappa * torch.log(torch.tensor(self.num_burnouts + 1.0))
+        termination_penalty = self.reward_config.termination_kappa * torch.log(self.num_burnouts + 1.0)
         termination_reward = self.reward_config.termination_reward - termination_penalty
         termination_reward = torch.clamp(termination_reward, min=0)
 

@@ -32,6 +32,7 @@ def aaai_2025_ol_config(openness_level: int) -> WildfireConfiguration:
         burnout_penalty=-1.0,
         bad_attack_penalty=-100.0,
         termination_reward=0.0,
+        termination_kappa=0.0,
     )
 
     fire_configuration = FireConfiguration(

@@ -18,6 +18,7 @@ def non_stochastic() -> WildfireConfiguration:
         bad_attack_penalty=-100.0,
         burnout_penalty=-1.0,
         termination_reward=0.0,
+        termination_kappa=0.0,
     )
 
     fire_configuration = FireConfiguration(
