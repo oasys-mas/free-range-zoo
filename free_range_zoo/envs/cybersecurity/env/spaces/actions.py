@@ -8,9 +8,12 @@ import free_range_rust
 from free_range_rust import Space
 
 
-def build_action_space(agent_type: Union[Literal['attacker'],
-                                         Literal['defender']], show_bad_actions: bool, environment_task_counts: torch.IntTensor,
-                       current_location: torch.IntTensor) -> List[free_range_rust.Space]:
+def build_action_space(
+    agent_type: Union[Literal['attacker'], Literal['defender']],
+    show_bad_actions: bool,
+    environment_task_counts: torch.IntTensor,
+    current_location: torch.IntTensor,
+) -> List[free_range_rust.Space]:
     """
     Build the action space for all environments in a batched environment.
 

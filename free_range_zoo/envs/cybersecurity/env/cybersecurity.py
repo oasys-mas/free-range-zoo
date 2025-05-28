@@ -483,7 +483,7 @@ class raw_env(BatchedAECEnv):
             agent_type=agent_type,
             show_bad_actions=self.show_bad_actions,
             environment_task_counts=num_tasks_in_environment,
-            current_location=self._state.location[:, agent_index],
+            current_location=self._state.location[:, agent_index] if agent_type == 'defender' else None,
         )
 
     @torch.no_grad()
