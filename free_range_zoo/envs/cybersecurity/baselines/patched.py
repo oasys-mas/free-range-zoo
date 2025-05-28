@@ -37,6 +37,12 @@ class PatchedAttackerBaseline(Agent):
         """
         self.observation, self.t_mapping = observation
         self.t_mapping = self.t_mapping['agent_action_mapping']
+
+        if self.t_mapping.numel() == 0:
+            self.actions[:, 0] = -100
+            self.actions[:, 1] = -1
+            return
+
         self.t_mapping = self.t_mapping.to_padded_tensor(padding=-100)
 
         new_targets = self.observation['tasks'][:, 0].argmin(dim=1).flatten()
@@ -89,13 +95,17 @@ class PatchedDefenderBaseline(Agent):
         """
         self.observation, self.t_mapping = observation
         self.t_mapping = self.t_mapping['agent_action_mapping']
+
+        if self.t_mapping.numel() == 0:
+            self.actions[:, 0] = -100
+            self.actions[:, 1] = -1
+            return
+
         self.t_mapping = self.t_mapping.to_padded_tensor(padding=-100)
 
-        last_monitor = (self.observation['tasks'][:, 0] != -100).all(dim=1).flatten()
-
-        task_mask = self.observation['tasks'][:, 0]
-        task_mask = torch.where(self.observation['tasks'][:, 0] == 0, 1000, task_mask)
-        task_mask = torch.where(self.observation['tasks'][:, 0] == -100, 1000, task_mask)
+        node_state = self.observation['tasks'][:, 0]
+        last_monitor = (node_state != -100).all(dim=1).flatten()
+        task_mask = torch.where((node_state == -100) | (node_state == 0), 1000, node_state)
         new_targets = task_mask.argmin(dim=1).flatten()
 
         self.target_node = torch.where(last_monitor, new_targets, self.target_node)

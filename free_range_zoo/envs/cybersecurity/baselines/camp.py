@@ -38,6 +38,12 @@ class CampDefenderBaseline(Agent):
         """
         self.observation, self.t_mapping = observation
         self.t_mapping = self.t_mapping['action_task_mappings']
+
+        if self.t_mapping.numel() == 0:
+            self.actions[:, 0] = -100
+            self.actions[:, 1] = -1
+            return
+
         self.t_mapping = self.t_mapping.to_padded_tensor(padding=-100)
 
         self.target_node = self.agent_index % self.observation['tasks'].size(1)
