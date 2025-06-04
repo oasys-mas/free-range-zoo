@@ -156,6 +156,7 @@ class raw_env(BatchedAECEnv):
         for attacker_name, agent_idx in self.attacker_name_mapping.items():
             other_agents = agent_ids[agent_ids != agent_idx]
             self.observation_ordering[attacker_name] = other_agents
+        agent_ids = torch.arange(0, self.defender_config.num_defenders, device=self.device)
         for defender_name, agent_idx in self.defender_name_mapping.items():
             other_agents = agent_ids[agent_ids != agent_idx]
             self.observation_ordering[defender_name] = other_agents + self.attacker_config.num_attackers
@@ -381,16 +382,21 @@ class raw_env(BatchedAECEnv):
         # The only action that non-present agents can take is noop
         for agent in self.agents:
             agent_number = self.offset_agent_name_mapping[agent]
-            presence_state = self._state.presence[:, agent_number].unsqueeze(1)
-            presence_state = presence_state.expand(-1, self.network_config.num_nodes)
+            is_present = self._state.presence[:, agent_number]
 
-            tasks = self.network_range.unsqueeze(0).expand(self.parallel_envs, -1)
-            tasks = tasks[presence_state].flatten(end_dim=0)
+            full_task_set = self.network_range.unsqueeze(0).expand(self.parallel_envs, -1)
+            self.agent_observation_mapping[agent] = torch.nested.as_nested_tensor(full_task_set.split(1, dim=0))
 
-            task_counts = self.agent_task_count[agent_number]
+            if is_present.any():
+                presence_state = is_present.unsqueeze(1).expand(-1, self.network_config.num_nodes)
+                tasks = self.network_range.unsqueeze(0).expand(self.parallel_envs, -1)
+                masked_tasks = tasks[presence_state].flatten(end_dim=0)
 
-            self.agent_observation_mapping[agent] = torch.nested.as_nested_tensor(tasks.split(task_counts.tolist(), dim=0))
-            self.agent_action_mapping[agent] = torch.nested.as_nested_tensor(tasks.split(task_counts.tolist(), dim=0))
+                task_counts = self.agent_task_count[agent_number]
+                self.agent_action_mapping[agent] = torch.nested.as_nested_tensor(masked_tasks.split(task_counts.tolist(), dim=0))
+            else:
+                self.agent_action_mapping[agent] = torch.nested.as_nested_tensor(
+                    [torch.tensor([], device=self.device, dtype=self.network_range.dtype)] * self.parallel_envs)
 
     @torch.no_grad()
     def update_observations(self) -> None:
