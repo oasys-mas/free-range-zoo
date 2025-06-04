@@ -1,5 +1,5 @@
 """Wrapper utilities for applying wrapper classes for environment output modification."""
-from typing import List, Union, Dict, Any, Tuple
+from typing import List, Union, Dict, Any, Tuple, Optional
 
 import gymnasium
 from pettingzoo.utils import BaseParallelWrapper
@@ -7,6 +7,7 @@ from pettingzoo.utils.wrappers import OrderEnforcingWrapper as BaseWrapper
 from pettingzoo.utils.env import ActionType
 from supersuit.utils.wrapper_chooser import WrapperChooser
 
+from free_range_zoo.wrappers.passthrough import PassthroughWrapperModifier
 from free_range_zoo.utils.env import BatchedAECEnv
 
 import torch
@@ -15,15 +16,18 @@ import torch
 class shared_wrapper_aec(BaseWrapper):
     """Wrapper application utility for AEC environments."""
 
-    def __init__(self, env: BatchedAECEnv, modifier_class: BaseWrapper, **kwargs):
+    def __init__(self, env: BatchedAECEnv, modifier_class: BaseWrapper, agents_list: Optional[List[str]] = None, **kwargs):
         """
         Initialize the wrapper.
 
         Args:
             env: BatchedAECEnv - The environment to wrap
             modifier_class: BaseWrapper - The modifier class to use for modifying the environment output
+            agents_list: Optional[List[str]] - list of agents to apply the wrapper to
         """
         super().__init__(env)
+
+        self.agents_list = agents_list
 
         self.modifier_class = modifier_class
         self.modifiers = {}
@@ -67,23 +71,30 @@ class shared_wrapper_aec(BaseWrapper):
             agents_list: List[str] - the list of agents for which the modifiers need to be added
         """
         for agent in agents_list:
-            if agent not in self.modifiers:
-                args = []
+            if agent in self.modifiers:
+                continue
+
+            if self.agents_list is None or agent in self.agents_list:
+                mod_class = self.modifier_class
+                args, kwargs = [], self.modifier_args
                 if hasattr(self.modifier_class, 'env') and self.modifier_class.env:
                     args.append(self.env)
                 if hasattr(self.modifier_class, 'subject_agent') and self.modifier_class.subject_agent:
                     args.append(agent)
+            else:
+                mod_class = PassthroughWrapperModifier
+                args, kwargs = [], {}
 
-                self.modifiers[agent] = self.modifier_class(*args, **self.modifier_args)
+            self.modifiers[agent] = mod_class(*args, **kwargs)
 
-                self.observation_space(agent)
-                self.action_space(agent)
-                self.modifiers[agent].modify_obs(self.env.observe(agent))
-                self.modifiers[agent].reset(seed=self._cur_seed, options=self._cur_options)
+            self.observation_space(agent)
+            self.action_space(agent)
+            self.modifiers[agent].modify_obs(self.env.observe(agent))
+            self.modifiers[agent].reset(seed=self._cur_seed, options=self._cur_options)
 
-                # Modifiers for each agent has a different seed
-                if self._cur_seed is not None:
-                    self._cur_seed += 1
+            # Modifiers for each agent has a different seed
+            if self._cur_seed is not None:
+                self._cur_seed += 1
 
     def reset(self, seed: Union[List[int], int] = None, options: Dict[str, Any] = None) -> None:
         """
@@ -139,16 +150,20 @@ class shared_wrapper_aec(BaseWrapper):
 class shared_wrapper_parr(BaseParallelWrapper):
     """Wrapper application utility for parallel environments."""
 
-    def __init__(self, env: BatchedAECEnv, modifier_class: BaseWrapper, **kwargs):
+    def __init__(self, env: BatchedAECEnv, modifier_class: BaseWrapper, agents_list: Optional[List[str]] = None, **kwargs):
         """
         Initialize the wrapper.
 
         Args:
             env: BatchedAECEnv - The environment to wrap
             modifier_class: BaseWrapper - The modifier class to use for modifying the environment output
+            agents_list: Optional[List[str]] - list of agents to apply the wrapper to
         """
         super().__init__(env)
+
         self.env.reset()
+
+        self.agents_list = agents_list
 
         self.modifier_class = modifier_class
         self.modifiers = {}
@@ -190,23 +205,34 @@ class shared_wrapper_parr(BaseParallelWrapper):
             agents_list: List[str] - the list of agents for which the modifiers need to be added
         """
         for agent in agents_list:
-            if agent not in self.modifiers:
-                args = []
+            if agent in self.modifiers:
+                continue
+
+            if self.agents_list is None or agent in self.agents_list:
+                mod_class = self.modifier_class
+                args, kwargs = [], self.modifier_args
                 if hasattr(self.modifier_class, 'env') and self.modifier_class.env:
                     args.append(self.env)
                 if hasattr(self.modifier_class, 'subject_agent') and self.modifier_class.subject_agent:
                     args.append(agent)
+            else:
+                mod_class = PassthroughWrapperModifier
+                args, kwargs = [], {}
 
-                self.modifiers[agent] = self.modifier_class(*args, **self.modifier_args)
+            self.modifiers[agent] = mod_class(*args, **kwargs)
 
-                self.observation_space(agent)
-                self.action_space(agent)
+            self.observation_space(agent)
+            self.action_space(agent)
 
-                self.modifiers[agent].reset(seed=self._cur_seed, options=self._cur_options)
+            # Modifiers for each agent has a different seed
+            if self._cur_seed is not None:
+                self._cur_seed += 1
 
-                # Modifiers for each agent has a different seed
-                if self._cur_seed is not None:
-                    self._cur_seed += 1
+        for agent, observation in self.env.observe().items():
+            self.modifiers[agent].modify_obs(observation)
+
+        for agent in agents_list:
+            self.modifiers[agent].reset(seed=self._cur_seed, options=self._cur_options)
 
     def reset(self,
               seed: Union[int, List[int]] = None,
