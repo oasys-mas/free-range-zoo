@@ -12,14 +12,13 @@ class ActionTaskMappingWrapperModifier(BaseModifier):
     env = True
     subject_agent = True
 
-    def __init__(self, env: BatchedAECEnv, subject_agent: str, collapse: bool = False):
+    def __init__(self, env: BatchedAECEnv, subject_agent: str):
         """
         Initialize the ActionTaskMappingWrapperModifier.
 
         Args:
             env: BatchedAECEnv - The environment to wrap.
             subject_agent: str - The subject agent of the graph wrapper.
-            collapse: bool - Whether to collapse the task-action and task-agnostic action nodes into single nodes.
         """
         self.env = env
 
@@ -47,14 +46,13 @@ class ActionTaskMappingWrapperModifier(BaseModifier):
         return self.cur_obs
 
 
-def action_mapping_wrapper_v0(env, collapse: bool = False) -> BatchedAECEnv:
+def action_mapping_wrapper_v0(env: BatchedAECEnv, **kwargs) -> BatchedAECEnv:
     """
-    Apply the HeteroGraphWrapperModifier to the environment.
+    Apply the ActionTaskMappingWrapperModifier to the environment.
 
     Args:
         env: BatchedAECEnv - The environment to wrap.
-        collapse: bool - Whether to collapse the task-action and task-agnostic action nodes into single nodes.
     Returns:
         BatchedAECEnv - The wrapped environment.
     """
-    return shared_wrapper(env, ActionTaskMappingWrapperModifier, collapse=collapse)
+    return shared_wrapper(env, ActionTaskMappingWrapperModifier, **kwargs)
