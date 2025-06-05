@@ -394,7 +394,7 @@ class raw_env(BatchedAECEnv):
     @torch.no_grad()
     def step_environment(self) -> Tuple[Dict[str, torch.Tensor], Dict[str, torch.Tensor], Dict[str, Dict[str, bool]]]:
         """
-        The actual simultaneous action wildfire environment step
+        Perform a simultaneous action wildfire environment step.
         """
         # Initialize storages
         rewards = {agent: torch.zeros(self.parallel_envs, dtype=torch.float32, device=self.device) for agent in self.agents}
@@ -409,6 +409,9 @@ class raw_env(BatchedAECEnv):
         users = torch.zeros(shape, dtype=torch.bool, device=self.device)
         attack_powers = torch.zeros_like(self._state.fires, dtype=torch.float32, device=self.device)
 
+        (B, H, W), A = self._state.fires.shape, len(self.agents)
+        agent_last_hit_mask = torch.zeros((B, A, H, W), device=self.device, dtype=torch.bool)
+
         fire_positions = (self._state.fires > 0).nonzero(as_tuple=False)
 
         index_shifts = torch.roll(torch.cumsum(self.environment_task_count, dim=0), 1, dims=0)
@@ -422,16 +425,19 @@ class raw_env(BatchedAECEnv):
             # Determine in which environments this agent is refilling suppressant
             refills[agent_index] = agent_actions[:, 1] == -1
 
+            # Skip if this agent has no tasks in any environment
             if self.agent_task_count[agent_index].sum() == 0:
                 continue
 
+            non_refill_mask = ~refills[agent_index]
+
             agent_action_mapping_pad = self.agent_action_mapping[agent_name].to_padded_tensor(padding=-100)
 
-            # Gather the indexes of all of the agent actions
+            # Gather task indices for non-refill actions
             task_indices = torch.hstack([self.parallel_ranges.unsqueeze(1), agent_actions[:, 0].unsqueeze(1)])
-            task_indices = agent_action_mapping_pad[task_indices[~refills[agent_index]].split(1, dim=1)]
+            task_indices = agent_action_mapping_pad[task_indices[non_refill_mask].split(1, dim=1)]
 
-            global_task_indices = (index_shifts.squeeze(1)[~refills[agent_index]] + task_indices.squeeze(1))
+            global_task_indices = (index_shifts.squeeze(1)[non_refill_mask] + task_indices.squeeze(1))
 
             fire_coords = fire_positions[global_task_indices]
 
@@ -449,22 +455,27 @@ class raw_env(BatchedAECEnv):
             good_fight = torch.ones(self.parallel_envs, dtype=torch.bool, device=self.device)
             good_fight[refills[agent_index]] = False
 
+            # Further filter bad actions if enabled
             if self.show_bad_actions and self.agent_bad_actions[agent_name].numel() > 0:
                 bad_actions = self.agent_bad_actions[agent_name].to_padded_tensor(-100)
                 attacks = agent_actions[:, 0].unsqueeze(1).expand_as(bad_actions)
+                bad_actions_mask = (bad_actions == attacks).any(dim=1)
+                good_fight &= (~bad_actions_mask & ~refills[agent_index])
 
-                bad_actions = (bad_actions == attacks).any(dim=1)
-
-                good_fight = good_fight & (~bad_actions & ~refills[agent_index])
-
-            attack_powers[fire_coords[good_fight[~refills[agent_index]]].split(1, dim=1)] += full_powers[good_fight].unsqueeze(1)
+            attack_powers[fire_coords[good_fight[non_refill_mask]].split(1, dim=1)] += full_powers[good_fight].unsqueeze(1)
 
             # Aggregate the filtered information
             users[agent_index] = good_fight
-            bad_users = ~(users[agent_index] | refills[agent_index])
+            bad_users = ~(good_fight | refills[agent_index])
 
             # Give out rewards for bad actions
             rewards[agent_name][bad_users] = self.reward_config.bad_attack_penalty
+
+            active_envs = good_fight[non_refill_mask].nonzero(as_tuple=False).squeeze(1)
+            if active_envs.numel() > 0:
+                coords = fire_coords[active_envs]
+                batches, y, x = coords.unbind(dim=1)
+                agent_last_hit_mask[batches, agent_index, y, x] = True
 
         refills = refills.T
         users = users.T
@@ -518,16 +529,24 @@ class raw_env(BatchedAECEnv):
         fire_rewards = torch.zeros_like(self._state.fires, device=self.device, dtype=torch.float)
         fire_rewards[just_put_out] = self.fire_rewards[just_put_out]
         fire_rewards[just_burned_out] = self.reward_config.burnout_penalty
-        fire_rewards_per_batch = fire_rewards.sum(dim=(1, 2))
 
-        self.num_burnouts += just_burned_out.int().sum(dim=(1, 2))
+        # Assign rewards for burnouts and task rewards
+        if self.reward_config.localize_putouts:
+            localized_rewards = torch.zeros_like(fire_rewards)
+            localized_rewards[just_put_out] = self.fire_rewards[just_put_out]
+            localized_rewards_expanded = localized_rewards.unsqueeze(1)
+            per_agent_rewards = localized_rewards_expanded * agent_last_hit_mask
+            per_agent_reward_sums = per_agent_rewards.sum(dim=(2, 3))
 
-        infos['burnouts'] = just_burned_out.int().sum(dim=(1, 2))
-        infos['putouts'] = just_put_out.int().sum(dim=(1, 2))
+            burnout_penalty_total = self.reward_config.burnout_penalty * just_burned_out.sum(dim=(1, 2), dtype=torch.float)
 
-        # Assign rewards
-        for agent in self.agents:
-            rewards[agent] += fire_rewards_per_batch
+            for i, agent in enumerate(self.agents):
+                rewards[agent] += per_agent_reward_sums[:, i]
+                rewards[agent] += burnout_penalty_total
+        else:
+            fire_rewards_per_batch = fire_rewards.sum(dim=(1, 2))
+            for agent in self.agents:
+                rewards[agent] += fire_rewards_per_batch
 
         # Determine environment terminations due to no more fires
         fires_are_out = self._state.fires.flatten(start_dim=1).max(dim=1)[0] <= 0
@@ -545,9 +564,7 @@ class raw_env(BatchedAECEnv):
         # Assign rewards for terminated environments
         newly_terminated = ~self.terminated & batch_is_dead
         termination_penalty = self.reward_config.termination_kappa * torch.log(self.num_burnouts + 1.0)
-        termination_reward = self.reward_config.termination_reward - termination_penalty
-        termination_reward = torch.clamp(termination_reward, min=0)
-
+        termination_reward = (self.reward_config.termination_reward - termination_penalty).clamp(min=0)
         for agent in self.agents:
             rewards[agent][newly_terminated] += termination_reward[newly_terminated]
             self.terminations[agent] |= batch_is_dead
