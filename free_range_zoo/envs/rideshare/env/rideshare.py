@@ -313,10 +313,10 @@ class raw_env(BatchedAECEnv):
                 minlength=self.parallel_envs,
             )
 
-            indices_nested = torch.nested.as_nested_tensor(task_indices[agent_tasks].split(
-                self.agent_task_count[agent_index].tolist(),
-                dim=0,
-            ))
+            indices_nested = torch.nested.as_nested_tensor(
+                task_indices[agent_tasks].split(self.agent_task_count[agent_index].tolist(), dim=0),
+                layout=torch.jagged,
+            )
 
             self.agent_observation_mapping[agent_name] = indices_nested
             self.agent_action_mapping[agent_name] = indices_nested.clone()
@@ -345,7 +345,10 @@ class raw_env(BatchedAECEnv):
         fare_info = self._state.passengers[:, [5]]
 
         task_observations = torch.cat([task_positional_info, accepted_info, riding_info, fare_info, entered_info], dim=1)
-        self.task_store = torch.nested.as_nested_tensor(task_observations.split(self.environment_task_count.tolist()))
+        self.task_store = torch.nested.as_nested_tensor(
+            task_observations.split(self.environment_task_count.tolist()),
+            layout=torch.jagged,
+        )
 
         # Aggregate all of the informations for the agent observations
         agent_observations = torch.empty(
@@ -371,8 +374,10 @@ class raw_env(BatchedAECEnv):
 
             self.agent_task_count[agent_index] = self._state.passengers[agent_tasks][:, 0].bincount(minlength=self.parallel_envs)
 
-            nested_observation = torch.nested.as_nested_tensor(task_observations[agent_tasks].split(
-                self.agent_task_count[agent_index].tolist()))
+            nested_observation = torch.nested.as_nested_tensor(
+                task_observations[agent_tasks].split(self.agent_task_count[agent_index].tolist()),
+                layout=torch.jagged,
+            )
 
             agent_mask = torch.ones(self.agent_config.num_agents, dtype=torch.bool, device=self.device)
             agent_mask[agent_index] = False

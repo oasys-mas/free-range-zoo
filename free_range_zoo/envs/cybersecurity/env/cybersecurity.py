@@ -385,7 +385,10 @@ class raw_env(BatchedAECEnv):
             is_present = self._state.presence[:, agent_number]
 
             full_task_set = self.network_range.unsqueeze(0).expand(self.parallel_envs, -1)
-            self.agent_observation_mapping[agent] = torch.nested.as_nested_tensor(full_task_set.split(1, dim=0))
+            self.agent_observation_mapping[agent] = torch.nested.as_nested_tensor(
+                full_task_set.split(1, dim=0),
+                layout=torch.jagged,
+            )
 
             if is_present.any():
                 presence_state = is_present.unsqueeze(1).expand(-1, self.network_config.num_nodes)
@@ -393,7 +396,10 @@ class raw_env(BatchedAECEnv):
                 masked_tasks = tasks[presence_state].flatten(end_dim=0)
 
                 task_counts = self.agent_task_count[agent_number]
-                self.agent_action_mapping[agent] = torch.nested.as_nested_tensor(masked_tasks.split(task_counts.tolist(), dim=0))
+                self.agent_action_mapping[agent] = torch.nested.as_nested_tensor(
+                    masked_tasks.split(task_counts.tolist(), dim=0),
+                    layout=torch.jagged,
+                )
             else:
                 self.agent_action_mapping[agent] = torch.nested.as_nested_tensor(
                     [torch.tensor([], device=self.device, dtype=self.network_range.dtype)] * self.parallel_envs)

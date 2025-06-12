@@ -538,6 +538,7 @@ class raw_env(BatchedAECEnv):
         task_indices_nested = torch.nested.as_nested_tensor(
             task_indices.split(num_tasks_per_environment.tolist(), dim=0),
             device=self.device,
+            layout=torch.jagged,
         )
 
         # Aggregate the indices of all tasks to agent mapping
@@ -547,12 +548,17 @@ class raw_env(BatchedAECEnv):
             bad_task_count = num_tasks_per_environment - task_count
 
             tasks = task_indices[checks[agent_number]]
-            batchwise_indices = torch.nested.as_nested_tensor(tasks.split(task_count.tolist(), dim=0), device=self.device)
+            batchwise_indices = torch.nested.as_nested_tensor(
+                tasks.split(task_count.tolist(), dim=0),
+                device=self.device,
+                layout=torch.jagged,
+            )
 
             bad_tasks = task_indices[~checks[agent_number]]
             bad_batchwise_indices = torch.nested.as_nested_tensor(
                 bad_tasks.split(bad_task_count.tolist(), dim=0),
                 device=self.device,
+                layout=torch.jagged,
             )
 
             self.agent_task_count[agent_number] = task_count
