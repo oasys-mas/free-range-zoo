@@ -17,27 +17,15 @@ class TestTransitionForward(unittest.TestCase):
 
         self.device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
 
-        self.state = WildfireState(fires=torch.ones(
-            (self.parallel_envs, self.max_y, self.max_x), dtype=torch.int32, device=self.device) * -1,
-                                   intensity=torch.zeros((self.parallel_envs, self.max_y, self.max_x),
-                                                         dtype=torch.int32,
-                                                         device=self.device),
-                                   fuel=torch.zeros((self.parallel_envs, self.max_y, self.max_x),
-                                                    dtype=torch.int32,
-                                                    device=self.device),
-                                   agents=torch.randint(0,
-                                                        self.max_y, (self.num_agents, 2),
-                                                        dtype=torch.int32,
-                                                        device=self.device),
-                                   capacity=torch.ones((self.parallel_envs, self.num_agents),
-                                                       dtype=torch.float32,
-                                                       device=self.device),
-                                   suppressants=torch.ones((self.parallel_envs, self.num_agents),
-                                                           dtype=torch.float32,
-                                                           device=self.device),
-                                   equipment=torch.ones((self.parallel_envs, self.num_agents),
-                                                        dtype=torch.int32,
-                                                        device=self.device))
+        self.state = WildfireState(
+            fires=torch.ones((self.parallel_envs, self.max_y, self.max_x), dtype=torch.int32, device=self.device) * -1,
+            intensity=torch.zeros((self.parallel_envs, self.max_y, self.max_x), dtype=torch.int32, device=self.device),
+            fuel=torch.zeros((self.parallel_envs, self.max_y, self.max_x), dtype=torch.int32, device=self.device),
+            agents=torch.randint(0, self.max_y, (self.num_agents, 2), dtype=torch.int32, device=self.device),
+            capacity=torch.ones((self.parallel_envs, self.num_agents), dtype=torch.float32, device=self.device),
+            suppressants=torch.ones((self.parallel_envs, self.num_agents), dtype=torch.float32, device=self.device),
+            equipment=torch.ones((self.parallel_envs, self.num_agents), dtype=torch.int32, device=self.device),
+        )
         self.state.fires[0, 1, 1] = 1
         self.state.intensity[0, 1, 1] = 1
 
@@ -45,8 +33,10 @@ class TestTransitionForward(unittest.TestCase):
             fire_spread_weights=torch.tensor([[[[0, 0.5, 0], [0.5, 0, 0.5], [0, 0.5, 0]]]],
                                              dtype=torch.float32,
                                              device=self.device),
+            fire_random_spread_weight=0.0,
             ignition_temperatures=torch.tensor([[1, 1, 1, 1], [1, 1, 1, 1], [1, 1, 1, 1], [1, 1, 1, 1]], dtype=torch.int32),
-            use_fire_fuel=False).to(self.device)
+            use_fire_fuel=False,
+        ).to(self.device)
 
         self.randomness_source = torch.tensor(
             [[0.1, 0.6, 0.1, 0.6], [0.1, 0.6, 0.3, 0.8], [0.3, 0.8, 0.2, 0.7], [0.3, 0.8, 0.2, 0.7]],

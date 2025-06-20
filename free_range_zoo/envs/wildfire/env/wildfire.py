@@ -210,6 +210,7 @@ class raw_env(BatchedAECEnv):
 
         self.fire_spread_transition = transitions.FireSpreadTransition(
             fire_spread_weights=self.fire_spread_weights,
+            fire_random_spread_weight=self.config.fire_random_spread_weight,
             ignition_temperatures=self.ignition_temp,
             use_fire_fuel=self.stochastic_config.fire_fuel,
         ).to(self.device)

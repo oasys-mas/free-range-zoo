@@ -350,10 +350,15 @@ class WildfireConfiguration(Configuration):
             [0.0, Ss, 0.0],
         ], dtype=torch.float32)
 
-        if self.stochastic_config.random_fire_ignition:
-            fire_filter[1, 1] = fire_filter[1, 1] + self.fire_config.random_ignition_probability
-
         return fire_filter.unsqueeze(0).unsqueeze(0).to(torch.float32)
+
+    @functools.cached_property
+    def fire_random_spread_weight(self) -> float:
+        """Return the random fire spread weight given fire and stochastic configuration."""
+        if self.stochastic_config.random_fire_ignition:
+            return self.fire_config.random_ignition_probability
+        else:
+            return 0.0
 
     def validate(self) -> bool:
         """
