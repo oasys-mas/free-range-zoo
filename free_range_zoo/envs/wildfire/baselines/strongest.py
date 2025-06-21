@@ -35,6 +35,10 @@ class StrongestBaseline(Agent):
         self.observation, self.t_mapping = observation
         self.t_mapping = self.t_mapping['agent_action_mapping']
 
+        if self.t_mapping.numel() == 0:
+            self.actions.fill_(-1)
+            return
+
         has_suppressant = self.observation['self'][:, 3] != 0
         fires = self.observation['tasks'].to_padded_tensor(-100)[:, :, 3]
 
