@@ -108,6 +108,8 @@ class raw_env(BatchedAECEnv):
             other_agents = agent_ids[agent_ids != self.agent_name_mapping[agent]]
             self.observation_ordering[agent] = other_agents
 
+        self.agent_observation_mask = lambda agent_name: torch.ones(4, dtype=torch.bool, device=self.device)
+
         self.movement_transition = self.config.movement_transition(self.parallel_envs).to(self.device)
         self.passenger_entry_transition = self.config.passenger_entry_transition(self.parallel_envs).to(self.device)
         self.passenger_exit_transition = self.config.passenger_exit_transition(self.parallel_envs).to(self.device)
