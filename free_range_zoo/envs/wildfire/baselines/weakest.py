@@ -40,7 +40,7 @@ class WeakestBaseline(Agent):
         if all(self.t_mapping[j].size(0) == 0 for j in range(self.parallel_envs)):
             self.actions.fill_(-1)
             return
-            
+
         fires = self.observation['tasks'].to_padded_tensor(-100)[:, :, 3]
 
         argmax_store = torch.empty_like(self.t_mapping)
