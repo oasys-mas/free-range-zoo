@@ -37,7 +37,7 @@ class WeakestBaseline(Agent):
 
         has_suppressant = self.observation['self'][:, 3] != 0
 
-        if all(self.t_mapping[j].size(0) == 0 for j in range(self.parallel_envs)):
+        if self.t_mapping.numel() == 0:
             self.actions.fill_(-1)
             return
             

@@ -35,7 +35,7 @@ class StrongestBaseline(Agent):
         self.observation, self.t_mapping = observation
         self.t_mapping = self.t_mapping['agent_action_mapping']
 
-        if all(self.t_mapping[j].size(0) == 0 for j in range(self.parallel_envs)):
+        if self.t_mapping.numel() == 0:
             self.actions.fill_(-1)
             return
 
