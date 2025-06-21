@@ -157,7 +157,7 @@ class TestBuildSingleDefenderActionSpace(TestCaching, unittest.TestCase):
 
         expected = Space.OneOf([
             Space.Discrete(1, start=0),  # move to connected node
-            Space.Discrete(0, start=0),  # move to connected node
+            Space.Discrete(1, start=0),  # move to connected node
             Space.Discrete(1, start=0),  # move to connected node
             Space.Discrete(1, start=-1),  # noop
             Space.Discrete(1, start=-2),  # patch

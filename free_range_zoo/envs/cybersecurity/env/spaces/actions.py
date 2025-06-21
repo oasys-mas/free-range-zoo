@@ -57,7 +57,7 @@ def build_single_defender_action_space(num_tasks_in_environment: int, current_lo
         return Space.OneOf([Space.Discrete(1, start=-1)])  # noop
 
     # The agent is at the home node so they do not have the option to patch if bad options are not shown
-    if show_bad_actions and current_location == -1:
+    if show_bad_actions:
         return Space.OneOf([
             *[Space.Discrete(1, start=0) for _ in range(num_tasks_in_environment)],  # move to connected nodes
             Space.Discrete(1, start=-1),  # noop
@@ -72,9 +72,7 @@ def build_single_defender_action_space(num_tasks_in_environment: int, current_lo
         ])
 
     return Space.OneOf([
-        *[Space.Discrete(1, start=0) for _ in range(current_location)],  # move to connected nodes
-        Space.Discrete(0, start=0),  # move to current node (empty because this action isn't available)
-        *[Space.Discrete(1, start=0) for _ in range(num_tasks_in_environment - current_location - 1)],  # move to connected nodes
+        *[Space.Discrete(1, start=0) for _ in range(num_tasks_in_environment)],  # move to connected nodes
         Space.Discrete(1, start=-1),  # noop
         Space.Discrete(1, start=-2),  # patch current node
         Space.Discrete(1, start=-3),  # monitor
