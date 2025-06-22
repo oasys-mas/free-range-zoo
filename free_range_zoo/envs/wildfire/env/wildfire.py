@@ -344,7 +344,6 @@ class raw_env(BatchedAECEnv):
         """
         # Initialize storages
         rewards = {agent: torch.zeros(self.parallel_envs, dtype=torch.float32, device=self.device) for agent in self.agents}
-        terminations = {agent: torch.zeros(self.parallel_envs, dtype=torch.bool, device=self.device) for agent in self.agents}
         infos = {agent: {} for agent in self.agents}
 
         # For simplification purposes, one randomness generation is done per step, then taken piecewise
@@ -480,17 +479,24 @@ class raw_env(BatchedAECEnv):
             # If all fires are out then the episode is over
             batch_is_dead = fires_are_out
 
-        newly_terminated = torch.logical_xor(self.terminated, batch_is_dead)
+        # Remove all fires from dead batches to enforce termination
+        self._state.fires[batch_is_dead].fill_(0)
 
+        # Assign rewards for terminated environments
+        newly_terminated = ~self.terminated & batch_is_dead
         termination_penalty = self.reward_config.termination_kappa * torch.log(self.num_burnouts + 1.0)
         termination_reward = self.reward_config.termination_reward - termination_penalty
         termination_reward = torch.clamp(termination_reward, min=0)
 
         for agent in self.agents:
             rewards[agent][newly_terminated] += termination_reward[newly_terminated]
-            terminations[agent] = batch_is_dead
+            self.terminations[agent] |= batch_is_dead
 
-        return rewards, terminations, infos
+        self.num_burnouts += just_burned_out.int().sum(dim=(1, 2))
+        infos['burnouts'] = just_burned_out.int().sum(dim=(1, 2))
+        infos['putouts'] = just_put_out.int().sum(dim=(1, 2))
+
+        return rewards, self.terminations, infos
 
     @torch.no_grad()
     def update_actions(self) -> None:
