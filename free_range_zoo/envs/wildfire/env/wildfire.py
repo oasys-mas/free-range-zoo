@@ -599,7 +599,11 @@ class raw_env(BatchedAECEnv):
 
         task_count = lit_fires.sum(dim=(1, 2))
         fire_observations = torch.cat([lit_fire_indices[:, 1:], fires, intensities], dim=1)
-        fire_observations = torch.nested.as_nested_tensor(fire_observations.split(task_count.tolist(), dim=0))
+        fire_observations = torch.nested.as_nested_tensor(
+            fire_observations.split(task_count.tolist(), dim=0),
+            device=self.device,
+            layout=torch.jagged,
+        )
 
         self.task_store = fire_observations
 

@@ -387,6 +387,7 @@ class raw_env(BatchedAECEnv):
             full_task_set = self.network_range.unsqueeze(0).expand(self.parallel_envs, -1)
             self.agent_observation_mapping[agent] = torch.nested.as_nested_tensor(
                 full_task_set.split(1, dim=0),
+                device=self.device,
                 layout=torch.jagged,
             )
 
@@ -398,11 +399,15 @@ class raw_env(BatchedAECEnv):
                 task_counts = self.agent_task_count[agent_number]
                 self.agent_action_mapping[agent] = torch.nested.as_nested_tensor(
                     masked_tasks.split(task_counts.tolist(), dim=0),
+                    device=self.device,
                     layout=torch.jagged,
                 )
             else:
                 self.agent_action_mapping[agent] = torch.nested.as_nested_tensor(
-                    [torch.tensor([], device=self.device, dtype=self.network_range.dtype)] * self.parallel_envs)
+                    [torch.tensor([], device=self.device, dtype=self.network_range.dtype)] * self.parallel_envs,
+                    device=self.device,
+                    layout=torch.jagged,
+                )
 
     @torch.no_grad()
     def update_observations(self) -> None:

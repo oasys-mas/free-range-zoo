@@ -317,6 +317,7 @@ class raw_env(BatchedAECEnv):
 
             indices_nested = torch.nested.as_nested_tensor(
                 task_indices[agent_tasks].split(self.agent_task_count[agent_index].tolist(), dim=0),
+                device=self.device,
                 layout=torch.jagged,
             )
 
@@ -349,6 +350,7 @@ class raw_env(BatchedAECEnv):
         task_observations = torch.cat([task_positional_info, accepted_info, riding_info, fare_info, entered_info], dim=1)
         self.task_store = torch.nested.as_nested_tensor(
             task_observations.split(self.environment_task_count.tolist()),
+            device=self.device,
             layout=torch.jagged,
         )
 
