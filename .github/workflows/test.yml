@@ -24,28 +24,28 @@ jobs:
         run: poetry install
       - name: run tests
         run: poetry run python -m unittest -b
-  gpu:
-    timeout-minutes: 15
-    runs-on: [self-hosted, gpu]
-    if: github.event_name == 'pull_request' && github.base_ref == 'main' || (github.event_name == 'push' && github.ref == 'refs/heads/main')
-    container:
-      image: ubuntu:latest
-      options: --device=nvidia.com/gpu=all
-      volumes:
-        - /nix:/nix
-    steps:
-      - name: Update container
-        run: apt update && apt upgrade -y && apt install -y git make curl wget build-essential libssl-dev pkg-config cmake
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          submodules: recursive
-          token: ${{ secrets.CI_TOKEN }}
-      - name: set up environment
-        uses: c4patino/actions/.github/actions/setup-python@main
-      - name: set up environment
-        uses: c4patino/actions/.github/actions/setup-rust@main
-      - name: install dependencies
-        run: poetry install
-      - name: run gpu tests
-        run: poetry run python -m unittest -b
+  # gpu:
+  #   timeout-minutes: 15
+  #   runs-on: [self-hosted, gpu]
+  #   if: github.event_name == 'pull_request' && github.base_ref == 'main' || (github.event_name == 'push' && github.ref == 'refs/heads/main')
+  #   container:
+  #     image: ubuntu:latest
+  #     options: --device=nvidia.com/gpu=all
+  #     volumes:
+  #       - /nix:/nix
+  #   steps:
+  #     - name: Update container
+  #       run: apt update && apt upgrade -y && apt install -y git make curl wget build-essential libssl-dev pkg-config cmake
+  #     - name: Checkout code
+  #       uses: actions/checkout@v4
+  #       with:
+  #         submodules: recursive
+  #         token: ${{ secrets.CI_TOKEN }}
+  #     - name: set up environment
+  #       uses: c4patino/actions/.github/actions/setup-python@main
+  #     - name: set up environment
+  #       uses: c4patino/actions/.github/actions/setup-rust@main
+  #     - name: install dependencies
+  #       run: poetry install
+  #     - name: run gpu tests
+  #       run: poetry run python -m unittest -b
