@@ -607,8 +607,8 @@ class raw_env(BatchedAECEnv):
         fire_observations = torch.cat([lit_fire_indices[:, 1:], fires, intensities], dim=1)
         fire_observations = torch.nested.as_nested_tensor(
             fire_observations.split(task_count.tolist(), dim=0),
-            device=self.device,
             layout=torch.jagged,
+            device=self.device,
         )
 
         self.task_store = fire_observations
