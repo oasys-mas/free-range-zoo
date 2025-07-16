@@ -1,19 +1,84 @@
-"""
+r"""
 # Rideshare
-<hr>
+## Description
 
-| Import             | `from freerangezoo.otask import rideshare_v0` |
-|--------------------|------------------------------------|
-| Actions            | Discrete and perfect                            |
-| Observations | Discrete and fully observed with private observations |
-| Parallel API       | Yes                                |
-| Manual Control     | No                                 |
-| Agent Names             | [$driver$_0, ..., $driver$_n] |
-| #Agents             |    $n$                                  |
-| Action Shape       | (envs, 2)                 |
-| Action Values      | [-1, $\|tasks\|$], [-1,2]\*                    |
-| Observation Shape | TensorDict: { <br> &emsp; **Agent's self obs**, <ins>'self'</ins>: 5 `<agent index, ypos, xpos, #accepted passengers, #riding passengers>`, <br> &emsp; **Other agent obs**, <ins>'others'</ins>: ($\|Ag\| \times 5$) `<agent index, ypos, xpos, #accepted passengers, #riding passengers>`, <br> &emsp; **Fire/Task obs**, <ins>'tasks'</ins>: ($\|X\| \times 5$) `<task index, ystart, xstart, yend, xend, acceptedBy, ridingWith, fare, time entered>` <br> **batch_size: `num_envs`** <br>}|
-| Observation Values   | <ins>self</ins> <br> **agent index**: [0,n), <br> **ypos**: [0,grid_height], <br> **xpos**: [0, grid_width], <br> **number accepted passengers**: [0, $\infty$), <br> **number riding passengers**: [0,$\infty$) <br> <br> <ins>others</ins> <br> **agent index**: [0,$n$), <br> **ypos**: [0,grid_height], <br> **xpos**: [0, grid_width], <br> **number accepted passengers**: [0, $\infty$), <br> **number riding passengers**: [0,$\infty$)  <br> <br> <ins>tasks</ins> <br> **task index**: [0, $\infty$), <br> **ystart**: [0,grid_height], <br> **xstart**: [0, grid_width], <br> **yend**: [0, grid_height], <br> **xend**: [0,grid_width] <br> **accepted by**: [0,$n$) <br> **riding with**: [0,$n$), <br> **fare**: (0, $\infty$), <br> **time entered**: [0,max steps] |
+The rideshare domain simulates a grid-based environment where apssengers can appear and agents are tasked with
+delivering passengers from their current location to their desination. The environment is dynamic and partially
+observable, where agents cannot observe the contents of another agents car.
+
+<u>**Environment Dynamics**</u><br>
+- Passenger Entry / Exit: Passengers enter the environment from outside the simulation at any space. They must be
+  accepted by an agent and picked up at their current location, then dropped off at their destination. Agents
+  recieve the fare defined by an individual task, and receive penalties if any passenger is waiting for a state
+  transition for too long.
+
+<u>**Environment Openness**</u><br>
+
+- **task openness**: Tasks can be introduced or removed from the environment, allowing for flexbile goal setting and
+  adaptable planning / RL models.
+  - `rideshare`: New passengers can enter the environment, and old ones can leave. Agents have to reason about
+    competition for tasks, as well as how to efficiently pool, overlap, and complete tasks.
+
+
+# Specification
+
+---
+
+| Import             | `from free_range_zoo.envs import rideshare_v0`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| ------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Actions            | Discrete & Deterministic                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| Observations       | Discrete and fully observed with private observations                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| Parallel API       | Yes                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| Manual Control     | No                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| Agent Names        | [$driver$_0, ... , $driver$_n]                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| # Agents           | $n$                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| Action Shape       | ($envs$, 2)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| Action Values      | [$[accept (0)\|pick (1)\|drop (2)]\_0$, ..., $[accept (0)\|pick (1)\|drop (2)]\_{tasks}$, $noop$ (-1)]                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| Observation Shape  | TensorDict: { <br>&emsp;**self**: $<y, x, num_{accepted}, num_{riding}>$<br>&emsp;**others**: $<y, x, num_{accepted}, num_{riding}>$<br>&emsp;**tasks**: $<y, x, y_{dest}, x_{dest}, accepted_by, riding_by, entered_step>$ <br> **batch_size**: $num\_envs$ }                                                                                                                                                                                                                                                                                                                                                             |
+| Observation Values | <u>**self**</u>:<br>&emsp;$y$:$[0, max_y]$<br>&emsp;$x$: $[0, max_x]$<br>&emsp;$num\_accepted$: $[0, pooling\_limit]$<br>&emsp;$num_riding$: $[0, pooling\_limit]$<br><u>**others**</u>:<br>&emsp;$y$:$[0, max_y]$<br>&emsp;$x$: $[0, max_x]$<br>&emsp;$num\_accepted$: $[0, pooling\_limit]$<br>&emsp;$num_riding$: $[0, pooling\_limit]$<u>**tasks**</u>:<br>&emsp;$y$: $[0, max_y]$<br>&emsp;$x$: $[0, max_x]$<br>&emsp;$y_{dest}$: $[0, max_y]$<br>&emsp;$x_{dest}$: $[0, max_x]$<br>&emsp;$riding\_by$: $[0, num_{agents}]$<br>&emsp;$accepted\_by$: $[0, num_{agents}]$<br>&emsp;$entered\_step$: $[0, max_{steps}]$ |
+
+---
+"""
+r"""
+# Rideshare
+## Description
+
+The rideshare domain simulates a grid-based environment where apssengers can appear and agents are tasked with
+delivering passengers from their current location to their desination. The environment is dynamic and partially
+observable, where agents cannot observe the contents of another agents car.
+
+<u>**Environment Dynamics**</u><br>
+- Passenger Entry / Exit: Passengers enter the environment from outside the simulation at any space. They must be
+  accepted by an agent and picked up at their current location, then dropped off at their destination. Agents
+  recieve the fare defined by an individual task, and receive penalties if any passenger is waiting for a state 
+  transition for too long.
+
+<u>**Environment Openness**</u><br>
+
+- **task openness**: Tasks can be introduced or removed from the environment, allowing for flexbile goal setting and
+  adaptable planning / RL models.
+  - `rideshare`: New passengers can enter the environment, and old ones can leave. Agents have to reason about
+    competition for tasks, as well as how to efficiently pool, overlap, and complete tasks.
+
+
+# Specification
+
+---
+
+| Import             | `from free_range_zoo.envs import rideshare_v0`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| ------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Actions            | Discrete & Deterministic                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| Observations       | Discrete and fully observed with private observations                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| Parallel API       | Yes                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| Manual Control     | No                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| Agent Names        | [$driver$_0, ... , $driver$_n]                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| # Agents           | $n$                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| Action Shape       | ($envs$, 2)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| Action Values      | [$[accept (0)\|pick (1)\|drop (2)]\_0$, ..., $[accept (0)\|pick (1)\|drop (2)]\_{tasks}$, $noop$ (-1)]                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| Observation Shape  | TensorDict: { <br>&emsp;**self**: $<y, x, num_{accepted}, num_{riding}>$<br>&emsp;**others**: $<y, x, num_{accepted}, num_{riding}>$<br>&emsp;**tasks**: $<y, x, y_{dest}, x_{dest}, accepted_by, riding_by, entered_step>$ <br> **batch_size**: $num\_envs$ }                                                                                                                                                                                                                                                                                                                                                             |
+| Observation Values | <u>**self**</u>:<br>&emsp;$y$:$[0, max_y]$<br>&emsp;$x$: $[0, max_x]$<br>&emsp;$num\_accepted$: $[0, pooling\_limit]$<br>&emsp;$num_riding$: $[0, pooling\_limit]$<br><u>**others**</u>:<br>&emsp;$y$:$[0, max_y]$<br>&emsp;$x$: $[0, max_x]$<br>&emsp;$num\_accepted$: $[0, pooling\_limit]$<br>&emsp;$num_riding$: $[0, pooling\_limit]$<u>**tasks**</u>:<br>&emsp;$y$: $[0, max_y]$<br>&emsp;$x$: $[0, max_x]$<br>&emsp;$y_{dest}$: $[0, max_y]$<br>&emsp;$x_{dest}$: $[0, max_x]$<br>&emsp;$riding\_by$: $[0, num_{agents}]$<br>&emsp;$accepted\_by$: $[0, num_{agents}]$<br>&emsp;$entered\_step$: $[0, max_{steps}]$ |
+
+---
 """
 
 from typing import Dict, Any, List, Optional, Tuple, Callable

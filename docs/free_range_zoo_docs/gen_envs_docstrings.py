@@ -18,7 +18,7 @@ def _get_python_file_name(env_type, env_name):
 
 
 def _insert_docstring_into_python_file(file_path, doc):
-    new_docstring = f'"""\n{doc.strip()}\n"""\n'
+    new_docstring = f'r"""\n{doc.strip()}\n"""\n'
     leading_docstring_pattern = re.compile(r'^\s*(("""|\'\'\')([\s\S]*?)\2)', re.DOTALL)
 
     with open(file_path, "r", encoding="utf-8") as file:

@@ -16,7 +16,7 @@ observable, where agents cannot observe the contents of another agents car.
 <u>**Environment Dynamics**</u><br>
 - Passenger Entry / Exit: Passengers enter the environment from outside the simulation at any space. They must be
   accepted by an agent and picked up at their current location, then dropped off at their destination. Agents
-  recieve the fare defined by an individual task, and receive penalties if any passenger is waiting for a state 
+  recieve the fare defined by an individual task, and receive penalties if any passenger is waiting for a state
   transition for too long.
 
 <u>**Environment Openness**</u><br>
