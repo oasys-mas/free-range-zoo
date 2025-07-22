@@ -41,7 +41,6 @@ class StrongestBaseline(Agent):
 
         has_suppressant = self.observation['self'][:, 3] != 0
         fires = self.observation['tasks'].to_padded_tensor(-100)[:, :, 3]
-
         argmax_store = torch.empty_like(self.t_mapping)
 
         for batch in range(self.parallel_envs):
@@ -49,10 +48,15 @@ class StrongestBaseline(Agent):
                 argmax_store[batch][element] = fires[batch][element]
 
             if len(argmax_store[batch]) == 0:
-                self.actions[batch].fill_(-1)  # There are no fires in the environment so agents have to noop
+                self.actions[batch].fill_(-1)  # There are no fires in the environment, so agents have to noop
                 continue
 
-            self.actions[batch, 0] = argmax_store[batch].argmax(dim=0)
+            task = argmax_store[batch].max()
+            task = (argmax_store[batch] == task).nonzero()
+            select_action = torch.randint(0, task.shape[0], (1, ), dtype=torch.long)
+            act = task[select_action]
+
+            self.actions[batch, 0] = act
             self.actions[batch, 1] = 0
 
         self.actions[:, 1].masked_fill_(~has_suppressant, -1)  # Agents that do not have suppressant noop
