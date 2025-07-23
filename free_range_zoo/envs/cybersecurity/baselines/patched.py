@@ -49,7 +49,7 @@ class PatchedAttackerBaseline(Agent):
         potential_targets = (self.observation['tasks'][:, 0] == potential_targets).nonzero()
         select_action = torch.randint(0, potential_targets.shape[0], (1, ), dtype=torch.long)
         new_targets = potential_targets[select_action]
-        
+
         self.target_node = torch.where(self.target_node == -1, new_targets, self.target_node)
 
         absent = self.observation['self'][:, 1] == 0
