@@ -53,7 +53,12 @@ class WeakestBaseline(Agent):
                 self.actions[batch].fill_(-1)
                 continue
 
-            self.actions[batch, 0] = argmax_store[batch].argmin(dim=0)
+            task = argmax_store[batch].min()
+            task = (argmax_store[batch] == task).nonzero()
+            select_action = torch.randint(0, task.shape[0], (1, ), dtype=torch.long)
+            act = task[select_action]
+
+            self.actions[batch, 0] = act
             self.actions[batch, 1] = 0
 
         self.actions[:, 1].masked_fill_(~has_suppressant, -1)  # Agents that do not have suppressant noop

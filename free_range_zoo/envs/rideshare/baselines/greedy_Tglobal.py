@@ -75,7 +75,11 @@ class GreedyTaskGlobal(Agent):
                 self.actions[batch].fill_(-1)  # There are no passengers seen in the environment so this agent (batch) must noop
                 continue
 
-            self.actions[batch, 0] = argmin_store[batch].argmin(dim=0)
+            task = argmin_store[batch].min()
+            task = (argmin_store[batch] == task).nonzero()
+            select_action = torch.randint(0, task.shape[0], (1, ), dtype=torch.long)
+            act = task[select_action]
+            self.actions[batch, 0] = act
 
             #dropoff
             if riding[batch][self.actions[batch, 0]]:
