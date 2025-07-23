@@ -106,7 +106,11 @@ class PatchedDefenderBaseline(Agent):
         node_state = self.observation['tasks'][:, 0]
         last_monitor = (node_state != -100).all(dim=1).flatten()
         task_mask = torch.where((node_state == -100) | (node_state == 0), 1000, node_state)
-        new_targets = task_mask.argmin(dim=1).flatten()
+
+        task = task_mask[batch].min(dim=1)
+        task = (task_mask[batch] == task).nonzero()
+        select_action = torch.randint(0, task.shape[0], (1, ), dtype=torch.long)
+        new_targets = task[select_action]
 
         self.target_node = torch.where(last_monitor, new_targets, self.target_node)
 
