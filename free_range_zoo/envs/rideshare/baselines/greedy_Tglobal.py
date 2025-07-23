@@ -79,7 +79,7 @@ class GreedyTaskGlobal(Agent):
             task = (argmin_store[batch] == task).nonzero()
             select_action = torch.randint(0, task.shape[0], (1, ), dtype=torch.long)
             act = task[select_action]
-            self.actions[batch,0]=act
+            self.actions[batch, 0] = act
 
             #dropoff
             if riding[batch][self.actions[batch, 0]]:
