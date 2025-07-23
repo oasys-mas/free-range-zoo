@@ -45,7 +45,11 @@ class PatchedAttackerBaseline(Agent):
 
         self.t_mapping = self.t_mapping.to_padded_tensor(padding=-100)
 
-        new_targets = self.observation['tasks'][:, 0].argmin(dim=1).flatten()
+        potential_targets = self.observation['tasks'][:, 0].min(dim=1)
+        potential_targets = (self.observation['tasks'][:, 0] == potential_targets).nonzero()
+        select_action = torch.randint(0, potential_targets.shape[0], (1, ), dtype=torch.long)
+        new_targets = potential_targets[select_action]
+        
         self.target_node = torch.where(self.target_node == -1, new_targets, self.target_node)
 
         absent = self.observation['self'][:, 1] == 0
@@ -107,10 +111,10 @@ class PatchedDefenderBaseline(Agent):
         last_monitor = (node_state != -100).all(dim=1).flatten()
         task_mask = torch.where((node_state == -100) | (node_state == 0), 1000, node_state)
 
-        task = task_mask[batch].min(dim=1)
-        task = (task_mask[batch] == task).nonzero()
-        select_action = torch.randint(0, task.shape[0], (1, ), dtype=torch.long)
-        new_targets = task[select_action]
+        potential_targets = task_mask[batch].min(dim=1)
+        potential_targets = (task_mask[batch] == potential_targets).nonzero()
+        select_action = torch.randint(0, potential_targets.shape[0], (1, ), dtype=torch.long)
+        new_targets = potential_targets[select_action]
 
         self.target_node = torch.where(last_monitor, new_targets, self.target_node)
 
