@@ -45,10 +45,13 @@ class PatchedAttackerBaseline(Agent):
 
         self.t_mapping = self.t_mapping.to_padded_tensor(padding=-100)
 
-        potential_targets = self.observation['tasks'][:, 0].min(dim=1)
-        potential_targets = (self.observation['tasks'][:, 0] == potential_targets).nonzero()
-        select_action = torch.randint(0, potential_targets.shape[0], (1, ), dtype=torch.long)
-        new_targets = potential_targets[select_action]
+        min_values, _ = self.observation['tasks'][:, 0].min(dim=1)
+
+        new_targets = torch.zeros_like(self.target_node)
+        for i in range(self.observation['tasks'].shape[0]):
+            min_indices = torch.where(self.observation['tasks'][i, 0] == min_values[i])[0]
+            if min_indices.shape[0] > 0:
+                new_targets[i] = min_indices[torch.randint(0, min_indices.shape[0], (1, ))]
 
         self.target_node = torch.where(self.target_node == -1, new_targets, self.target_node)
 
@@ -111,10 +114,19 @@ class PatchedDefenderBaseline(Agent):
         last_monitor = (node_state != -100).all(dim=1).flatten()
         task_mask = torch.where((node_state == -100) | (node_state == 0), 1000, node_state)
 
-        potential_targets = task_mask[batch].min(dim=1)
-        potential_targets = (task_mask[batch] == potential_targets).nonzero()
-        select_action = torch.randint(0, potential_targets.shape[0], (1, ), dtype=torch.long)
-        new_targets = potential_targets[select_action]
+        # Find the min value for each batch
+        min_values, _ = task_mask.min(dim=1)
+
+        # Initialize targets tensor
+        new_targets = torch.zeros_like(self.target_node)
+
+        # Process each batch element separately
+        for i in range(task_mask.shape[0]):
+            # Find indices where value equals min for this batch element
+            min_indices = torch.where(task_mask[i] == min_values[i])[0]
+            if min_indices.shape[0] > 0:
+                # Randomly select one index
+                new_targets[i] = min_indices[torch.randint(0, min_indices.shape[0], (1, ))]
 
         self.target_node = torch.where(last_monitor, new_targets, self.target_node)
 

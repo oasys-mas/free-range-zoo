@@ -51,10 +51,10 @@ class StrongestBaseline(Agent):
                 self.actions[batch].fill_(-1)  # There are no fires in the environment, so agents have to noop
                 continue
 
-            task = argmax_store[batch].max()
-            task = (argmax_store[batch] == task).nonzero()
-            select_action = torch.randint(0, task.shape[0], (1, ), dtype=torch.long)
-            act = task[select_action]
+            max_val = argmax_store[batch].max()
+            max_indices = torch.where(argmax_store[batch] == max_val)[0]
+            if max_indices.shape[0] > 0:
+                act = max_indices[torch.randint(0, max_indices.shape[0], (1, ))]
 
             self.actions[batch, 0] = act
             self.actions[batch, 1] = 0

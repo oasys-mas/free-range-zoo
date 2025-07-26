@@ -36,7 +36,6 @@ class FirstInFirstOutBaseline(Agent):
         self.observation, self.t_mapping = observation
         self.t_mapping = self.t_mapping['agent_action_mapping']
 
-        #no passengers, (all accepted by other agents)
         if all([self.observation['tasks'][i].size(0) == 0 for i in range(self.parallel_envs)]):
             self.actions.fill_(-1)
             return
@@ -53,28 +52,21 @@ class FirstInFirstOutBaseline(Agent):
                 argmin_store[batch][element] = passengers[batch][element]
 
             if len(argmin_store[batch]) == 0:
-                self.actions[batch].fill_(-1)  # There are no passengers seen in the environment so this agent (batch) must noop
+                self.actions[batch].fill_(-1)
                 continue
 
-            task = argmin_store[batch].max()
-            task = (argmin_store[batch] == task).nonzero()
-            select_action = torch.randint(0, task.shape[0], (1, ), dtype=torch.long)
-            act = task[select_action]
+            max_val = argmin_store[batch].max()
+            max_indices = torch.where(argmin_store[batch] == max_val)[0]
+            if max_indices.shape[0] > 0:
+                act = max_indices[torch.randint(0, max_indices.shape[0], (1, ))]
             self.actions[batch, 0] = act
 
-            #dropoff
             if riding[batch][self.actions[batch, 0]]:
                 self.actions[batch, 1] = 2
-
-            #pickup
             elif accepted[batch][self.actions[batch, 0]]:
                 self.actions[batch, 1] = 1
-
-            #accept
             elif unaccepted[batch][self.actions[batch, 0]]:
                 self.actions[batch, 1] = 0
-
-            #noop
             else:
                 raise ValueError(
                     "Invalid Observation, if this is reached there exists >=1 passenger, but that passenger has no features")

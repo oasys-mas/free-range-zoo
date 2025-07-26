@@ -53,10 +53,10 @@ class WeakestBaseline(Agent):
                 self.actions[batch].fill_(-1)
                 continue
 
-            task = argmax_store[batch].min()
-            task = (argmax_store[batch] == task).nonzero()
-            select_action = torch.randint(0, task.shape[0], (1, ), dtype=torch.long)
-            act = task[select_action]
+            min_val = argmax_store[batch].min()
+            min_indices = torch.where(argmax_store[batch] == min_val)[0]
+            if min_indices.shape[0] > 0:
+                act = min_indices[torch.randint(0, min_indices.shape[0], (1, ))]
 
             self.actions[batch, 0] = act
             self.actions[batch, 1] = 0
