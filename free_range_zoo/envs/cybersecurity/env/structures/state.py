@@ -48,6 +48,6 @@ class CybersecurityState(State):
         Returns:
             int - Hash of the state
         """
-        keys = (self.state, self.agents, self.presence)
+        keys = (self.network_state, self.location, self.presence)
         hashables = tuple([optimized_convert_hashable(key) for key in keys])
         return hash(hashables)
