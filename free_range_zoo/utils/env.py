@@ -246,23 +246,28 @@ class BatchedAECEnv(ABC, AECEnv):
             self._are_logs_initialized = False
 
         df = self._state.to_dataframe()
+        new_cols = {}
+
         if reset:
             for agent in self.possible_agents:
-                df[[f'{agent}_action', f'{agent}_rewards']] = None
+                new_cols[f'{agent}_action'] = [None] * len(df)
+                new_cols[f'{agent}_rewards'] = [None] * len(df)
 
-            df['step'] = -1
-            df['complete'] = None
+            new_cols['step'] = [-1] * len(df)
+            new_cols['complete'] = [None] * len(df)
         else:
             for agent in self.possible_agents:
-                df[f'{agent}_action'] = [str(action) for action in self.actions[agent].cpu().tolist()]
-                df[f'{agent}_rewards'] = self.rewards[agent].cpu()
+                new_cols[f'{agent}_action'] = [str(action) for action in self.actions[agent].cpu().tolist()]
+                new_cols[f'{agent}_rewards'] = self.rewards[agent].cpu().tolist()
 
-            df['step'] = self.num_moves.cpu()
-            df['complete'] = self.finished.cpu()
+            new_cols['step'] = self.num_moves.cpu().tolist()
+            new_cols['complete'] = self.finished.cpu().tolist()
 
         for agent in self.possible_agents:
-            df[f'{agent}_action_map'] = [str(mapping.tolist()) for mapping in self.agent_action_mapping[agent]]
-            df[f'{agent}_observation_map'] = [str(mapping.tolist()) for mapping in self.agent_observation_mapping[agent]]
+            new_cols[f'{agent}_action_map'] = [str(mapping.tolist()) for mapping in self.agent_action_mapping[agent]]
+            new_cols[f'{agent}_observation_map'] = [str(mapping.tolist()) for mapping in self.agent_observation_mapping[agent]]
+
+        df = pd.concat([df, pd.DataFrame(new_cols)], axis=1)
 
         if extra is not None:
             df = pd.concat([df, extra], axis=1)
