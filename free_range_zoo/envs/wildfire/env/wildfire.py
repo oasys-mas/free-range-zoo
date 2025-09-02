@@ -559,7 +559,7 @@ class raw_env(BatchedAECEnv):
             batch_is_dead = fires_are_out
 
         # Remove all fires from dead batches to enforce termination
-        self._state.fires[batch_is_dead].fill_(0)
+        self._state.fires[batch_is_dead] = 0
 
         # Assign rewards for terminated environments
         newly_terminated = ~self.terminated & batch_is_dead
