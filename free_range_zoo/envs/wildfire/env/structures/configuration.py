@@ -29,7 +29,9 @@ class RewardConfiguration(Configuration):
 
     fire_rewards: torch.FloatTensor
     bad_attack_penalty: float
+
     burnout_penalty: float
+    burnout_penalty_scaled: bool
 
     termination_reward: float = 0.0
     termination_kappa: float = 0.0
@@ -45,6 +47,8 @@ class RewardConfiguration(Configuration):
         """
         if len(self.fire_rewards.shape) != 2:
             raise ValueError('fire_rewards should be a 2D tensor')
+        if self.burnout_penalty != 0 and self.burnout_penalty_scaled:
+            raise ValueError('burnout_penalty and burnout_penalty_scaled are mutually exclusive')
 
         return True
 

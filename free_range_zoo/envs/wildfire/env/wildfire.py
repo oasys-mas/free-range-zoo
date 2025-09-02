@@ -460,7 +460,7 @@ class raw_env(BatchedAECEnv):
                 bad_actions = self.agent_bad_actions[agent_name].to_padded_tensor(-100)
                 attacks = agent_actions[:, 0].unsqueeze(1).expand_as(bad_actions)
                 bad_actions_mask = (bad_actions == attacks).any(dim=1)
-                good_fight &= (~bad_actions_mask & ~refills[agent_index])
+                good_fight &= (non_refill_mask & ~bad_actions_mask)
 
             attack_powers[fire_coords[good_fight[non_refill_mask]].split(1, dim=1)] += full_powers[good_fight].unsqueeze(1)
 
@@ -526,27 +526,30 @@ class raw_env(BatchedAECEnv):
             randomness_source=field_randomness[2],
         )
 
+        # Compute rewards for fires which were just put out
         fire_rewards = torch.zeros_like(self._state.fires, device=self.device, dtype=torch.float)
         fire_rewards[just_put_out] = self.fire_rewards[just_put_out]
-        fire_rewards[just_burned_out] = self.reward_config.burnout_penalty
 
-        # Assign rewards for burnouts and task rewards
+        # Compute rewards for fires which just burned out
+        burnout_penalties = torch.zeros_like(fire_rewards)
+        if self.reward_config.burnout_penalty_scaled:
+            burnout_penalties[just_burned_out] = -1 * self.fire_rewards[just_burned_out]
+        else:
+            burnout_penalties[just_burned_out] = self.reward_config.burnout_penalty
+        burnout_penalty_total = burnout_penalties.sum(dim=(1, 2))
+
         if self.reward_config.localize_putouts:
             localized_rewards = torch.zeros_like(fire_rewards)
             localized_rewards[just_put_out] = self.fire_rewards[just_put_out]
-            localized_rewards_expanded = localized_rewards.unsqueeze(1)
-            per_agent_rewards = localized_rewards_expanded * agent_last_hit_mask
-            per_agent_reward_sums = per_agent_rewards.sum(dim=(2, 3))
+            per_agent_rewards = (localized_rewards.unsqueeze(1) * agent_last_hit_mask).sum(dim=(2, 3))
 
-            burnout_penalty_total = self.reward_config.burnout_penalty * just_burned_out.sum(dim=(1, 2), dtype=torch.float)
-
+            burnout_penalty_total = burnout_penalties.sum(dim=(1, 2))
             for i, agent in enumerate(self.agents):
-                rewards[agent] += per_agent_reward_sums[:, i]
-                rewards[agent] += burnout_penalty_total
+                rewards[agent] += per_agent_rewards[:, i] + burnout_penalty_total
         else:
             fire_rewards_per_batch = fire_rewards.sum(dim=(1, 2))
             for agent in self.agents:
-                rewards[agent] += fire_rewards_per_batch
+                rewards[agent] += fire_rewards_per_batch + burnout_penalty_total
 
         # Determine environment terminations due to no more fires
         fires_are_out = self._state.fires.flatten(start_dim=1).max(dim=1)[0] <= 0

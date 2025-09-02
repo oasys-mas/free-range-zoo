@@ -19,7 +19,7 @@ def non_stochastic() -> WildfireConfiguration:
         burnout_penalty=-1.0,
         termination_reward=0.0,
         termination_kappa=0.0,
-        localize_putouts=True,
+        localize_putouts=False,
     )
 
     fire_configuration = FireConfiguration(
