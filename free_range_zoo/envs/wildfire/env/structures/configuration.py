@@ -29,8 +29,8 @@ class RewardConfiguration(Configuration):
     bad_attack_penalty: float
     burnout_penalty: float
 
-    termination_reward: float=0.0
-    termination_kappa: float=0.0
+    termination_reward: float = 0.0
+    termination_kappa: float = 0.0
 
     def validate(self) -> bool:
         """

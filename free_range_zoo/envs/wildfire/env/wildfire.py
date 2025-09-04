@@ -431,7 +431,7 @@ class raw_env(BatchedAECEnv):
             task_indices = torch.hstack([self.parallel_ranges.unsqueeze(1), agent_actions[:, 0].unsqueeze(1)])
             task_indices = agent_action_mapping_pad[task_indices[~refills[agent_index]].split(1, dim=1)]
 
-            global_task_indices = ( index_shifts.squeeze(1)[~refills[agent_index]] + task_indices.squeeze(1))
+            global_task_indices = (index_shifts.squeeze(1)[~refills[agent_index]] + task_indices.squeeze(1))
 
             fire_coords = fire_positions[global_task_indices]
 
@@ -442,8 +442,8 @@ class raw_env(BatchedAECEnv):
             print(self._state.agents[agent_index, :])
 
             if (fire_coords[:, 1:].numel() > 0):
-                if not torch.all((((fire_coords[:, 1:] - self._state.agents[agent_index, :])[:, 0] <= 1) & (
-                    (fire_coords[:, 1:] - self._state.agents[agent_index, :])[:, 1] <= 1))):
+                if not torch.all((((fire_coords[:, 1:] - self._state.agents[agent_index, :])[:, 0] <= 1) &
+                                  ((fire_coords[:, 1:] - self._state.agents[agent_index, :])[:, 1] <= 1))):
                     raise ValueError
 
             reduction_powers = self.fire_reduction_power[agent_index].expand(self.parallel_envs)
