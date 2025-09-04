@@ -36,7 +36,7 @@ class RewardConfiguration(Configuration):
     termination_reward: float = 0.0
     termination_kappa: float = 0.0
 
-    localize_putouts: bool
+    localize_putouts: bool = False
 
     def validate(self) -> bool:
         """
