@@ -431,7 +431,7 @@ class raw_env(BatchedAECEnv):
             task_indices = torch.hstack([self.parallel_ranges.unsqueeze(1), agent_actions[:, 0].unsqueeze(1)])
             task_indices = agent_action_mapping_pad[task_indices[~refills[agent_index]].split(1, dim=1)]
 
-            global_task_indices = ( index_shifts.squeeze(1)[~refills[agent_index]] + task_indices.squeeze(1))
+            global_task_indices = (index_shifts.squeeze(1)[~refills[agent_index]] + task_indices.squeeze(1))
 
             fire_coords = fire_positions[global_task_indices]
 
