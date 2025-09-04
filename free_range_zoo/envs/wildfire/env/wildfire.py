@@ -431,20 +431,15 @@ class raw_env(BatchedAECEnv):
             task_indices = torch.hstack([self.parallel_ranges.unsqueeze(1), agent_actions[:, 0].unsqueeze(1)])
             task_indices = agent_action_mapping_pad[task_indices[~refills[agent_index]].split(1, dim=1)]
 
-            global_task_indices = (agent_actions[:, 0] + index_shifts.squeeze(1))[~refills[agent_index]]
+            global_task_indices = (index_shifts.squeeze(1)[~refills[agent_index]] + task_indices.squeeze(1))
 
             fire_coords = fire_positions[global_task_indices]
 
-            print(f' FIRE_COORDS {agent_name} '.center(80, '-'))
-            print(fire_coords[:, 1:])
-
-            print(f' AGENT_POSITION {agent_name} '.center(80, '-'))
-            print(self._state.agents[agent_index, :])
-
-            if (fire_coords[:, 1:].numel() > 0):
-                if not ((fire_coords[:, 1:] - self._state.agents[agent_index, :])[:, 0] <= 1) & (
-                    (fire_coords[:, 1:] - self._state.agents[agent_index, :])[:, 1] <= 1):
-                    raise ValueError
+            #?in the case where you are having fires that are unreachable attacked check this
+            # if (fire_coords[:, 1:].numel() > 0):
+            #     if not torch.all((((fire_coords[:, 1:] - self._state.agents[agent_index, :])[:, 0] <= 1) & (
+            #         (fire_coords[:, 1:] - self._state.agents[agent_index, :])[:, 1] <= 1))):
+            #         raise ValueError
 
             reduction_powers = self.fire_reduction_power[agent_index].expand(self.parallel_envs)
             equipment_bonuses = self.agent_config.equipment_states[self._state.equipment[:, agent_index].unsqueeze(0)][:, :, 1]
@@ -470,9 +465,6 @@ class raw_env(BatchedAECEnv):
 
             # Give out rewards for bad actions
             rewards[agent_name][bad_users] = self.reward_config.bad_attack_penalty
-
-        print(' ATTACK_POWER '.center(80, '-'))
-        print(attack_powers)
 
         refills = refills.T
         users = users.T
