@@ -435,7 +435,6 @@ class raw_env(BatchedAECEnv):
 
             fire_coords = fire_positions[global_task_indices]
 
-
             #?in the case where you are having fires that are unreachable attacked check this
             # if (fire_coords[:, 1:].numel() > 0):
             #     if not torch.all((((fire_coords[:, 1:] - self._state.agents[agent_index, :])[:, 0] <= 1) & (
