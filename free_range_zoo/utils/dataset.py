@@ -3,6 +3,7 @@ from typing import List, Callable, Dict, Any, Optional
 import torch
 import itertools
 import copy
+import math
 
 
 def _deep_clone(data):
@@ -49,8 +50,8 @@ class ConfigurationDataset:
             assert isinstance(datum, dict), "All data must be dictionaries"
 
         instances = len(data)
-        val_count = int(val_split * instances)
-        test_count = int(test_split * instances)
+        val_count = math.ceil(val_split * instances)
+        test_count = math.ceil(test_split * instances)
         train_count = instances - val_count - test_count
 
         # Assign data using the pattern
