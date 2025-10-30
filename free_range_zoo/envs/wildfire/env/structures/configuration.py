@@ -20,25 +20,25 @@ class RewardConfiguration(Configuration):
         fire_rewards: torch.FloatTensor - Reward for extinguishing a fire
         bad_attack_penalty: float - Penalty for attacking a tile that is not on fire
 
+        burnout_penalty: float - Penalty for attacking a burned out fire
+        burnout_penalty_scaled: bool - Inverse reward penalty for attacking a burned out fire
+
         termination_reward: float - Reward for terminating the environment
         termination_kappa: float - Reward for scaling sensitivity to burned-out fires
 
         localize_putouts: bool - enable rewards are limited to contributing agents
-
-        burnout_penalty: float - Penalty for attacking a burned out fire
-        burnout_penalty_scaled: bool - Inverse reward penalty for attacking a burned out fire
     """
 
     fire_rewards: torch.FloatTensor
     bad_attack_penalty: float
 
+    burnout_penalty: float
+    burnout_penalty_scaled: bool = False
+
     termination_reward: float = 0.0
     termination_kappa: float = 0.0
 
     localize_putouts: bool = False
-
-    burnout_penalty: float
-    burnout_penalty_scaled: bool = False
 
     def validate(self) -> bool:
         """
