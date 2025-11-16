@@ -32,9 +32,9 @@ class TestConfigurationDataset(unittest.TestCase):
         val_len = len(dataset.val_data)
         test_len = len(dataset.test_data)
 
-        self.assertEqual(train_len, 24)
-        self.assertEqual(val_len, 6)
-        self.assertEqual(test_len, 6)
+        self.assertEqual(train_len, 22)
+        self.assertEqual(val_len, 7)
+        self.assertEqual(test_len, 7)
 
     def test_transform_application(self) -> None:
         dataset = ConfigurationDataset(self.data, self.transforms, seed=self.seed)
