@@ -12,6 +12,7 @@ import os
 from free_range_zoo.utils.configuration import Configuration
 from free_range_zoo.utils.state import State
 from free_range_zoo.utils.random_generator import RandomGenerator
+from free_range_zoo.utils.logging_handlers import CSVLogger, SQLLogger
 
 
 class BatchedAECEnv(ABC, AECEnv):
@@ -61,12 +62,27 @@ class BatchedAECEnv(ABC, AECEnv):
                 if isinstance(value, Configuration):
                     setattr(self, key, value)
 
-        self._are_logs_initialized = False
-        if not override_initialization_check and self.log_directory is not None and os.path.exists(self.log_directory):
-            if os.listdir(self.log_directory):
-                raise FileExistsError("The logging output directory already exists. Set override_initialization_check or rename.")
-        if self.log_directory is not None and not os.path.exists(self.log_directory):
-            os.mkdir(self.log_directory)
+        match self.log_directory:
+            case None:
+                self.logger = None
+            case s if s.startswith("sqlite://"):
+                self.logger = SQLLogger(
+                    connection_string=self.log_directory,
+                    domain=self.metadata["name"],
+                    parallel_envs=self.parallel_envs,
+                )
+            case s if s.startswith("postgresql://"):
+                self.logger = SQLLogger(
+                    connection_string=self.log_directory,
+                    domain=self.metadata["name"],
+                    parallel_envs=self.parallel_envs,
+                )
+            case _:
+                self.logger = CSVLogger(
+                    log_directory=self.log_directory,
+                    parallel_envs=self.parallel_envs,
+                    override_initialization_check=override_initialization_check,
+                )
 
         self.generator = RandomGenerator(
             parallel_envs=parallel_envs,
@@ -120,6 +136,12 @@ class BatchedAECEnv(ABC, AECEnv):
         }
         self.truncations = {agent: torch.zeros(self.parallel_envs, dtype=torch.bool, device=self.device) for agent in self.agents}
         self.infos = {agent: {} for agent in self.agents}
+
+        # Ensure logger is reset before any logging
+        if self.logger is not None:
+            self.logger.reset(log_label=getattr(self, "_log_label", None),
+                              log_description=getattr(self, "log_description", None),
+                              agents=self.possible_agents)
 
         # Dictionary storing actions for each agent
         self.actions = {
@@ -233,56 +255,20 @@ class BatchedAECEnv(ABC, AECEnv):
 
     def _log_environment(self, reset: bool = False, extra: pd.DataFrame = None) -> None:
         """
-        Log all portions of the environment.
-
-        Args:
-            reset: bool - Indicates whether the source of the logging is due to a reset. N/A flag on step-specific items.
-            extra: pd.DataFrame = Additional data to append to the environment logs.
+        Log all portions of the environment using the pluggable logger.
         """
-        if extra is not None and len(extra) != self.parallel_envs:
-            raise ValueError('The number of elements in extras must match the number of parallel environments.')
-
-        if reset:
-            self._are_logs_initialized = False
-
-        df = self._state.to_dataframe()
-        new_cols = {}
-
-        if reset:
-            for agent in self.possible_agents:
-                new_cols[f'{agent}_action'] = [None] * len(df)
-                new_cols[f'{agent}_rewards'] = [None] * len(df)
-
-            new_cols['step'] = [-1] * len(df)
-            new_cols['complete'] = [None] * len(df)
-        else:
-            for agent in self.possible_agents:
-                new_cols[f'{agent}_action'] = [str(action) for action in self.actions[agent].cpu().tolist()]
-                new_cols[f'{agent}_rewards'] = self.rewards[agent].cpu().tolist()
-
-            new_cols['step'] = self.num_moves.cpu().tolist()
-            new_cols['complete'] = self.finished.cpu().tolist()
-
-        for agent in self.possible_agents:
-            new_cols[f'{agent}_action_map'] = [str(mapping.tolist()) for mapping in self.agent_action_mapping[agent]]
-            new_cols[f'{agent}_observation_map'] = [str(mapping.tolist()) for mapping in self.agent_observation_mapping[agent]]
-
-        df = pd.concat([df, pd.DataFrame(new_cols)], axis=1)
-
-        if extra is not None:
-            df = pd.concat([df, extra], axis=1)
-
-        df['description'] = self.log_description
-
-        for i in range(self.parallel_envs):
-            df.iloc[[i]].to_csv(
-                os.path.join(self.log_directory, f'{i}.csv'),
-                mode='w' if not self._are_logs_initialized else 'a',
-                header=not self._are_logs_initialized,
-                index=False,
-                na_rep="NULL",
-            )
-        self._are_logs_initialized = True
+        # Always use possible_agents for logging
+        self.logger.log_environment(state=self._state,
+                                    actions=self.actions,
+                                    rewards=self.rewards,
+                                    agent_action_mapping=self.agent_action_mapping,
+                                    agent_observation_mapping=self.agent_observation_mapping,
+                                    num_moves=self.num_moves,
+                                    finished=self.finished,
+                                    log_description=self.log_description,
+                                    agents=self.possible_agents,
+                                    extra=extra,
+                                    reset=reset)
 
     @abstractmethod
     def update_actions(self) -> None:
