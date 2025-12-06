@@ -6,6 +6,41 @@ Logging in Free-Range-Zoo enables tracking of environment states, which can be u
 ## Logging Setup
 To enable logging, specify the `log_directory` parameter when initializing an environment. This directory will store log files containing state information for each independent environment instance. You can bypass this check by setting `override_initialization_check=True` on environment creation.
 
+### Choosing Logging Backend: CSV vs SQL
+
+You can select between CSV and SQL logging backends by the format of the `log_directory` parameter:
+
+- **CSV Logging**: Pass a directory path (e.g., `"outputs/my_logs"`). The logger will create CSV files for each parallel environment instance in the specified directory.
+- **SQL Logging**: Pass a SQL connection string to `log_directory`:
+    - For SQLite: `log_directory="sqlite:///outputs/my_logs.db"`
+    - For PostgreSQL: `log_directory="postgresql://user:password@host:port/dbname"`
+  The logger will create and manage SQL tables for all environment and agent logs in the specified database.
+
+The environment automatically detects the type of logging backend based on the format of `log_directory`:
+- If it starts with `"sqlite://"` or `"postgresql://"` → **SQL logging**
+- Otherwise → **CSV logging**
+
+#### Example Usage
+```python
+# CSV logging
+env = wildfire_v0.parallel_env(
+    ...,
+    log_directory="outputs/wildfire_logs"
+)
+
+# SQL logging (SQLite)
+env = wildfire_v0.parallel_env(
+    ...,
+    log_directory="sqlite:///outputs/wildfire_logs.db"
+)
+
+# SQL logging (PostgreSQL)
+env = wildfire_v0.parallel_env(
+    ...,
+    log_directory="postgresql://user:password@localhost:5432/mydb"
+)
+```
+
 ### Example Usage
 To enable logging, construct an environment and pass the `log_directory` parameter:
 
@@ -71,5 +106,4 @@ The logged data is also used for rendering wildfire simulations. The `Wildfire S
 - Ensure that the `log_directory` does not exist before execution.
 - Logs reflect **environment states**, not agent observations.
 - Logs are structured for compatibility with the rendering system.
-
 
