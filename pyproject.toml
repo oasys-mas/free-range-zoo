@@ -24,6 +24,7 @@ dependencies = [
     "torchaudio (>=2.6.0,<3.0.0)",
     "torchvision (>=0.21.0,<0.22.0)",
     "xxhash (>=3.5.0,<4.0.0)",
+    "sqlalchemy (>=2.0.44,<3.0.0)",
 ]
 
 [tool.poetry.group.oasys.dependencies]
