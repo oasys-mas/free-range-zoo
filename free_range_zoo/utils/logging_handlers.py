@@ -208,7 +208,8 @@ class SQLLogger(Logger):
                                 presence=str(getattr(state, 'presence', None)[env_idx].tolist()),
                             )
                         case _:
-                            raise NotImplementedError(f"Environment {self.domain} does not have an implemented log_environment function.")
+                            raise NotImplementedError(
+                                f"Environment {self.domain} does not have an implemented log_environment function.")
                     self.session.add(env_log)
 
                     for agent in agents:
