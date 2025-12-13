@@ -131,7 +131,7 @@ class SQLLogConverter:
                     else:
                         raise RuntimeError("To override, set 'override_initialization_check' to True.")
                 sim_paths[sim_ind] = os.path.join(output_directory, f"{sim_ind}_{sim_name}")
-            
+
             stmt = select(t_env.c.id, t_env.c.simulation_id,
                           t_env.c.simulation_index).where(t_env.c.simulation_id.in_([sim[0] for sim in sim_indices]))
             env_episodes = conn.execute(stmt).fetchall()
