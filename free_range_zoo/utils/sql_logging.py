@@ -91,6 +91,7 @@ class CybersecurityEnvironmentLog(Base):
     network_state = Column(Text)
     location = Column(Text)
     presence = Column(Text)
+    adj_matrix = Column(Text)
     timestep = relationship('EnvironmentTimestep', back_populates='cybersecurity_logs')
 
 

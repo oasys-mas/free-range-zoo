@@ -134,7 +134,12 @@ def env(wrappers: List[Callable] = [], **kwargs) -> BatchedAECEnv:
 
 class raw_env(BatchedAECEnv):
     """Implementation of the dynamic rideshare environment."""
-    metadata = {"render.modes": ["human", "rgb_array"], "name": "rideshare_v0", "is_parallelizable": True, "render_fps": 2}
+    metadata = {
+        "render.modes": ["human", "rgb_array"],
+        "name": "rideshare_v0",
+        "is_parallelizable": True,
+        "render_fps": 2,
+    }
 
     @torch.no_grad()
     def __init__(self, *args, **kwargs):

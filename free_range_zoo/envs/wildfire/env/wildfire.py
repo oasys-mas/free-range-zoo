@@ -163,7 +163,12 @@ def env(wrappers: List[Callable], **kwargs) -> BatchedAECEnv:
 class raw_env(BatchedAECEnv):
     """Environment definition for the wildfire environment."""
 
-    metadata = {"render.modes": ["human", "rgb_array"], "name": "wildfire_v0", "is_parallelizable": True, "render_fps": 2}
+    metadata = {
+        "render.modes": ["human", "rgb_array"],
+        "name": "wildfire_v0",
+        "is_parallelizable": True,
+        "render_fps": 2,
+    }
 
     @torch.no_grad()
     def __init__(self,
