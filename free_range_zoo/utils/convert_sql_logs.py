@@ -4,6 +4,7 @@ Converts SQL logged experiments to csv format padding openness with nulls
 import os
 import pandas as pd
 import numpy as np
+import warnings
 from typing import Any, Dict, Optional, Union
 from sqlalchemy import create_engine, text, event
 from sqlalchemy import select, MetaData, Table
@@ -61,6 +62,83 @@ class SQLLogConverter:
 
         self.metadata = MetaData()
         self.metadata.reflect(bind=self.engine)
+
+    def __call__(self, output_directory: str, name: Optional[str] = None, 
+        desc: Optional[str] = None, simulation_index: Optional[int] = None, verbose: bool = False, *args, **kwargs):
+        """
+        Args:
+            name (Optional[str], optional): Partial Name of the episode to retrieve. Defaults to None.
+            desc (Optional[str], optional): Partial Description of the episode to retrieve. Defaults to None.
+            simulation_index (Optional[int], optional): Simulation index of the episode to retrieve. Defaults to None.
+        
+        Writes:
+            simulationindex_name \forall matching simulations
+                - environment_id.csv \forall matching episodes
+        """
+        assert any([name is not None, desc is not None, simulation_index is not None]), \
+            "At least one of 'name', 'desc', or 'simulation_index' must be provided."
+
+        t_sim = self.metadata.tables['simulation']
+        t_env = self.metadata.tables['environment']
+
+        with self.engine.connect() as conn:
+            conn = conn.execution_options(is_readonly=True)
+
+            if name:
+                stmt = select(t_sim.c.id, t_sim.c.name).where(t_sim.c.name.ilike(f"%{name}%"))
+                sim_indices_name = conn.execute(stmt).fetchall()
+            
+            if desc:
+                stmt = select(t_sim.c.id,t_sim.c.name).where(t_sim.c.description.ilike(f"%{desc}%"))
+                sim_indices_desc = conn.execute(stmt).fetchall()
+
+            if simulation_index is not None:
+                if (name or desc) and verbose:
+                    warnings.warn("Both 'simulation_index' and 'name'/'desc' provided. Ignoring 'name'/'desc'.")
+                stmt = select(t_sim.c.id,t_sim.c.name).where(t_sim.c.id == simulation_index)
+                sim_indices = conn.execute(stmt).fetchall()
+
+            else:
+                if name and desc:
+                    sim_indices = list(set(sim_indices_name) & set(sim_indices_desc))
+                elif name:
+                    sim_indices = sim_indices_name
+                elif desc:
+                    sim_indices = sim_indices_desc
+            
+            if verbose:
+                print("Fetching: ", sim_indices)
+
+            sim_paths = {}
+
+            for sim_ind, sim_name in sim_indices:
+                try:
+                    os.makedirs(os.path.join(output_directory, f"{sim_ind}_{sim_name}"), exist_ok=False)
+                    sim_paths[sim_ind] = os.path.join(output_directory, f"{sim_ind}_{sim_name}")
+                except:
+                    warnings.warn(f"Output directory for simulation '{sim_ind}_{sim_name}' already exists.")
+                    if override_initialization_check:
+                        warnings.warn("Override flag set. Continuing and potentially overwriting existing files.")
+                    else:
+                        raise RuntimeError("To override, set 'override_initialization_check' to True.")
+
+            stmt = select(t_env.c.id, t_env.c.simulation_id, t_env.c.simulation_index).where(
+                t_env.c.simulation_id.in_([sim[0] for sim in sim_indices])
+            )
+            env_episodes = conn.execute(stmt).fetchall()
+
+            for env_id, sim_id, sim_index in env_episodes:
+                df = self.get_episode(env_id, simulation_index=sim_index, *args, **kwargs)
+                output_path = os.path.join(
+                    sim_paths[sim_id], f'{sim_index}.csv'
+                )
+                df.to_csv(output_path, index=False)
+            
+                
+
+
+
+    
 
     def get_episode(self, environment_id: int, simulation_index: Optional[int] = None, reindex: bool = False) -> pd.DataFrame:
         """
@@ -152,7 +230,7 @@ class SQLLogConverter:
         
 
         complete_map = defaultdict(lambda : False)
-        complete_map[0] = None
+        complete_map[0] = float('nan')
         complete_map[time_env_agents['step'].max().item()] = True
         time_env_agents['complete'] = time_env_agents['step'].map(complete_map)
 
