@@ -168,7 +168,6 @@ class raw_env(BatchedAECEnv):
         "name": "wildfire_v0",
         "is_parallelizable": True,
         "render_fps": 2,
-        'agent_name': 'firefighter'
     }
 
     @torch.no_grad()

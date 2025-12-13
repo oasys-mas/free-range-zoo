@@ -139,7 +139,6 @@ class raw_env(BatchedAECEnv):
         "name": "rideshare_v0",
         "is_parallelizable": True,
         "render_fps": 2,
-        'agent_name': 'driver'
     }
 
     @torch.no_grad()
