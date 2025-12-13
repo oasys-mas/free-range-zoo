@@ -50,7 +50,7 @@ class SQLLogConverter:
 
         assert self.domain in [j.lower() for j in os.listdir(os.path.dirname(__file__) + '/../../free_range_zoo/envs')], \
             f"Environment domain '{self.domain}' not recognized."
-        
+
         if agent_name is None:
             if not hasattr(env, 'metadata'):
                 self.agent_name = None
@@ -152,7 +152,7 @@ class SQLLogConverter:
         Returns:
             pd.DataFrame: A DataFrame containing merged agent and environment logs per timesteps
         """
-        
+
         # 1. Access Table Objects (Fail fast if core tables are missing)
         try:
             t_env = self.metadata.tables['environment']
@@ -165,9 +165,8 @@ class SQLLogConverter:
         env_table_name = f"{self.domain}_environment_log"
         if env_table_name not in self.metadata.tables:
             raise ValueError(f"Table '{env_table_name}' does not exist in the database.")
-        
-        t_env_log = self.metadata.tables[env_table_name]
 
+        t_env_log = self.metadata.tables[env_table_name]
 
         with self.engine.connect() as conn:
             conn = conn.execution_options(is_readonly=True)
@@ -195,15 +194,13 @@ class SQLLogConverter:
             stmt_features = select(t_env_log).where(t_env_log.c.simulation_timestep_id.in_(timestep_ids))
             env_features = pd.read_sql(stmt_features, conn)
 
-        
         env_features = env_features.drop(columns=['id'], errors='ignore')
         time_env = pd.merge(time, env_features, left_on='id', right_on='simulation_timestep_id')
 
         #to help with arbirary agent column renaming
         agents = agents.drop(columns=['id'], errors='ignore').add_prefix('agent_')
-        agents = agents.rename(columns={'agent_simulation_timestep_id': 'simulation_timestep_id',
-                                      'agent_agent_id': 'agent_id'})
-        
+        agents = agents.rename(columns={'agent_simulation_timestep_id': 'simulation_timestep_id', 'agent_agent_id': 'agent_id'})
+
         # Create per agent columns filling missing with NaN
         if reindex:
             unique_agents = agents['agent_id'].astype(int).unique()
@@ -213,26 +210,23 @@ class SQLLogConverter:
         agent_pivot = agents.pivot(index='simulation_timestep_id', columns='agent_id')
         agent_pivot.columns = ['_'.join(map(str, col)).strip() for col in agent_pivot.columns.values]
         agent_pivot = agent_pivot.reset_index()
-        
+
         time_env_agents = pd.merge(time_env, agent_pivot, on='simulation_timestep_id', how='left')
         time_env_agents['simulation_index'] = simulation_index
 
-        remove_agent_holder = {col:''.join(col.split('agent_')) for col in time_env_agents.columns if col.startswith('agent_')}
+        remove_agent_holder = {col: ''.join(col.split('agent_')) for col in time_env_agents.columns if col.startswith('agent_')}
         time_env_agents.rename(columns=remove_agent_holder, inplace=True)
 
         ag_naming_dict = {
-            col: self.agent_name+'_'+col.split('_')[-1]+'_'+'_'.join(col.split('_')[:-1]) 
+            col: self.agent_name + '_' + col.split('_')[-1] + '_' + '_'.join(col.split('_')[:-1])
             for col in time_env_agents.columns if col in remove_agent_holder.values()
         }
 
-        time_env_agents = time_env_agents.rename(columns = {
-            'timestep': 'step'} | ag_naming_dict)
-        
+        time_env_agents = time_env_agents.rename(columns={'timestep': 'step'} | ag_naming_dict)
 
         complete_map = defaultdict(lambda : False)
         complete_map[0] = float('nan')
         complete_map[time_env_agents['step'].max().item()] = True
         time_env_agents['complete'] = time_env_agents['step'].map(complete_map)
-
 
         return time_env_agents
