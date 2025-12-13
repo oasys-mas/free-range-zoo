@@ -63,8 +63,14 @@ class SQLLogConverter:
         self.metadata = MetaData()
         self.metadata.reflect(bind=self.engine)
 
-    def __call__(self, output_directory: str, name: Optional[str] = None, 
-        desc: Optional[str] = None, simulation_index: Optional[int] = None, verbose: bool = False, *args, **kwargs):
+    def __call__(self,
+                 output_directory: str,
+                 name: Optional[str] = None,
+                 desc: Optional[str] = None,
+                 simulation_index: Optional[int] = None,
+                 verbose: bool = False,
+                 *args,
+                 **kwargs):
         """
         Args:
             name (Optional[str], optional): Partial Name of the episode to retrieve. Defaults to None.
@@ -87,15 +93,15 @@ class SQLLogConverter:
             if name:
                 stmt = select(t_sim.c.id, t_sim.c.name).where(t_sim.c.name.ilike(f"%{name}%"))
                 sim_indices_name = conn.execute(stmt).fetchall()
-            
+
             if desc:
-                stmt = select(t_sim.c.id,t_sim.c.name).where(t_sim.c.description.ilike(f"%{desc}%"))
+                stmt = select(t_sim.c.id, t_sim.c.name).where(t_sim.c.description.ilike(f"%{desc}%"))
                 sim_indices_desc = conn.execute(stmt).fetchall()
 
             if simulation_index is not None:
                 if (name or desc) and verbose:
                     warnings.warn("Both 'simulation_index' and 'name'/'desc' provided. Ignoring 'name'/'desc'.")
-                stmt = select(t_sim.c.id,t_sim.c.name).where(t_sim.c.id == simulation_index)
+                stmt = select(t_sim.c.id, t_sim.c.name).where(t_sim.c.id == simulation_index)
                 sim_indices = conn.execute(stmt).fetchall()
 
             else:
@@ -105,7 +111,7 @@ class SQLLogConverter:
                     sim_indices = sim_indices_name
                 elif desc:
                     sim_indices = sim_indices_desc
-            
+
             if verbose:
                 print("Fetching: ", sim_indices)
 
@@ -122,23 +128,14 @@ class SQLLogConverter:
                     else:
                         raise RuntimeError("To override, set 'override_initialization_check' to True.")
 
-            stmt = select(t_env.c.id, t_env.c.simulation_id, t_env.c.simulation_index).where(
-                t_env.c.simulation_id.in_([sim[0] for sim in sim_indices])
-            )
+            stmt = select(t_env.c.id, t_env.c.simulation_id,
+                          t_env.c.simulation_index).where(t_env.c.simulation_id.in_([sim[0] for sim in sim_indices]))
             env_episodes = conn.execute(stmt).fetchall()
 
             for env_id, sim_id, sim_index in env_episodes:
                 df = self.get_episode(env_id, simulation_index=sim_index, *args, **kwargs)
-                output_path = os.path.join(
-                    sim_paths[sim_id], f'{sim_index}.csv'
-                )
+                output_path = os.path.join(sim_paths[sim_id], f'{sim_index}.csv')
                 df.to_csv(output_path, index=False)
-            
-                
-
-
-
-    
 
     def get_episode(self, environment_id: int, simulation_index: Optional[int] = None, reindex: bool = False) -> pd.DataFrame:
         """
@@ -224,7 +221,7 @@ class SQLLogConverter:
 
         time_env_agents = time_env_agents.rename(columns={'timestep': 'step'} | ag_naming_dict)
 
-        complete_map = defaultdict(lambda : False)
+        complete_map = defaultdict(lambda: False)
         complete_map[0] = float('nan')
         complete_map[time_env_agents['step'].max().item()] = True
         time_env_agents['complete'] = time_env_agents['step'].map(complete_map)
