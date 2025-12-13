@@ -2,50 +2,43 @@ name: test
 
 on:
   workflow_call:
-    secrets:
-      CI_TOKEN:
+    inputs:
+      targetSha:
         required: true
+        type: string
 
 jobs:
-  free-range-zoo:
+  lib:
     timeout-minutes: 15
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, nix]
     steps:
       - name: checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6.0.1
         with:
-          submodules: recursive
-          token: ${{ secrets.CI_TOKEN }}
-      - name: set up environment
-        uses: c4patino/actions/.github/actions/setup-python@main
+          ref: ${{ inputs.targetSha }}
+      - name: activate nix shell
+        uses: nicknovitski/nix-develop@v1.2.1
         with:
-          language: python
+          arguments: ".#ci"
       - name: install dependencies
         run: poetry install
       - name: run tests
         run: poetry run python -m unittest -b
-  # gpu:
-  #   timeout-minutes: 15
-  #   runs-on: [self-hosted, gpu]
-  #   if: github.event_name == 'pull_request' && github.base_ref == 'main' || (github.event_name == 'push' && github.ref == 'refs/heads/main')
-  #   container:
-  #     image: ubuntu:latest
-  #     options: --device=nvidia.com/gpu=all
-  #     volumes:
-  #       - /nix:/nix
-  #   steps:
-  #     - name: Update container
-  #       run: apt update && apt upgrade -y && apt install -y git make curl wget build-essential libssl-dev pkg-config cmake
-  #     - name: Checkout code
-  #       uses: actions/checkout@v4
-  #       with:
-  #         submodules: recursive
-  #         token: ${{ secrets.CI_TOKEN }}
-  #     - name: set up environment
-  #       uses: c4patino/actions/.github/actions/setup-python@main
-  #     - name: set up environment
-  #       uses: c4patino/actions/.github/actions/setup-rust@main
-  #     - name: install dependencies
-  #       run: poetry install
-  #     - name: run gpu tests
-  #       run: poetry run python -m unittest -b
+  docs:
+    timeout-minutes: 15
+    runs-on: [self-hosted, nix]
+    steps:
+      - name: checkout code
+        uses: actions/checkout@v6.0.1
+        with:
+          ref: ${{ inputs.targetSha }}
+      - name: activate nix shell
+        uses: nicknovitski/nix-develop@v1.2.1
+        with:
+          arguments: ".#ci"
+      - name: install dependencies
+        working-directory: docs
+        run: poetry install
+      - name: run tests
+        working-directory: docs
+        run: poetry run python -m unittest -b

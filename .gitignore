@@ -232,15 +232,19 @@ pip-selfcheck.json
 # End of https://www.toptal.com/developers/gitignore/api/visualstudiocode,vim,direnv,virtualenv,python
 
 # free-range-zoo specific .gitignore
-my_secrets.py
-**/plotting/*-paper*
+
 *.csv
 *.gif
 *.pkl
 *.prof
 *.pth
 
+.devenv
 .neptune
-unittest_logs
+
+**/plotting/*-paper*
 
 !free_range_zoo/envs/**/env
+
+my_secrets.py
+unittest_logs

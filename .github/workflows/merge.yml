@@ -1,0 +1,34 @@
+name: merge
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+concurrency:
+  group: merge-${{ github.workflow }}-${{ github.event_name }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    uses: ./.github/workflows/lint.yml
+    with:
+      targetSha: ${{ github.event.pull_request.head.sha }}
+  test:
+    uses: ./.github/workflows/test.yml
+    with:
+      targetSha: ${{ github.event.pull_request.head.sha }}
+  docs:
+    if: (!github.event.repository.private)
+    needs:
+      - lint
+      - test
+    permissions:
+      pages: write
+      id-token: write
+    uses: ./.github/workflows/docs.yml
+    with:
+      targetSha: ${{ github.event.pull_request.head.sha }}
