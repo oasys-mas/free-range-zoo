@@ -152,7 +152,7 @@ class raw_env(BatchedAECEnv):
     metadata = {
         "render.modes": ["human", "rgb_array"],
         "name": "cybersecurity_v0",
-        'agent_name': None, 
+        'agent_name': None,
         "is_parallelizable": True,
         "render_fps": 2,
         "null_value": -100
