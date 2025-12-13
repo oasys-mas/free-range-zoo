@@ -17,6 +17,7 @@ from free_range_zoo.utils.env import AECEnv
 
 logger = logging.getLogger('free_range_zoo')
 
+
 @event.listens_for(Engine, "before_cursor_execute")
 def intercept_read_only_writes(conn, cursor, statement, parameters, context, executemany):
     if conn.get_execution_options().get("is_readonly"):
