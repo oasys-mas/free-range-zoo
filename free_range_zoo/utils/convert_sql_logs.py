@@ -72,6 +72,7 @@ class SQLLogConverter:
                  desc: Optional[str] = None,
                  simulation_index: Optional[int] = None,
                  verbose: bool = False,
+                 override_initialization_check: bool = False,
                  *args,
                  **kwargs):
         """
@@ -123,14 +124,14 @@ class SQLLogConverter:
             for sim_ind, sim_name in sim_indices:
                 try:
                     os.makedirs(os.path.join(output_directory, f"{sim_ind}_{sim_name}"), exist_ok=False)
-                    sim_paths[sim_ind] = os.path.join(output_directory, f"{sim_ind}_{sim_name}")
                 except:
                     warnings.warn(f"Output directory for simulation '{sim_ind}_{sim_name}' already exists.")
                     if override_initialization_check:
-                        warnings.warn("Override flag set. Continuing and potentially overwriting existing files.")
+                        logger.warning("Override flag set. Continuing and potentially overwriting existing files.")
                     else:
                         raise RuntimeError("To override, set 'override_initialization_check' to True.")
-
+                sim_paths[sim_ind] = os.path.join(output_directory, f"{sim_ind}_{sim_name}")
+            
             stmt = select(t_env.c.id, t_env.c.simulation_id,
                           t_env.c.simulation_index).where(t_env.c.simulation_id.in_([sim[0] for sim in sim_indices]))
             env_episodes = conn.execute(stmt).fetchall()

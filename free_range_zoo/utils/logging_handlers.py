@@ -206,6 +206,7 @@ class SQLLogger(Logger):
                                 network_state=str(getattr(state, 'network_state', None)[env_idx].tolist()),
                                 location=str(getattr(state, 'location', None)[env_idx].tolist()),
                                 presence=str(getattr(state, 'presence', None)[env_idx].tolist()),
+                                adj_matrix =str( extra['adj_matrix'][env_idx] ),
                             )
                         case _:
                             raise NotImplementedError(
