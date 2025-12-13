@@ -52,3 +52,31 @@ Initialization](https://oasys-mas.github.io/free-range-zoo/events/moasei-2026/en
 ## Track #2 Rideshare
 
 ## Track #3 Wildfire
+
+### How does the equipment transition work for the bonus round?
+
+In the wildfire environment, each agent's equipment can be in one of four
+states, representing its condition:
+
+- **Fully repaired (pristine)**
+- **Intermediate state 1**
+- **Intermediate state 2**
+- **Fully damaged**
+
+For the competition, only the *maximum suppressant* capacity of an agent is
+affected by equipment state. The rules are as follows:
+
+- **Fully repaired (pristine):** The agent's maximum suppressant is increased
+  by 1 (+1 modifier).
+- **Intermediate states (1 & 2):** The agent's maximum suppressant is unchanged
+  (no modifier).
+- **Fully damaged:** The agent's maximum suppressant is decreased by 1 (-1
+  modifier).
+
+Equipment state transitions are handled by the environment and occur
+stochastically. Agents may degrade their equipment through use, suffer critical
+errors, or repair their equipment when they perform the `noop` action.
+
+This mechanism encourages agents to maintain their equipment in good condition
+to maximize their firefighting effectiveness, while also introducing strategic
+considerations around equipment management and resupply.
