@@ -225,6 +225,10 @@ class SQLLogConverter:
 
         complete_map = defaultdict(lambda: False)
         complete_map[0] = float('nan')
+
+        if time_env_agents['step'].isna().all():
+            raise RuntimeError(f"No simulation found for {self.domain} at env_id:{environment_id}.")
+
         complete_map[time_env_agents['step'].max().item()] = True
         time_env_agents['complete'] = time_env_agents['step'].map(complete_map)
 
