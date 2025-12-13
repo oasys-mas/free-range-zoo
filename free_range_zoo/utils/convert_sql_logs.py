@@ -10,10 +10,12 @@ from sqlalchemy import create_engine, text, event
 from sqlalchemy import select, MetaData, Table
 from sqlalchemy.engine import Engine
 from collections import defaultdict
+import logging
 
 from free_range_zoo.utils.sql_logging import get_engine_and_session
 from free_range_zoo.utils.env import AECEnv
 
+logger = logging.getLogger('free_range_zoo')
 
 @event.listens_for(Engine, "before_cursor_execute")
 def intercept_read_only_writes(conn, cursor, statement, parameters, context, executemany):
@@ -29,16 +31,16 @@ def intercept_read_only_writes(conn, cursor, statement, parameters, context, exe
 
 class SQLLogConverter:
 
-    def __init__(self, db_path: str, env: Union[str, 'AECEnv'], agent_name: Optional[str] = None):
+    def __init__(self, connection_string: str, env: Union[str, 'AECEnv'], agent_name: Optional[str] = None):
         """
         Args:
-            db_path (str): Path to the SQL database file
+            connection_string (str): Connection string to the SQL database
             env (Union[str, AECEnv]): The environment name (e.g., 'wildfire_v0') or environment instance
             agent_name (Optional[str], optional): The name of the agent type in the environment.
                 If None, it will be inferred from the environment metadata. Defaults to None.
         """
-        self.db_path = db_path
-        self.engine, self.Session = get_engine_and_session(db_path)
+        self.connection_string = connection_string
+        self.engine, self.Session = get_engine_and_session(connection_string)
 
         if isinstance(env, str):
             if '_' in env:
@@ -107,7 +109,7 @@ class SQLLogConverter:
                     sim_indices = sim_indices_desc
             
             if verbose:
-                print("Fetching: ", sim_indices)
+                logger.info(f"Fetching: {sim_indices}")
 
             sim_paths = {}
 
@@ -140,7 +142,7 @@ class SQLLogConverter:
 
     
 
-    def get_episode(self, environment_id: int, simulation_index: Optional[int] = None, reindex: bool = False) -> pd.DataFrame:
+    def get_episode(self, environment_id: int, simulation_index: Optional[int] = None) -> pd.DataFrame:
         """
         Query the database for all agent and task features across all timesteps for a given environment_id
 
@@ -158,6 +160,7 @@ class SQLLogConverter:
             t_env = self.metadata.tables['environment']
             t_timestep = self.metadata.tables['environment_timestep']
             t_agent_log = self.metadata.tables['agent_log']
+            t_agent = self.metadata.tables['agent']
         except KeyError as e:
             raise RuntimeError(f"Critical table missing from database: {e}")
 
@@ -194,18 +197,17 @@ class SQLLogConverter:
             stmt_features = select(t_env_log).where(t_env_log.c.simulation_timestep_id.in_(timestep_ids))
             env_features = pd.read_sql(stmt_features, conn)
 
+            # Query 5: Get Agent Names
+            stmt_agent_names = select(t_agent.c.id, t_agent.c.name).where(t_agent.c.environment_id == environment_id)
+            agent_names = pd.read_sql(stmt_agent_names, conn)
+            agent_name_map = dict(zip(agent_names['id'], agent_names['name']))
+
         env_features = env_features.drop(columns=['id'], errors='ignore')
         time_env = pd.merge(time, env_features, left_on='id', right_on='simulation_timestep_id')
 
         #to help with arbirary agent column renaming
         agents = agents.drop(columns=['id'], errors='ignore').add_prefix('agent_')
         agents = agents.rename(columns={'agent_simulation_timestep_id': 'simulation_timestep_id', 'agent_agent_id': 'agent_id'})
-
-        # Create per agent columns filling missing with NaN
-        if reindex:
-            unique_agents = agents['agent_id'].astype(int).unique()
-            map_dict = {old_id: new_id for new_id, old_id in enumerate(sorted(unique_agents))}
-            agents['agent_id'] = agents['agent_id'].apply(lambda x: map_dict[x])
 
         agent_pivot = agents.pivot(index='simulation_timestep_id', columns='agent_id')
         agent_pivot.columns = ['_'.join(map(str, col)).strip() for col in agent_pivot.columns.values]
@@ -218,7 +220,7 @@ class SQLLogConverter:
         time_env_agents.rename(columns=remove_agent_holder, inplace=True)
 
         ag_naming_dict = {
-            col: self.agent_name + '_' + col.split('_')[-1] + '_' + '_'.join(col.split('_')[:-1])
+            col: agent_name_map[int(col.split('_')[-1])] + '_' + '_'.join(col.split('_')[:-1])
             for col in time_env_agents.columns if col in remove_agent_holder.values()
         }
 
