@@ -238,6 +238,7 @@ pip-selfcheck.json
 *.pkl
 *.prof
 *.pth
+*.db
 
 .devenv
 .neptune
