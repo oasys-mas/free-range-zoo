@@ -17,6 +17,53 @@ this_dir = os.path.dirname(__file__)
 ########################################################
 #                IMAGE AND COLOR HELPERS              #
 ########################################################
+def resolve_fire_target_clockwise(intensity_2d, agent_row, agent_col, fire_rank, rng=1):
+    """
+    fire_rank = k-th *active* fire cell in clockwise order within Chebyshev range <= rng.
+    Active means intensity in {1,2,3}. Burnout (4) is excluded.
+    Returns (row, col) or None.
+    """
+    H = len(intensity_2d)
+    W = len(intensity_2d[0]) if H > 0 else 0
+
+    def ring_perimeter(d):
+        cells = []
+        top = agent_row - d
+        bottom = agent_row + d
+        left = agent_col - d
+        right = agent_col + d
+
+        for c in range(left, right + 1):         # top edge
+            cells.append((top, c))
+        for r in range(top + 1, bottom + 1):     # right edge
+            cells.append((r, right))
+        for c in range(right - 1, left - 1, -1): # bottom edge
+            cells.append((bottom, c))
+        for r in range(bottom - 1, top, -1):     # left edge
+            cells.append((r, left))
+        return cells
+
+    candidates = []
+    for d in range(1, rng + 1):
+        for r, c in ring_perimeter(d):
+            if 0 <= r < H and 0 <= c < W:
+                inten = intensity_2d[r][c]
+                if inten in (1, 2, 3):
+                    candidates.append((r, c))
+
+    if not candidates:
+        return None
+
+    try:
+        k = int(fire_rank)
+    except:
+        return None
+
+    if k < 0 or k >= len(candidates):
+        return None
+
+    return candidates[k]
+
 
 
 def render_image(path, cell_size: int):
@@ -575,27 +622,38 @@ def render(path: str,
                         window.blit(z_surf, z_rect)
                     # supress
                     if power == 0:
+                        # Use the *current step* fires grid, not a global precomputed list
+                        intensity_now = df['intensity'].iloc[t]
+                        target = resolve_fire_target_clockwise(
+                            intensity_2d=intensity_now,
+                            agent_row=obj["row"],
+                            agent_col=obj["col"],
+                            fire_rank=fire_num,
+                            rng=1
+                        )
 
-                        # If valid fire_number, draw arrow from agent to that fire
-                        # if 0 <= fire_num <= len(fire_positions):
-                        # Get the (row, col) of that fire from row-major list
-                        fire_to_supress = next((fire for fire in fire_positions if fire.get("fire") == fire_num), None)
-                        fire_row = fire_to_supress['y']
-                        fire_col = fire_to_supress['x']
 
-                        # Draw arrow from agent -> that fire cell
-                        z_surf = big_font.render(f"Supress Fire {fire_num}", True, (0, 0, 250))
-                        # Place the "Z" near the center of the agent's tile
-                        # window.blit(z_surf, (draw_x + cell_size // 2, draw_y + cell_size // 2))
-                        z_rect = z_surf.get_rect(center=(draw_x + 45, draw_y + img_height + 35))
-                        window.blit(z_surf, z_rect)
-                        draw_arrow(
-                            window,
-                            start_pos=(obj["col"], obj["row"]),  # (x, y) for agent
-                            end_pos=(fire_col, fire_row),  # (x, y) for the target fire
-                            cell_size=cell_size,
-                            x_offset=x_offset,
-                            y_offset=y_offset)
+                        if target is None:
+                            # No valid in-range target for that rank, treat as NOOP visually
+                            z_surf = big_font.render("NO VALID TARGET", True, (250, 0, 0))
+                            z_rect = z_surf.get_rect(center=(draw_x + 45, draw_y + img_height + 35))
+                            window.blit(z_surf, z_rect)
+                        else:
+                            fire_row, fire_col = target
+
+                            z_surf = big_font.render(f"Suppress {fire_num}", True, (0, 0, 250))
+                            z_rect = z_surf.get_rect(center=(draw_x + 45, draw_y + img_height + 35))
+                            window.blit(z_surf, z_rect)
+
+                            draw_arrow(
+                                window,
+                                start_pos=(obj["col"], obj["row"]),     # (x, y)
+                                end_pos=(fire_col, fire_row),           # (x, y)
+                                cell_size=cell_size,
+                                x_offset=x_offset,
+                                y_offset=y_offset
+                            )
+
 
         # -------------------- Flip display or record frame --------------------
         if render_mode == "human":

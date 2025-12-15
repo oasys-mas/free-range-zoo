@@ -20,7 +20,7 @@ env = wildfire_v0.parallel_env(
 obs = env.reset()
 agents = env.agents
 
-for i in range(10):
+for i in range(25):
     print(f"Step {i}")
     actions = {agent: torch.tensor(env.action_space(agent).sample_nested()) for agent in agents}
     printr(f"Action taken: {actions}\n")
