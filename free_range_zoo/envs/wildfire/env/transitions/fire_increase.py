@@ -87,7 +87,7 @@ class FireIncreaseTransition(nn.Module):
         just_burned_out = torch.logical_and(fire_increase_mask, state.intensity >= self.burnout_state)
 
         state.fires[just_burned_out] *= -1
-        state.fuel[just_burned_out] = 0
+        state.fuel[just_burned_out] = torch.clamp(state.fuel[just_burned_out] - 1, min=0)
 
         if return_burned_out:
             return state, just_burned_out
