@@ -1,5 +1,6 @@
 """Run one of the cybersecurity based on Random Baseline and generate logs for rendering."""
 
+from pathlib import Path
 import sys
 
 sys.path.append('.')
@@ -8,6 +9,12 @@ import argparse
 import torch
 
 from free_range_zoo.envs import cybersecurity_v0
+
+
+p = Path(__file__).resolve()
+while p.name != "dev-free-range-zoo":
+    p = p.parent
+sys.path.insert(0, str(p))
 from tests.utils import cybersecurity_configs
 from free_range_zoo.wrappers.action_task import action_mapping_wrapper_v0
 from free_range_zoo.envs.cybersecurity.baselines import (

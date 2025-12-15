@@ -1,8 +1,14 @@
 import sys
 import termcolor
+import sys
+from pathlib import Path
+import sys
+from pathlib import Path
 
-sys.path.append('.')
-
+p = Path(__file__).resolve()
+while p.name != "dev-free-range-zoo":
+    p = p.parent
+sys.path.insert(0, str(p))
 from tests.utils import rideshare_configs
 
 printg = lambda x: print(termcolor.colored(x, "green"))

@@ -10,8 +10,6 @@ import pandas as pd
 
 this_dir = os.path.dirname(__file__)
 
-raise NotImplementedError("This was likely broken in the rewrite.")
-
 
 def render_image(path, cell_size: int):
     """
@@ -159,15 +157,15 @@ def find_arrow_points(start_pos, end_pos, cell_size, x_offset, y_offset):
 # Function to draw an arrow from start to end
 def draw_arrow(window, start_pos, end_pos, cell_size, x_offset, y_offset):
     start_edge, end_edge = find_arrow_points(start_pos, end_pos, cell_size, x_offset, y_offset)
-
+    width = 2
     # Draw the line (shaft of the arrow)
-    pygame.draw.line(window, (0, 0, 0), start_edge, end_edge, 5)
+    pygame.draw.line(window, (0, 0, 0), start_edge, end_edge, width)
 
     # Calculate the angle of the arrow
     angle = math.atan2(end_edge[1] - start_edge[1], end_edge[0] - start_edge[0])
 
     # Define arrowhead size
-    arrowhead_length = 20
+    arrowhead_length = 15
     arrowhead_angle = math.radians(30)
 
     # Calculate the points of the arrowhead
@@ -199,11 +197,12 @@ def dashed_points(surface, color, start_pos, end_pos, width=1, dash_length=10):
 def draw_dash_arrow(window, start_pos, end_pos, cell_size, x_offset, y_offset):
     start_edge, end_edge = find_arrow_points(start_pos, end_pos, cell_size, x_offset, y_offset)
     # Draw dashed line for the arrow shaft
-    dashed_points(window, (0, 0, 0), start_edge, end_edge, 5)
+    width = 2
+    dashed_points(window, (0, 0, 0), start_edge, end_edge, width)
 
     # Draw the arrowhead (as before)
     angle = math.atan2(end_edge[1] - start_edge[1], end_edge[0] - start_edge[0])
-    arrowhead_length = 20
+    arrowhead_length = 15
     arrowhead_angle = math.radians(30)
 
     point1 = (end_edge[0] - arrowhead_length * math.cos(angle - arrowhead_angle),
@@ -214,425 +213,441 @@ def draw_dash_arrow(window, start_pos, end_pos, cell_size, x_offset, y_offset):
     pygame.draw.polygon(window, (0, 0, 0), [end_edge, point1, point2])
 
 
-def render(
-    path: str,
-    render_mode: str,
-    # Define grid dimensions (m rows, n columns)
-    y=10,
-    x=10,
-    cell_size=50,  # Width and height of each grid cell
-    line_color=(200, 200, 200),  # Gray color for the grid lines
-    padding=50,  # Padding around the grid
-    frame_rate=30,  # Frames per second (mostly matters for rgb_array rendering)
-    checkpoint=None  #specific checkpoint to render
-) -> Union[None, np.ndarray]:
+def get_drivers_with_riders(row):
     """
-    
+    Given a row, returns a dict: driver_id -> list of passenger_ids
     """
+    passengers = literal_eval(row['passengers']) if isinstance(row['passengers'], str) else row['passengers']
+    riding_map = defaultdict(list)
 
+    for p_idx, p_info in enumerate(passengers):
+        if len(p_info) < 11:
+            continue
+        state = p_info[6]
+        riding_with = p_info[7]
+        picked_step = p_info[10]
+
+        if state == 1 and riding_with != -1 and picked_step != -1:
+            riding_map[riding_with].append(p_idx)
+
+    return dict(riding_map)
+
+
+def extract_render_data(row, num_drivers):
+    """
+    Extracts all relevant render data from a single CSV row.
+    Returns a dictionary containing agents, passengers, accepted/riding maps, and driver actions.
+    """
+    row_data = {}
+
+    # Parse agents and passengers
+    # order y,x
+    # agent Ids= index in the tensor
+    agents = row['agents']
+    passengers = row['passengers']
+    row_data['agents'] = agents
+    row_data['passengers'] = passengers
+
+    # Collect accepted and riding passengers
+    accepted_map = defaultdict(list)  # driver_id -> list of passenger indices
+    riding_map = defaultdict(list)
+
+    for p_idx, p_info in enumerate(passengers):
+        if len(p_info) < 11:
+            continue
+        accepted_by = p_info[7]
+        py, px = p_info[1], p_info[2]
+        dy, dx = p_info[3], p_info[4]
+        fare = p_info[5]
+        state = p_info[6]  # accepted
+        riding_with = p_info[7]
+        picked_step = p_info[10]
+
+        if accepted_by != -1:
+            accepted_map[accepted_by].append(p_idx)
+        if state == 1 and riding_with != -1 and picked_step != -1:
+            riding_map[riding_with].append(p_idx)
+
+    row_data['accepted_map'] = accepted_map
+    row_data['riding_map'] = riding_map
+
+    # Parse driver actions
+    driver_actions = []
+    for d_idx in range(num_drivers):
+        col = f'driver_{d_idx+1}_action'
+        if col not in row or pd.isnull(row[col]):
+            driver_actions.append([-1, -1])
+        else:
+            try:
+                driver_actions.append(literal_eval(row[col]))
+            except:
+                driver_actions.append([-1, -1])
+    row_data['driver_actions'] = driver_actions
+
+    return row_data
+
+
+def colorize_passenger(base_img, hue_shift):
+    return colorize_car(base_img, hue_shift)
+
+
+def colorize_car(base_img, hue_shift):
+    """
+    Applies hue shift only to red car body pixels (255, 0, 0),
+    and preserves the alpha channel (transparency).
+    """
+    img = base_img.copy()
+    rgb_arr = pygame.surfarray.array3d(img).astype(np.uint8)
+    alpha_arr = pygame.surfarray.array_alpha(img).astype(np.uint8)
+
+    # Create mask for pure red pixels (car body)
+    mask = (rgb_arr[:, :, 0] == 255) & (rgb_arr[:, :, 1] == 0) & (rgb_arr[:, :, 2] == 0)
+
+    # Get red pixels to shift
+    red_pixels = rgb_arr[mask].astype(np.float32) / 255.0
+    r, g, b = red_pixels[:, 0], red_pixels[:, 1], red_pixels[:, 2]
+    maxc = np.maximum(np.maximum(r, g), b)
+    minc = np.minimum(np.minimum(r, g), b)
+    delta = maxc - minc
+
+    hue = np.zeros_like(r)
+    hue[delta != 0] = 0  # red = hue 0
+    hue = (hue + hue_shift / 360.0) % 1.0
+
+    c = maxc
+    x = c * (1 - np.abs((hue * 6) % 2 - 1))
+
+    r_, g_, b_ = np.zeros_like(hue), np.zeros_like(hue), np.zeros_like(hue)
+    idx = (hue >= 0) & (hue < 1 / 6)
+    r_[idx], g_[idx], b_[idx] = c[idx], x[idx], 0
+    idx = (hue >= 1 / 6) & (hue < 2 / 6)
+    r_[idx], g_[idx], b_[idx] = x[idx], c[idx], 0
+    idx = (hue >= 2 / 6) & (hue < 3 / 6)
+    r_[idx], g_[idx], b_[idx] = 0, c[idx], x[idx]
+    idx = (hue >= 3 / 6) & (hue < 4 / 6)
+    r_[idx], g_[idx], b_[idx] = 0, x[idx], c[idx]
+    idx = (hue >= 4 / 6) & (hue < 5 / 6)
+    r_[idx], g_[idx], b_[idx] = x[idx], 0, c[idx]
+    idx = (hue >= 5 / 6) & (hue <= 1)
+    r_[idx], g_[idx], b_[idx] = c[idx], 0, x[idx]
+
+    # Convert to uint8 and put back in original RGB array
+    rgb_arr[mask, 0] = (r_ * 255).astype(np.uint8)
+    rgb_arr[mask, 1] = (g_ * 255).astype(np.uint8)
+    rgb_arr[mask, 2] = (b_ * 255).astype(np.uint8)
+
+    # Combine with original alpha channel
+    surface = pygame.Surface(img.get_size(), pygame.SRCALPHA)
+    pygame.surfarray.blit_array(surface, rgb_arr)
+    pygame.surfarray.pixels_alpha(surface)[:, :] = alpha_arr
+
+    return surface
+
+
+# Replace hue-shifted cars with pre-colored images
+def tint_surface(base_surface, color):
+    """Apply a solid tint color to a surface while preserving alpha."""
+    surface = base_surface.copy()
+    arr = pygame.surfarray.pixels3d(surface)
+    alpha = pygame.surfarray.pixels_alpha(surface)
+    color_arr = np.array(color, dtype=np.uint8).reshape((1, 1, 3))
+    mask = (arr[:, :, 0] > 200) & (arr[:, :, 1] < 50) & (arr[:, :, 2] < 50)  # red-ish mask
+    arr[mask] = color_arr
+    pygame.surfarray.pixels_alpha(surface)[:, :] = alpha
+    return surface
+
+
+def render(path: str,
+           render_mode: str = 'human',
+           y=10,
+           x=10,
+           cell_size=50,
+           line_color=(200, 200, 200),
+           padding=50,
+           frame_rate=30,
+           checkpoint=None) -> Union[None, np.ndarray]:
+
+    pygame.init()
     frames = []
 
-    grid_width = y * cell_size
-    grid_height = x * cell_size
-    screen_size = max(grid_width, grid_height) + padding * 3  # Square screen size
+    grid_w = x * cell_size
+    grid_h = y * cell_size
+    screen_size = max(grid_w, grid_h) + padding * 3
 
-    #?window configuration
-    window = pygame.display.set_mode(size=(screen_size, screen_size + 200))
-
-    # Initialize Pygame
-    pygame.init()
+    # window = pygame.display.set_mode((screen_size, screen_size + 200))
     clock = pygame.time.Clock()
 
-    assert render_mode in ['human', 'rgb_array'], "Invalid render mode. Choose from 'human' or 'rgb_array'."
-
-    #?load log
     df = pd.read_csv(path)
+    df['agents'] = df['agents'].apply(literal_eval)
 
-    #filter by checkpoint if specified
-    if checkpoint is not None:
-        renderAll = False
-        df = df[df['label'].apply(lambda s: f'{checkpoint}' in f'{s}')].reset_index(drop=True)
-    else:
-        renderAll = True  #maybe use this flag later
+    driver_action_cols = [c for c in df.columns if c.startswith('driver_') and c.endswith('_action')]
+    num_drivers = len(driver_action_cols)
 
-    df['locations'] = df['locations'].apply(literal_eval)
-    df['destinations'] = df['destinations'].apply(literal_eval)
+    # Dynamic slider to agents
 
-    #handle columns with NaNs
-    df['associations'] = df['associations'].apply(lambda x: x.replace('nan', '-1'))
-    df['timing'] = df['timing'].apply(lambda x: x.replace('nan', '-1'))
+    extra_ui_height = 200 + num_drivers * (cell_size - 5)
+    window = pygame.display.set_mode((screen_size, screen_size + extra_ui_height))
 
-    df['associations'] = df['associations'].apply(literal_eval)
-    df['timing'] = df['timing'].apply(literal_eval)
+    df['passengers'] = df['passengers'].apply(literal_eval)
 
-    #find agents
-    agent_cols = df.columns[df.columns.str.contains('driver')]
-    agent_states = [col for col in agent_cols if 'state' in col]
-    agent_actions = [col for col in agent_cols if 'action_choice' in col]
-    task_actions = [col for col in agent_cols if 'task-action-index' in col]
+    # max_pass = len(df['passengers'])
+    max_pass = max(len(p) for p in df['passengers'])
 
-    for col in agent_cols:
-        df[col] = df[col].apply(lambda x: x.replace('tensor', '')[1:-1] if type(x) == str else '[-1,-1]')
-        df[col] = df[col].apply(literal_eval)
-
-    number_of_agents = len(agent_states)
-    max_number_of_tasks = df['locations'].apply(lambda x: len(x)).max()
-
-    #preparing assets
-    car_hues = 360 // number_of_agents
-    passenger_hues = 360 // max_number_of_tasks
-    # 2. Load base images and convert them for alpha
-    base_car = pygame.image.load(os.path.join(this_dir, "..", "assets", "car_asset.png")).convert_alpha()
-    base_passenger = pygame.image.load(os.path.join(this_dir, "..", "assets", "passenger_asset.png")).convert_alpha()
-    small_passenger = pygame.transform.scale(base_passenger, (cell_size // 3, cell_size // 3)).convert_alpha()
-    # Scale them to fit exactly in a cell
+    this_dir = os.path.dirname(os.path.abspath(__file__))
+    base_car = pygame.image.load(os.path.join(this_dir, "..", "assets", "car_plain.png")).convert_alpha()
     base_car = pygame.transform.scale(base_car, (cell_size, cell_size))
+
+    base_passenger = pygame.image.load(os.path.join(this_dir, "..", "assets", "passenger_plain.png")).convert_alpha()
     base_passenger = pygame.transform.scale(base_passenger, (cell_size, cell_size))
+    small_pass = pygame.transform.scale(base_passenger, (cell_size // 3, cell_size // 3)).convert_alpha()
 
-    # 3. Create hue variants for cars
-    car_assets = []
-    for i in range(number_of_agents):
-        # Shift hue for each car
-        car_surface = change_hue(base_car, 120)
-        car_assets.append(car_surface)
+    location_black = pygame.image.load(os.path.join(this_dir, "..", "assets", "location_black.png")).convert_alpha()
+    location_black = pygame.transform.scale(location_black, (cell_size // 2, cell_size // 2))
 
-    # 4. Create hue variants for passengers and their destinations
-    passenger_assets = []
-    small_passenger_assets = []
-    passenger_dest_assets = []
+    location_green = pygame.image.load(os.path.join(this_dir, "..", "assets", "location_green.png")).convert_alpha()
+    location_green = pygame.transform.scale(location_green, (cell_size // 2, cell_size // 2))
 
-    for i in range(max_number_of_tasks):
-        # Shift hue for each passenger
-        p_surface = change_hue(base_passenger, i * passenger_hues).convert_alpha()
-        sp_surface = change_hue(small_passenger, i * passenger_hues).convert_alpha()
+    high_contrast_colors = [
+        (255, 0, 0),  # Red
+        (0, 255, 0),  # Green
+        (0, 0, 255),  # Blue
+        (255, 255, 0),  # Yellow
+        (255, 0, 255),  # Magenta
+        (0, 255, 255),  # Cyan
+        (0, 0, 0),  # Black
+        (255, 165, 0),  # Orange
+    ]
 
-        # Make the destination a semi‐transparent copy of the passenger
-        p_dest_surface = p_surface.copy()
-        p_dest_surface.set_alpha(128)  # Adjust alpha for partial transparency
+    # car_hue_step = 120 // max(1, num_drivers)
+    pass_hue_step = 120 // max(1, max_pass)
+    # Shift red body by these hue values
+    hue_shifts = [0, 60, 120, 180, 240, 300]  # In degrees
 
-        passenger_assets.append(p_surface)
-        small_passenger_assets.append(sp_surface)
-        passenger_dest_assets.append(p_dest_surface)
+    # car_assets = [colorize_car(base_car, hue_shift=hue_shifts[i % len(hue_shifts)]) for i in range(num_drivers)]
+    car_assets = [tint_surface(base_car, high_contrast_colors[i % len(high_contrast_colors)]) for i in range(num_drivers)]
+    # passenger_assets = [colorize_passenger(base_passenger, hue_shift=i * pass_hue_step) for i in range(max_pass)]
+    passenger_assets = [
+        tint_surface(base_passenger, high_contrast_colors[i % len(high_contrast_colors)]) for i in range(max_pass)
+    ]
+    # passenger_assets = [colorize_passenger(base_passenger, hue_shift=i * pass_hue_step) for i in range(max_pass)]
+    small_pass_assets = [colorize_passenger(small_pass, hue_shift=i * pass_hue_step) for i in range(max_pass)]
 
-    # 5. Store these assets in a dictionary for easy retrieval
-    assets = {
-        "car": car_assets,
-        "passenger": passenger_assets,
-        "smallpassenger": small_passenger_assets,
-        "passenger_dest": passenger_dest_assets
-    }
-    assets = {
-        'car': [change_hue(base_car, i * car_hues) for i in range(number_of_agents)],
-        'smallpassenger': [change_hue(small_passenger, i * passenger_hues) for i in range(max_number_of_tasks)],
-        'passenger': [change_hue(base_passenger, i * passenger_hues) for i in range(max_number_of_tasks)]
-    }
-    #create ghosts of destinations
-    assets['passenger_dest'] = [v.copy().convert_alpha() for v in assets['passenger']]
-    [img.set_alpha(128) for img in assets['passenger_dest']]
+    # ghost_passengers = [p.copy() for p in passenger_assets]
+    # for gp in ghost_passengers:
+    #     gp.set_alpha(128)
 
-    #?organizing for rendering
-    state_record = defaultdict(lambda *args, **kwargs: {})
-    label_record = defaultdict(lambda *args, **kwargs: 'NaN')
-    time_record = defaultdict(lambda *args, **kwargs: -1)
+    pygame.font.init()
+    font = pygame.font.SysFont(None, 32)
+    tinyfont = pygame.font.SysFont(None, 16)
 
-    for i, row in df.iterrows():
-        time_step = {}
-        first_timestep = i if row['label'] not in label_record.values() else list(label_record.values()).index(row['label'])
-        label_record[i] = row['label']
-        time_record[i] = first_timestep
-
-        #add passengers (location and destination)
-        for ix, passenger in enumerate(row['locations']):
-            key = (passenger[1], passenger[2], ix + number_of_agents)
-            dest_key = (row['destinations'][ix][1], row['destinations'][ix][2], ix + number_of_agents)
-            time_step[key] = {
-                'asset': assets['passenger'][ix],
-                'smallasset': assets['smallpassenger'][ix],
-                'type': 'passenger',
-                'acceptedby': row['associations'][ix][1],
-                'ridingwith': row['associations'][ix][2]
-            }
-            time_step[dest_key] = {'asset': assets['passenger_dest'][ix], 'type': 'passenger_dest'}
-        state_record[i] = time_step
-
-        for agent_index, (agent_state, agent_action) in enumerate(zip(agent_states, agent_actions)):
-
-            ag_state = row[agent_state]
-            ag_action = df.loc[i + 1][agent_action] if df.shape[0] > i + 1 else [-1, -1]
-            #maps (agent local task, action) -> (global task "within this batch", action)
-            # ag_task_action_map = df.loc[i + 1][task_actions[agent_index]] if df.shape[0] > i + 1 else None
-            ag_task_action_map = row[task_actions[agent_index]]
-
-            key = (ag_state[2], ag_state[3], agent_index)
-
-            if ag_action[1] == -1:
-                time_step[key] = {
-                    'asset': assets['car'][agent_index],
-                    'action': 'noop',
-                    'name': f'driver_{agent_index}',
-                    'type': 'driver'
-                }
-            else:
-                #map the local task to the global task
-                try:
-                    ag_action = (ag_task_action_map[int(ag_action[0])][2] - 1, ag_action[1])
-                except Exception as e:
-                    # print(e)
-                    print(f"Error mapping task index: {e}")
-                    print(f"Current action: {ag_action}, Task-Action-Map: {ag_task_action_map}")
-                    continue  # Skip this action if mapping fails
-                # Ensure the index is valid
-                if not (0 <= ag_action[0] < len(row['locations'])):
-                    print(f"Invalid task index: {ag_action[0]}, Available tasks: {len(row['locations'])}")
-                    print(f"Locations: {row['locations']}, Task-Action-Map: {ag_task_action_map}")
-                    continue  # Skip this iteration instead of raising an error
-
-                if ag_action[1] == 0:
-                    time_step[key] = {
-                        'asset': assets['car'][agent_index],
-                        'action': 'accept',
-                        'accept_position': row['locations'][int(ag_action[0])],
-                        'name': f'driver_{agent_index}',
-                        'type': 'driver'
-                    }
-                elif ag_action[1] in [1, 2]:
-                    travel_dest = row['locations'][int(ag_action[0])] if i + 1 >= df.shape[0] else (df.loc[i + 1][agent_state][2],
-                                                                                                    df.loc[i + 1][agent_state][3])
-                    time_step[key] = {
-                        'asset': assets['car'][agent_index],
-                        'action': 'pickup' if ag_action[1] == 1 else 'dropoff',
-                        'move': [travel_dest[1], travel_dest[2 - 1]],
-                        'name': f'driver_{agent_index}',
-                        'type': 'driver'
-                    }
-                else:
-                    print(f"Invalid action index: {ag_action[1]}")
-                    continue  # Skip invalid actions
-                assert ag_action[0] < len(
-                    row['locations']), f"Invalid task index: {ag_action[0]},\n {row['locations']},\n {ag_task_action_map}"
-
-                if ag_action[1] == 0:
-                    time_step[key] = {
-                        'asset': assets['car'][agent_index],
-                        'action': 'accept',
-                        #TODO this won't be accurate because of 'global' vs 'local' indices
-                        'accept_position': row['locations'][int(ag_action[0])],
-                        'name': f'driver_{agent_index}',
-                        'type': 'driver'
-                    }
-
-                elif ag_action[1] == 1 or ag_action[1] == 2:
-
-                    if df.shape[0] < i + 1:
-                        travel_dest = row['locations'][int(ag_action[0])]
-
-                        time_step[key] = {
-                            'asset': assets['car'][agent_index],
-                            'action': 'pickup' if ag_action[1] == 1 else 'dropoff',
-                            'move': [travel_dest[1], travel_dest[2]],
-                            'name': f'driver_{agent_index}',
-                            'type': 'driver'
-                        }
-
-                    else:
-                        travel_dest = (df.loc[i + 1][agent_state][2], df.loc[i + 1][agent_state][3])
-
-                        time_step[key] = {
-                            'asset': assets['car'][agent_index],
-                            'action': 'pickup' if ag_action[1] == 1 else 'dropoff',
-                            'move': travel_dest,
-                            'name': f'driver_{agent_index}',
-                            'type': 'driver'
-                        }
-                else:
-                    raise IndexError(f"Invalid action index: {ag_action[1]}")
-
-    # state_record[0] = {(0, 0, 0): {'asset': assets['car'], 'move': (1, 3), 'name': 'driver_0', 'action': 'dropoff'}}
-
-    # Calculate top-left corner for centering the grid
-    x_offset = (screen_size - grid_width) // 2
-    y_offset = (screen_size - grid_height) // 2
-
-    #?rendering configuration
-    start_time = 0
     max_time = df.shape[0] - 1
-    t = start_time
-    slider_position = t
+    t = 0
+    slider_pos = 0
     dragging_slider = False
-
-    # Slider and Button setup
-    slider_width = 300
-    slider_height = 10
-    slider_x = (screen_size - slider_width) // 2
-    slider_y = screen_size + 30  # Below the grid
-    button_size = 40
-    button_x = slider_x + slider_width + 20
-    button_y = slider_y - 15
-    x_offset = (screen_size - grid_width) // 2
-    y_offset = (screen_size - grid_height) // 2
-
-    # Button state
     is_playing = False
     last_time = time.time()
 
-    # Initialize Pygame font
-    pygame.font.init()
-    font = pygame.font.SysFont(None, 32)  # Use a default font, size 48
-    tinyfont = pygame.font.SysFont(None, 24)  # Use a default font, size 24
-    """
- 
-       ____                _           _             _ 
-      |  _ \ ___ _ __   __| | ___ _ __(_)_ __   __ _| |
-      | |_) / _ \ '_ \ / _` |/ _ \ '__| | '_ \ / _` | |
-      |  _ <  __/ | | | (_| |  __/ |  | | | | | (_| |_|
-      |_| \_\___|_| |_|\__,_|\___|_|  |_|_| |_|\__, (_)
-                                               |___/   
- 
-    """
+    slider_width = 300
+    slider_height = 10
+    slider_x = (screen_size - slider_width) // 2
+    # slider_y = screen_size + 30
 
-    # Main game loop
+    slider_y = screen_size + extra_ui_height - 60  # near bottom of whole window
+    button_size = 40
+    button_x = slider_x + slider_width + 20
+    button_y = slider_y - 15
+
     running = True
     while running:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
-
-            # Handle slider dragging
-            if event.type == pygame.MOUSEBUTTONDOWN:
+            elif event.type == pygame.MOUSEBUTTONDOWN:
                 if slider_x <= event.pos[0] <= slider_x + slider_width and slider_y - 5 <= event.pos[1] <= slider_y + 15:
                     dragging_slider = True
-
-                # Handle button click
                 if button_x <= event.pos[0] <= button_x + button_size and button_y <= event.pos[1] <= button_y + button_size:
-                    is_playing = not is_playing  # Toggle play/stop state
-
-            if event.type == pygame.MOUSEBUTTONUP:
+                    is_playing = not is_playing
+            elif event.type == pygame.MOUSEBUTTONUP:
                 dragging_slider = False
+            elif event.type == pygame.MOUSEMOTION and dragging_slider:
+                slider_pos = max(0, min(slider_width, event.pos[0] - slider_x))
 
-            if event.type == pygame.MOUSEMOTION and dragging_slider:
-                slider_position = max(0, min(event.pos[0] - slider_x, slider_width))
-
-        # Auto-increase slider position if playing
         if is_playing and time.time() - last_time >= 1 and not dragging_slider:
             last_time = time.time()
-            slider_position = min(slider_width, slider_position + slider_width / max_time)
+            slider_pos = min(slider_width, slider_pos + slider_width / max_time)
 
-        #==============================================================
-        # Fill the background (white in this case)
         window.fill((255, 255, 255))
 
-        # Draw grid lines (vertical and horizontal)
-        for _y in range(y + 1):  # Horizontal lines
-            pygame.draw.line(
-                window,
-                line_color,
-                (x_offset, y_offset + _y * cell_size),
-                (x_offset + grid_width, y_offset + _y * cell_size),
-                1  # Line thickness
-            )
-        for _x in range(x + 1):  # Vertical lines
-            pygame.draw.line(
-                window,
-                line_color,
-                (x_offset + _x * cell_size, y_offset),
-                (x_offset + _x * cell_size, y_offset + grid_height),
-                1  # Line thickness
-            )
-        #==============================================================
+        x_off = (screen_size - grid_w) // 2
+        y_off = (screen_size - grid_h) // 2
 
-        #generate controls if human rendering
+        for row_line in range(y + 1):
+            pygame.draw.line(window, line_color, (x_off, y_off + row_line * cell_size),
+                             (x_off + grid_w, y_off + row_line * cell_size), 1)
+        for col_line in range(x + 1):
+            pygame.draw.line(window, line_color, (x_off + col_line * cell_size, y_off),
+                             (x_off + col_line * cell_size, y_off + grid_h), 1)
+
         if render_mode == 'human':
-            t = draw_slider(window=window,
-                            slider_x=slider_x,
-                            slider_y=slider_y,
-                            slider_width=slider_width,
-                            slider_height=slider_height,
-                            slider_position=slider_position,
-                            max_time=max_time,
-                            t=t)
-
-            draw_button(window=window, is_playing=is_playing, button_x=button_x, button_y=button_y, button_size=button_size)
+            t = draw_slider(window, slider_x, slider_y, slider_width, slider_height, slider_pos, max_time, t)
+            draw_button(window, is_playing, button_x, button_y, button_size)
         else:
-            t = t + 1 if t < max_time else max_time
+            t = min(t + 1, max_time)
 
-        draw_title(window=window, checkpoint=label_record[t], t=t, screen_size=screen_size, font=font)
+        draw_title(window, checkpoint="", t=t, screen_size=screen_size, font=font)
 
-        #count offset for multiple passengers in driver/passenger list
-        x_count_offset = {key: 0 for key in range(number_of_agents)}
+        # === Legend ===
+        legend_font = pygame.font.SysFont(None, 14)
 
-        # Render each asset in the correct grid position
-        for (_y, _x, order_in_df), asset_details in state_record[t].items():
+        legend_y = y_off + grid_h + 15
+        legend_cell_size = 20
+        legend_x = x_off + 20
+        spacing = 120  # horizontal space between items
 
-            #determine offsets for multiple drivers in the same cell
-            num_drivers = sum(
-                [key[0] == _y and key[1] == _x for key in state_record[t].keys() if state_record[t][key]['type'] == 'driver'])
-            if num_drivers > 1:
-                scaled_driver_size = cell_size / num_drivers
-                driver_offset = order_in_df * (scaled_driver_size // 2)
+        # ---------- First Line: Arrows ----------
+        # Pickup (Dashed Arrow)
+        draw_dash_arrow(window, (0, 0), (3, 0), legend_cell_size + 15, legend_x, legend_y)
+        pickup_label = legend_font.render("Pickup", True, (0, 0, 0))
+        window.blit(pickup_label, (legend_x, legend_y + 5))
+
+        # Dropoff (Solid Arrow)
+        dropoff_x = legend_x + spacing
+        draw_arrow(window, (0, 0), (3, 0), legend_cell_size + 15, dropoff_x, legend_y)
+        dropoff_label = legend_font.render("Dropoff", True, (0, 0, 0))
+        window.blit(dropoff_label, (dropoff_x, legend_y + 5))
+
+        # ---------- Second Line: Accepted / Unaccepted Destinations ----------
+        legend_y2 = legend_y + 30  # move to second row
+
+        # Unaccepted Destination (Black Icon)
+        icon_black_x = legend_x
+        window.blit(location_black, (icon_black_x, legend_y2))
+        black_label = legend_font.render("= Unaccepted passenger destination", True, (0, 0, 0))
+        window.blit(black_label, (icon_black_x + 30, legend_y2 + 15))
+
+        # Accepted Destination (Colored Icon)
+        icon_colored_x = icon_black_x + spacing + 30
+        colored_icon = colorize_car(location_green.copy(), hue_shift=60)
+        window.blit(colored_icon, (icon_colored_x + 75, legend_y2))
+        colored_label = legend_font.render("= Accepted passenger destination", True, (0, 0, 0))
+        window.blit(colored_label, (icon_colored_x + 100, legend_y2 + 15))
+        # Horizontal line below the legend
+        line_y = legend_y2 + 30  # Adjust vertical offset as needed
+        pygame.draw.line(window, (0, 0, 0), (0, line_y), (window.get_width(), line_y), 1)
+
+        raw_row = df.iloc[t]
+        render_data = extract_render_data(raw_row, num_drivers)
+
+        agents = render_data['agents']
+        passengers = render_data['passengers']
+        accepted_map = render_data['accepted_map']
+        riding_map = render_data['riding_map']
+        driver_actions = render_data['driver_actions']
+
+        for d_idx, (driver_row, driver_col) in enumerate(agents):
+
+            car_img = car_assets[d_idx] if d_idx < len(car_assets) else car_assets[-1]
+            window.blit(car_img, (x_off + driver_col * cell_size, y_off + driver_row * cell_size))
+            label_txt = tinyfont.render(f"Driver_{d_idx+1}", True, (0, 0, 0))
+            window.blit(label_txt, (x_off + driver_col * cell_size, y_off + driver_row * cell_size))
+
+            # Driver extra info
+            icon_x = x_off  # space horizontally
+            icon_y = y_off + grid_h + 75 + d_idx * (cell_size + 25)
+            window.blit(car_img, (icon_x, icon_y))
+
+            # Extract reward safely from current row
+            reward_col = f'driver_{d_idx+1}_rewards'
+            raw_reward = raw_row.get(reward_col, 0)
+            reward = 0 if pd.isnull(raw_reward) or raw_reward is None else raw_reward
+
+            # Get riding and accepted passengers
+            riding_passengers = riding_map.get(d_idx, [])
+            accepted_passengers = accepted_map.get(d_idx, [])
+            accepted_only = [p for p in accepted_passengers if p not in riding_passengers]
+
+            # Format strings
+            riding_str = ", ".join([f"P{p}" for p in riding_passengers]) if riding_passengers else "None"
+            accepted_str = ", ".join([f"P{p}" for p in accepted_only]) if accepted_only else "None"
+
+            # Full display label
+            info_text = f"Driver_{d_idx+1}: Reward {round(reward, 2)} | Riding: {riding_str} | Accepted: {accepted_str}"
+            info_label = tinyfont.render(info_text, True, (0, 0, 0))
+            window.blit(info_label, (icon_x + cell_size + 5, icon_y + cell_size // 4))
+
+            offset_count = 0
+            # if d_idx in accepted_map:
+            #     for p_idx in accepted_map[d_idx]:
+            #         if d_idx in riding_map and p_idx in riding_map[d_idx]:
+            #             continue
+            #         sp_img = small_pass_assets[p_idx] if p_idx < len(small_pass_assets) else small_pass_assets[-1]
+            #         x_icon = x_off + 120 + offset_count * (cell_size // 2)
+            #         y_icon = y_off + grid_h + 30 * d_idx + 15
+            #         # window.blit(sp_img, (x_icon, y_icon))
+            #         offset_count += 1
+
+            # if d_idx in riding_map:
+            #     riders_str = ", ".join([f"P{p}" for p in riding_map[d_idx]])
+            #     rid_txt = tinyfont.render(f"Driver {d_idx} is RIDING: {riders_str}", True, (0, 0, 0))
+            #     rx = x_off + 130
+            #     ry = y_off + grid_h + 35 * d_idx
+            #     window.blit(rid_txt, (rx, ry))
+
+            d_action = driver_actions[d_idx]
+            if d_action[1] != -1 and d_action[0] < len(passengers):
+                target = passengers[d_action[0]]
+                if len(target) >= 5:
+                    py, px = target[1], target[2]
+                    desty, destx = target[3], target[4]
+                    if d_action[1] == 0:
+                        draw_dash_arrow(window, (driver_col, driver_row), (px, py), cell_size, x_off, y_off)
+                    elif d_action[1] == 1:
+                        draw_arrow(window, (driver_col, driver_row), (destx, desty), cell_size, x_off, y_off)
+
+        for p_idx, p_info in enumerate(passengers):
+            if len(p_info) < 11:
+                continue
+            riding_with = p_info[7]
+            picked_step = p_info[10]
+            if riding_with != -1 and picked_step != -1:
+                continue
+            py, px = p_info[1], p_info[2]
+            dy, dx = p_info[3], p_info[4]
+
+            pass_img = passenger_assets[p_idx] if p_idx < len(passenger_assets) else passenger_assets[-1]
+            # ghost_img = ghost_passengers[p_idx] if p_idx < len(ghost_passengers) else ghost_passengers[-1]
+            window.blit(pass_img, (x_off + px * cell_size, y_off + py * cell_size))
+            label_txt = tinyfont.render(f"P_{p_idx}", True, (0, 0, 0))
+            window.blit(label_txt, (x_off + px * cell_size, y_off + py * cell_size))
+
+            is_accepted = p_info[6]  # driver ID, -1 if unaccepted
+
+            if is_accepted == 0:
+                icon_to_draw = location_black
             else:
-                scaled_driver_size = cell_size
-                driver_offset = 0
+                icon_to_draw = location_green
 
-            #handle nested offset for passengers only
-            num_passengers = sum(
-                [key[0] == _y and key[1] == _x for key in state_record[t].keys() if 'passenger' in state_record[t][key]['type']])
+            # Draw centered icon
+            dest_x = x_off + dx * cell_size + (cell_size - icon_to_draw.get_width()) // 2
+            dest_y = y_off + dy * cell_size + (cell_size - icon_to_draw.get_height()) // 2
+            window.blit(icon_to_draw, (dest_x, dest_y))
 
-            if num_passengers > 1:
-                scaled_passenger_size = cell_size / max(num_drivers, 1) / num_passengers
-                passenger_offset = order_in_df * (scaled_passenger_size // 2)
+            # dest_x = x_off + dx * cell_size + (cell_size - location_icon.get_width()) // 2
+            # dest_y = y_off + dy * cell_size + (cell_size - location_icon.get_height()) // 2
+            # window.blit(location_icon, (dest_x, dest_y))
 
-            window.blit(asset_details['asset'],
-                        (x_offset + _x * cell_size + driver_offset, y_offset + _y * cell_size + driver_offset))
+            # window.blit(location_icon, (x_off + dx * cell_size, y_off + dy * cell_size))
+            label_txt = tinyfont.render(f"P_D_{p_idx}", True, (0, 0, 0))
+            window.blit(label_txt, (x_off + dx * cell_size, y_off + dy * cell_size))
 
-            #handle identifying accepted passengers
-            if asset_details['type'] == 'driver':
-                agent_index = asset_details['name'].split('_')[-1]
-                #pick position below grid * by number of agents
-                labeling_text_pos = (cell_size * 2, y_offset + y * cell_size + 25 + 50 * int(agent_index))
-                labeling_text = tinyfont.render(f"{asset_details['name']}", True, (0, 0, 0))
-                window.blit(labeling_text, labeling_text_pos)
-
-            if 'acceptedby' in asset_details and asset_details.get('acceptedby') != -1:
-                agent_index = int(asset_details['acceptedby'])
-                #pick position below grid * by number of agents
-                labeling_image_pos = (cell_size * 4 + 40 * x_count_offset[agent_index],
-                                      y_offset + y * cell_size + 25 + 50 * int(agent_index))
-                x_count_offset[agent_index] += 1
-                # print(labeling_image_pos, x_count_offset, agent_index, screen_size, asset_details['asset'])
-                window.blit(asset_details['smallasset'], labeling_image_pos)
-
-                if asset_details['ridingwith'] != -1:
-                    riding_text = tinyfont.render(f"RIDING", True, (0, 0, 0))
-                    window.blit(riding_text, (labeling_image_pos[0], labeling_image_pos[1] - 20))
-
-            if 'move' in asset_details:
-                # print(_y, _x, asset_details['move'])
-                move_y, move_x = asset_details['move']
-                if asset_details['action'] == 'pickup':
-                    draw_dash_arrow(window, (_x, _y), (move_x, move_y),
-                                    cell_size=cell_size,
-                                    x_offset=x_offset + driver_offset,
-                                    y_offset=y_offset + driver_offset)
-                else:
-                    draw_arrow(window, (_x, _y), (move_x, move_y),
-                               cell_size=cell_size,
-                               x_offset=x_offset + driver_offset,
-                               y_offset=y_offset + driver_offset)
-
-        # Update the display
         pygame.display.flip()
 
-        #record frames if rgb_array
         if render_mode == 'rgb_array':
             frames.append(pygame.surfarray.array3d(window))
-            if t == max_time:
+            if t >= max_time:
                 running = False
 
-        if render_mode == 'human':
-            clock.tick(frame_rate)
-        else:
-            clock.tick()
+        clock.tick(frame_rate if render_mode == 'human' else 0)
 
-    # Quit Pygame
     pygame.quit()
     return frames if render_mode == 'rgb_array' else None
