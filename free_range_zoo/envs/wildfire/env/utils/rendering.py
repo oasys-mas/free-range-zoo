@@ -25,7 +25,6 @@ def resolve_fire_target_clockwise(intensity_2d, agent_row, agent_col, fire_rank,
     """
     H = len(intensity_2d)
     W = len(intensity_2d[0]) if H > 0 else 0
-
     def ring_perimeter(d):
         cells = []
         top = agent_row - d
@@ -33,14 +32,26 @@ def resolve_fire_target_clockwise(intensity_2d, agent_row, agent_col, fire_rank,
         left = agent_col - d
         right = agent_col + d
 
-        for c in range(left, right + 1):         # top edge
-            cells.append((top, c))
-        for r in range(top + 1, bottom + 1):     # right edge
-            cells.append((r, right))
-        for c in range(right - 1, left - 1, -1): # bottom edge
-            cells.append((bottom, c))
-        for r in range(bottom - 1, top, -1):     # left edge
+        # (agent_row, left), then go UP to top-left
+        for r in range(agent_row, top - 1, -1):       # left edge, up
             cells.append((r, left))
+
+        # Top edge: left+1 -> right
+        for c in range(left + 1, right + 1):          # top edge, right
+            cells.append((top, c))
+
+        # Right edge: top+1 -> bottoma
+        for r in range(top + 1, bottom + 1):          # right edge, down
+            cells.append((r, right))
+
+        # Bottom edge: right-1 -> left
+        for c in range(right - 1, left - 1, -1):      # bottom edge, left
+            cells.append((bottom, c))
+
+        # Left edge: bottom-1 -> agent_row+1 (back up, without repeating start)
+        for r in range(bottom - 1, agent_row, -1):    # left edge, up
+            cells.append((r, left))
+
         return cells
 
     candidates = []
@@ -283,6 +294,16 @@ def render(path: str,
     pygame.init()
     clock = pygame.time.Clock()
     df = pd.read_csv(path)
+
+    # Shift only these state columns down by 1 step
+    state_cols = ["fires", "intensity", "suppressants", "capacity", "equipment", "agents"]
+    for c in state_cols:
+        if c in df.columns:
+            df[c] = df[c].shift(1)
+
+    # Drop the first row (now has NaNs for shifted state)
+    df = df.iloc[1:].reset_index(drop=True)
+
 
     # Convert certain columns from string to actual Python lists
     array_like_cols = [
@@ -533,33 +554,40 @@ def render(path: str,
 
         # -------------------- Render the state for this time-step --------------------
         fire_index = 0  # Just for labeling fires
+        # -------------------- Render the state for this time-step --------------------
+        fires_now = df["fires"].iloc[t]           # SIZE grid (0,1,2,3,4)
+        intensity_now = df["intensity"].iloc[t]   # intensity grid
+        fuel_now = df["fuel"].iloc[t]             # fuel grid
+
+        fire_index = 0  # Just for labeling fires
         for obj in state_record[t]:
             cell_x = x_offset + obj["col"] * cell_size
             cell_y = y_offset + obj["row"] * cell_size
             if obj["type"] == "fire":
-                # If intensity == 0, might skip rendering anything
-                if obj["intensity"] == 0:
+                size_val = fires_now[obj["row"]][obj["col"]]
+                intensity_val = intensity_now[obj["row"]][obj["col"]]
+                fuel_val = fuel_now[obj["row"]][obj["col"]]
+
+                # if size_val not in (1, 2, 3, 4):
+                #     continue
+                   
+                # Choose sprite
+                if size_val == 4 or intensity_val == 4:
+                    base_img = base_burnt
+                elif size_val == 1:
+                    base_img = base_fire_low
+                elif size_val == 2:
+                    base_img = base_fire_med
+                elif size_val == 3:
+                    base_img = base_fire_high
+                else:
                     continue
 
-                fire_tag = ''
-                # Choose a base image by intensity
-                if obj["intensity"] == 1:
-                    base_img = base_fire_low
-                    fire_tag = "Small Fire"
-                    # scale_factor = 0.5
-                elif obj["intensity"] == 2:
-                    base_img = base_fire_med
-                    fire_tag = "Medium Fire"
-                    # scale_factor = 0.75
-                elif obj["intensity"] == 3:
-                    base_img = base_fire_high
-                    fire_tag = "Large Fire"
-                    # scale_factor = 1.0
-                else:
-                    # E.g. "4" or burnt
-                    base_img = base_burnt
-                    fire_tag = "Burnt Out"
-                    # scale_factor = 0.75
+                # elif size_val == 4:
+                #     base_img = base_burnt
+                # else:
+                #     base_img = base_burnt
+
                 scale_factor = 0.9
                 img_width = int(cell_size * scale_factor)
                 img_height = int(cell_size * scale_factor)
@@ -571,12 +599,13 @@ def render(path: str,
                 draw_y = center_y - img_height // 2
                 window.blit(img_scaled, (draw_x, draw_y))
 
-                # Optional text label
                 fire_text = [
-                    f"Fire {fire_index}",  # Fire index label
-                    f"Intensity: {obj['intensity']} - {fire_tag}",
-                    f"Fuel: {obj['fuel']}"
+                    f"Fire {fire_index}",
+                    f"Intensity: {intensity_val}",
+                    f"Size: {size_val}",
+                    f"Fuel: {fuel_val}",
                 ]
+
                 fire_index += 1
 
                 small_font = pygame.font.SysFont(None, 20)
