@@ -1,5 +1,6 @@
 from free_range_zoo.wrappers.wrapper_util import shared_wrapper_aec, shared_wrapper_gym, shared_wrapper_parr
 
+
 def list_wrappers(env):
     """
     Return an ordered list of all wrappers applied to a PettingZoo environment.

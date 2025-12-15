@@ -1,7 +1,7 @@
 # MOASEI FAQ
 
 *Have a question? Open a issue on our
-[git](https://github.com/oasys-mas/free-range-zoo/issues/new)*, or send a email
+[GitHub](https://github.com/oasys-mas/free-range-zoo/issues/new)*, or send a email
 to us (see MOASEI webpage for contact info).
 
 ## Competition Logistics
@@ -25,13 +25,10 @@ between these states, and accordingly shift rewards.
 
 
 ### What does `importance` mean?
-
-![Diagram that shows importance being a multiple of the number of outgoing
-edges from nodes on the reward of that
-node](https://oasys-mas.github.io/free-range-zoo/docs/source/_static/img/cybersecurity_rewards.png)
-```{eval-rst} .. image:: /_static/img/cybersecurity_rewards.png   :alt: Diagram
-that shows importance being a multiple of the number of outgoing edges from
-nodes on the reward of that node ```
+```{eval-rst}
+.. image:: /_static/img/cybersecurity_rewards.png
+   :alt: Diagram that shows importance being a multiple of the number of outgoing edges from nodes on the reward of that node
+```
 
 `Importance` is a measure of the number of outgoing edges from each node. This
 multiplies the reward of that node, so a node with zero outgoing edges doesn't
