@@ -221,18 +221,20 @@ class SQLLogger(Logger):
                             self.session.flush()
                             self._agent_ids[(agent, env_id)] = agent_rec.id
 
-                        agent_id = self._agent_ids.get((agent, env_id))
-                        if agent_id is not None:
-                            agent_log = AgentLog(
-                                simulation_timestep_id=timestep_rec.id,
-                                agent_id=agent_id,
-                                reward=int(rewards[agent][env_idx].item()),
-                                action_field=int(actions[agent][env_idx][0].item()),
-                                task_field=int(actions[agent][env_idx][1].item()),
-                                action_map=str(agent_action_mapping[agent][env_idx].tolist()),
-                                observation_map=str(agent_observation_mapping[agent][env_idx].tolist()),
-                            )
-                            self.session.add(agent_log)
+                    if not reset:
+                        for agent in agents:
+                            agent_id = self._agent_ids.get((agent, env_id))
+                            if agent_id is not None:
+                                agent_log = AgentLog(
+                                    simulation_timestep_id=timestep_rec.id,
+                                    agent_id=agent_id,
+                                    reward=int(rewards[agent][env_idx].item()),
+                                    action_field=int(actions[agent][env_idx][1].item()),
+                                    task_field=int(actions[agent][env_idx][0].item()),
+                                    action_map=str(agent_action_mapping[agent][env_idx].tolist()),
+                                    observation_map=str(agent_observation_mapping[agent][env_idx].tolist()),
+                                )
+                                self.session.add(agent_log)
 
         except Exception as e:
             self.session.rollback()
