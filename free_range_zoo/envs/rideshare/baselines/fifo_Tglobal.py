@@ -6,7 +6,7 @@ import free_range_rust
 from free_range_zoo.utils.agent import Agent
 
 
-class FirstInFirstOutBaseline(Agent):
+class FirstInFirstOutTglobalBaseline(Agent):
     """Agent that always acts on the first arrived passenger."""
 
     def __init__(self, *args, **kwargs) -> None:
@@ -45,7 +45,7 @@ class FirstInFirstOutBaseline(Agent):
         riding = self.observation['tasks'].to_padded_tensor(-100)[:, :, 5] >= 0
         unaccepted = ~accepted & ~riding
 
-        argmin_store = torch.empty_like(self.t_mapping)
+        argmin_store = torch.ones_like(self.t_mapping) * float('inf')
 
         for batch in range(self.parallel_envs):
             for element in range(self.t_mapping[batch].size(0)):
@@ -55,18 +55,20 @@ class FirstInFirstOutBaseline(Agent):
                 self.actions[batch].fill_(-1)
                 continue
 
-            max_val = argmin_store[batch].max()
+            max_val = argmin_store[batch].min()
             max_indices = torch.where(argmin_store[batch] == max_val)[0]
-            if max_indices.shape[0] > 0:
-                act = max_indices[torch.randint(0, max_indices.shape[0], (1, ))]
-            self.actions[batch, 0] = act
 
-            if riding[batch][self.actions[batch, 0]]:
-                self.actions[batch, 1] = 2
-            elif accepted[batch][self.actions[batch, 0]]:
-                self.actions[batch, 1] = 1
-            elif unaccepted[batch][self.actions[batch, 0]]:
-                self.actions[batch, 1] = 0
-            else:
-                raise ValueError(
-                    "Invalid Observation, if this is reached there exists >=1 passenger, but that passenger has no features")
+            if max_indices.shape[0] > 0:
+
+                act = max_indices[torch.randint(0, max_indices.shape[0], (1, ))]
+                self.actions[batch, 0] = act
+
+                if riding[batch][self.actions[batch, 0]]:
+                    self.actions[batch, 1] = 2
+                elif accepted[batch][self.actions[batch, 0]]:
+                    self.actions[batch, 1] = 1
+                elif unaccepted[batch][self.actions[batch, 0]]:
+                    self.actions[batch, 1] = 0
+                else:
+                    raise ValueError(
+                        "Invalid Observation, if this is reached there exists >=1 passenger, but that passenger has no features")
