@@ -76,6 +76,13 @@ class GreedyTaskFocus(Agent):
                     "Invalid Observation, if this is reached there exists >=1 passenger, but there should only be one accepted passenger"+\
                         f"\n{passengers[batch][accepted[batch]][(passengers[batch][accepted[batch]] < upper_distance_bound)]}"
 
+            #?this isn't strictly necessary, but I added it just in case
+            if torch.any(riding[batch]):
+                passengers[batch][~riding[batch]] = upper_distance_bound
+                assert (passengers[batch][riding[batch]] < upper_distance_bound).sum() == 1,\
+                    "Invalid Observation, if this is reached there exists >=1 passenger, but there should only be one riding passenger"+\
+                        f"\n{passengers[batch][riding[batch]][(passengers[batch][riding[batch]] < upper_distance_bound)]}"
+
             for element in range(self.t_mapping[batch].size(0)):
                 argmin_store[batch][element] = passengers[batch][element]
 
