@@ -192,7 +192,7 @@ class SQLLogger(Logger):
                                 suppressants=str(getattr(state, 'suppressants', None)[env_idx].tolist()),
                                 capacity=str(getattr(state, 'capacity', None)[env_idx].tolist()),
                                 equipment=str(getattr(state, 'equipment', None)[env_idx].tolist()),
-                                agents=str(getattr(state, 'agents', None)[env_idx].tolist()),
+                                agents=str(getattr(state, 'agents', None).tolist()),
                             )
                         case 'rideshare':
                             env_log = RideshareEnvironmentLog(
