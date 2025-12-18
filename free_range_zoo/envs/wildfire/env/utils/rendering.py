@@ -14,6 +14,7 @@ import pandas as pd
 # Adjust if you want to reference relative to this file
 this_dir = os.path.dirname(__file__)
 
+
 ########################################################
 #                IMAGE AND COLOR HELPERS              #
 ########################################################
@@ -22,9 +23,19 @@ def resolve_fire_target_clockwise(intensity_2d, agent_row, agent_col, fire_rank,
     fire_rank = k-th *active* fire cell in clockwise order within Chebyshev range <= rng.
     Active means intensity in {1,2,3}. Burnout (4) is excluded.
     Returns (row, col) or None.
+
+    Args:
+        intensity_2d : 2D list of fire intensities
+        agent_row    : agent's row position
+        agent_col    : agent's column position
+        fire_rank    : kth active fire to target (0-based)
+        rng          : Chebyshev range to search within
+    Returns:
+        (row, col) of target fire cell, or None if not found
     """
     H = len(intensity_2d)
     W = len(intensity_2d[0]) if H > 0 else 0
+
     def ring_perimeter(d):
         cells = []
         top = agent_row - d
@@ -67,14 +78,13 @@ def resolve_fire_target_clockwise(intensity_2d, agent_row, agent_col, fire_rank,
 
     try:
         k = int(fire_rank)
-    except:
+    except Exception as e:
         return None
 
     if k < 0 or k >= len(candidates):
         return None
 
     return candidates[k]
-
 
 
 def render_image(path, cell_size: int):
@@ -304,7 +314,6 @@ def render(path: str,
     # Drop the first row (now has NaNs for shifted state)
     df = df.iloc[1:].reset_index(drop=True)
 
-
     # Convert certain columns from string to actual Python lists
     array_like_cols = [
         'fires',
@@ -441,7 +450,7 @@ def render(path: str,
 
             try:
                 action_data = literal_eval(action_str) if isinstance(action_str, str) and action_str.strip() else []
-            except:
+            except Exception as e:
                 action_data = []
 
             # Also read the agent's suppressants, capacity, and reward
@@ -452,7 +461,7 @@ def render(path: str,
             if 'capacity' in df.columns and a_id < len(row['capacity']):
                 cap_val = row['capacity'][a_id]
 
-            rw_col = f'firefighter_{a_id+1}_rewards'
+            rw_col = f'firefighter_{a_id + 1}_rewards'
             rew_val = row[rw_col] if rw_col in df.columns and pd.notna(row[rw_col]) else 0.0
 
             agent_obj = {
@@ -570,7 +579,6 @@ def render(path: str,
 
                 # if size_val not in (1, 2, 3, 4):
                 #     continue
-                   
                 # Choose sprite
                 if size_val == 4 or intensity_val == 4:
                     base_img = base_burnt
@@ -661,7 +669,6 @@ def render(path: str,
                             rng=1
                         )
 
-
                         if target is None:
                             # No valid in-range target for that rank, treat as NOOP visually
                             z_surf = big_font.render("NO VALID TARGET", True, (250, 0, 0))
@@ -682,7 +689,6 @@ def render(path: str,
                                 x_offset=x_offset,
                                 y_offset=y_offset
                             )
-
 
         # -------------------- Flip display or record frame --------------------
         if render_mode == "human":
