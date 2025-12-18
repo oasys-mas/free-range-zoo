@@ -30,7 +30,7 @@ dependencies = [
 [tool.poetry.group.docs]
 optional = true
 
-[tool.poetry.group.oasys.dependencies]
+[tool.poetry.group.docs.dependencies]
 free-range-zoo-docs = { path = "docs", develop = true }
 
 [build-system]
