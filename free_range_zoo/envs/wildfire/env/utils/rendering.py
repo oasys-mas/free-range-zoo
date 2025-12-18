@@ -14,9 +14,77 @@ import pandas as pd
 # Adjust if you want to reference relative to this file
 this_dir = os.path.dirname(__file__)
 
+
 ########################################################
 #                IMAGE AND COLOR HELPERS              #
 ########################################################
+def resolve_fire_target_clockwise(intensity_2d, agent_row, agent_col, fire_rank, rng=1):
+    """
+    fire_rank = k-th *active* fire cell in clockwise order within Chebyshev range <= rng.
+    Active means intensity in {1,2,3}. Burnout (4) is excluded.
+    Returns (row, col) or None.
+
+    Args:
+        intensity_2d : 2D list of fire intensities
+        agent_row    : agent's row position
+        agent_col    : agent's column position
+        fire_rank    : kth active fire to target (0-based)
+        rng          : Chebyshev range to search within
+    Returns:
+        (row, col) of target fire cell, or None if not found
+    """
+    H = len(intensity_2d)
+    W = len(intensity_2d[0]) if H > 0 else 0
+
+    def ring_perimeter(d):
+        cells = []
+        top = agent_row - d
+        bottom = agent_row + d
+        left = agent_col - d
+        right = agent_col + d
+
+        # (agent_row, left), then go UP to top-left
+        for r in range(agent_row, top - 1, -1):       # left edge, up
+            cells.append((r, left))
+
+        # Top edge: left+1 -> right
+        for c in range(left + 1, right + 1):          # top edge, right
+            cells.append((top, c))
+
+        # Right edge: top+1 -> bottoma
+        for r in range(top + 1, bottom + 1):          # right edge, down
+            cells.append((r, right))
+
+        # Bottom edge: right-1 -> left
+        for c in range(right - 1, left - 1, -1):      # bottom edge, left
+            cells.append((bottom, c))
+
+        # Left edge: bottom-1 -> agent_row+1 (back up, without repeating start)
+        for r in range(bottom - 1, agent_row, -1):    # left edge, up
+            cells.append((r, left))
+
+        return cells
+
+    candidates = []
+    for d in range(1, rng + 1):
+        for r, c in ring_perimeter(d):
+            if 0 <= r < H and 0 <= c < W:
+                inten = intensity_2d[r][c]
+                if inten in (1, 2, 3):
+                    candidates.append((r, c))
+
+    if not candidates:
+        return None
+
+    try:
+        k = int(fire_rank)
+    except Exception as e:
+        return None
+
+    if k < 0 or k >= len(candidates):
+        return None
+
+    return candidates[k]
 
 
 def render_image(path, cell_size: int):
@@ -237,6 +305,15 @@ def render(path: str,
     clock = pygame.time.Clock()
     df = pd.read_csv(path)
 
+    # Shift only these state columns down by 1 step
+    state_cols = ["fires", "intensity", "suppressants", "capacity", "equipment", "agents"]
+    for c in state_cols:
+        if c in df.columns:
+            df[c] = df[c].shift(1)
+
+    # Drop the first row (now has NaNs for shifted state)
+    df = df.iloc[1:].reset_index(drop=True)
+
     # Convert certain columns from string to actual Python lists
     array_like_cols = [
         'fires',
@@ -373,7 +450,7 @@ def render(path: str,
 
             try:
                 action_data = literal_eval(action_str) if isinstance(action_str, str) and action_str.strip() else []
-            except:
+            except Exception as e:
                 action_data = []
 
             # Also read the agent's suppressants, capacity, and reward
@@ -384,7 +461,7 @@ def render(path: str,
             if 'capacity' in df.columns and a_id < len(row['capacity']):
                 cap_val = row['capacity'][a_id]
 
-            rw_col = f'firefighter_{a_id+1}_rewards'
+            rw_col = f'firefighter_{a_id + 1}_rewards'
             rew_val = row[rw_col] if rw_col in df.columns and pd.notna(row[rw_col]) else 0.0
 
             agent_obj = {
@@ -486,33 +563,39 @@ def render(path: str,
 
         # -------------------- Render the state for this time-step --------------------
         fire_index = 0  # Just for labeling fires
+        # -------------------- Render the state for this time-step --------------------
+        fires_now = df["fires"].iloc[t]           # SIZE grid (0,1,2,3,4)
+        intensity_now = df["intensity"].iloc[t]   # intensity grid
+        fuel_now = df["fuel"].iloc[t]             # fuel grid
+
+        fire_index = 0  # Just for labeling fires
         for obj in state_record[t]:
             cell_x = x_offset + obj["col"] * cell_size
             cell_y = y_offset + obj["row"] * cell_size
             if obj["type"] == "fire":
-                # If intensity == 0, might skip rendering anything
-                if obj["intensity"] == 0:
+                size_val = fires_now[obj["row"]][obj["col"]]
+                intensity_val = intensity_now[obj["row"]][obj["col"]]
+                fuel_val = fuel_now[obj["row"]][obj["col"]]
+
+                # if size_val not in (1, 2, 3, 4):
+                #     continue
+                # Choose sprite
+                if size_val == 4 or intensity_val == 4:
+                    base_img = base_burnt
+                elif size_val == 1:
+                    base_img = base_fire_low
+                elif size_val == 2:
+                    base_img = base_fire_med
+                elif size_val == 3:
+                    base_img = base_fire_high
+                else:
                     continue
 
-                fire_tag = ''
-                # Choose a base image by intensity
-                if obj["intensity"] == 1:
-                    base_img = base_fire_low
-                    fire_tag = "Small Fire"
-                    # scale_factor = 0.5
-                elif obj["intensity"] == 2:
-                    base_img = base_fire_med
-                    fire_tag = "Medium Fire"
-                    # scale_factor = 0.75
-                elif obj["intensity"] == 3:
-                    base_img = base_fire_high
-                    fire_tag = "Large Fire"
-                    # scale_factor = 1.0
-                else:
-                    # E.g. "4" or burnt
-                    base_img = base_burnt
-                    fire_tag = "Burnt Out"
-                    # scale_factor = 0.75
+                # elif size_val == 4:
+                #     base_img = base_burnt
+                # else:
+                #     base_img = base_burnt
+
                 scale_factor = 0.9
                 img_width = int(cell_size * scale_factor)
                 img_height = int(cell_size * scale_factor)
@@ -524,12 +607,13 @@ def render(path: str,
                 draw_y = center_y - img_height // 2
                 window.blit(img_scaled, (draw_x, draw_y))
 
-                # Optional text label
                 fire_text = [
-                    f"Fire {fire_index}",  # Fire index label
-                    f"Intensity: {obj['intensity']} - {fire_tag}",
-                    f"Fuel: {obj['fuel']}"
+                    f"Fire {fire_index}",
+                    f"Intensity: {intensity_val}",
+                    f"Size: {size_val}",
+                    f"Fuel: {fuel_val}",
                 ]
+
                 fire_index += 1
 
                 small_font = pygame.font.SysFont(None, 20)
@@ -575,27 +659,36 @@ def render(path: str,
                         window.blit(z_surf, z_rect)
                     # supress
                     if power == 0:
+                        # Use the *current step* fires grid, not a global precomputed list
+                        intensity_now = df['intensity'].iloc[t]
+                        target = resolve_fire_target_clockwise(
+                            intensity_2d=intensity_now,
+                            agent_row=obj["row"],
+                            agent_col=obj["col"],
+                            fire_rank=fire_num,
+                            rng=1
+                        )
 
-                        # If valid fire_number, draw arrow from agent to that fire
-                        # if 0 <= fire_num <= len(fire_positions):
-                        # Get the (row, col) of that fire from row-major list
-                        fire_to_supress = next((fire for fire in fire_positions if fire.get("fire") == fire_num), None)
-                        fire_row = fire_to_supress['y']
-                        fire_col = fire_to_supress['x']
+                        if target is None:
+                            # No valid in-range target for that rank, treat as NOOP visually
+                            z_surf = big_font.render("NO VALID TARGET", True, (250, 0, 0))
+                            z_rect = z_surf.get_rect(center=(draw_x + 45, draw_y + img_height + 35))
+                            window.blit(z_surf, z_rect)
+                        else:
+                            fire_row, fire_col = target
 
-                        # Draw arrow from agent -> that fire cell
-                        z_surf = big_font.render(f"Supress Fire {fire_num}", True, (0, 0, 250))
-                        # Place the "Z" near the center of the agent's tile
-                        # window.blit(z_surf, (draw_x + cell_size // 2, draw_y + cell_size // 2))
-                        z_rect = z_surf.get_rect(center=(draw_x + 45, draw_y + img_height + 35))
-                        window.blit(z_surf, z_rect)
-                        draw_arrow(
-                            window,
-                            start_pos=(obj["col"], obj["row"]),  # (x, y) for agent
-                            end_pos=(fire_col, fire_row),  # (x, y) for the target fire
-                            cell_size=cell_size,
-                            x_offset=x_offset,
-                            y_offset=y_offset)
+                            z_surf = big_font.render(f"Suppress {fire_num}", True, (0, 0, 250))
+                            z_rect = z_surf.get_rect(center=(draw_x + 45, draw_y + img_height + 35))
+                            window.blit(z_surf, z_rect)
+
+                            draw_arrow(
+                                window,
+                                start_pos=(obj["col"], obj["row"]),     # (x, y)
+                                end_pos=(fire_col, fire_row),           # (x, y)
+                                cell_size=cell_size,
+                                x_offset=x_offset,
+                                y_offset=y_offset
+                            )
 
         # -------------------- Flip display or record frame --------------------
         if render_mode == "human":
