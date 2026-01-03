@@ -1,4 +1,9 @@
 # Cybersecurity
+
+<p align="center">
+    <img src="env/assets/rendering.gif" width="300" height="300">
+</p>
+
 ## Description
 The cybersecurity domain simulates a network environment where nodes are either attacked or patched by agents, with
 the goal of protecting or exploiting the system. The environment is partially observable, with defenders needing to
