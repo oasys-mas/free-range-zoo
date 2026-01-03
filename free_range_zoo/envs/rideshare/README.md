@@ -106,4 +106,8 @@ while not torch.all(env.finished):
 env.close()
 ```
 
+## Rendering
+
+For information on visualizing rideshare simulations, see the [Rendering Documentation](./env/utils/README.md). The rendering module provides tools to convert CSV logs into interactive or video-based visualizations using Pygame. See [rendering.py](./env/utils/rendering.py) for implementation details.
+
 ---

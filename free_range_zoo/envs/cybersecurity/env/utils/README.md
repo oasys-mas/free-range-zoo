@@ -5,7 +5,7 @@ This module provides a visualization tool for cybersecurity simulations. It proc
 
 ## A demo of the environment
 <p align="center">
-    <img src="assets/rendering.gif" width="400" height="400">
+    <img src="../assets/rendering.gif" width="400" height="400">
 </p>
 
 
