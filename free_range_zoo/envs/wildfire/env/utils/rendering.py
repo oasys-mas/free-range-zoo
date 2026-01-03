@@ -44,23 +44,23 @@ def resolve_fire_target_clockwise(intensity_2d, agent_row, agent_col, fire_rank,
         right = agent_col + d
 
         # (agent_row, left), then go UP to top-left
-        for r in range(agent_row, top - 1, -1):       # left edge, up
+        for r in range(agent_row, top - 1, -1):  # left edge, up
             cells.append((r, left))
 
         # Top edge: left+1 -> right
-        for c in range(left + 1, right + 1):          # top edge, right
+        for c in range(left + 1, right + 1):  # top edge, right
             cells.append((top, c))
 
         # Right edge: top+1 -> bottoma
-        for r in range(top + 1, bottom + 1):          # right edge, down
+        for r in range(top + 1, bottom + 1):  # right edge, down
             cells.append((r, right))
 
         # Bottom edge: right-1 -> left
-        for c in range(right - 1, left - 1, -1):      # bottom edge, left
+        for c in range(right - 1, left - 1, -1):  # bottom edge, left
             cells.append((bottom, c))
 
         # Left edge: bottom-1 -> agent_row+1 (back up, without repeating start)
-        for r in range(bottom - 1, agent_row, -1):    # left edge, up
+        for r in range(bottom - 1, agent_row, -1):  # left edge, up
             cells.append((r, left))
 
         return cells
@@ -564,9 +564,9 @@ def render(path: str,
         # -------------------- Render the state for this time-step --------------------
         fire_index = 0  # Just for labeling fires
         # -------------------- Render the state for this time-step --------------------
-        fires_now = df["fires"].iloc[t]           # SIZE grid (0,1,2,3,4)
-        intensity_now = df["intensity"].iloc[t]   # intensity grid
-        fuel_now = df["fuel"].iloc[t]             # fuel grid
+        fires_now = df["fires"].iloc[t]  # SIZE grid (0,1,2,3,4)
+        intensity_now = df["intensity"].iloc[t]  # intensity grid
+        fuel_now = df["fuel"].iloc[t]  # fuel grid
 
         fire_index = 0  # Just for labeling fires
         for obj in state_record[t]:
@@ -666,7 +666,7 @@ def render(path: str,
                             agent_row=obj["row"],
                             agent_col=obj["col"],
                             fire_rank=fire_num,
-                            rng=1
+                            rng=1,
                         )
 
                         if target is None:
@@ -683,12 +683,11 @@ def render(path: str,
 
                             draw_arrow(
                                 window,
-                                start_pos=(obj["col"], obj["row"]),     # (x, y)
-                                end_pos=(fire_col, fire_row),           # (x, y)
+                                start_pos=(obj["col"], obj["row"]),  # (x, y)
+                                end_pos=(fire_col, fire_row),  # (x, y)
                                 cell_size=cell_size,
                                 x_offset=x_offset,
-                                y_offset=y_offset
-                            )
+                                y_offset=y_offset)
 
         # -------------------- Flip display or record frame --------------------
         if render_mode == "human":
