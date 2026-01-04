@@ -10,7 +10,7 @@
 ### How do the number of `patched`, `exploited`, and `vulnerable` states affect the simulation?
 
 ```{eval-rst}
-.. image:: /_static/img/CybersecurityDrawing_network_state_rewards.png
+.. image:: /_static/img/cybersecurity_network_state_rewards.png
    :alt: Diagram of a tensor split into three sections (patched -> vulnerable -> exploited)
 ```
 
