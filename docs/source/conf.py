@@ -58,13 +58,15 @@ html_baseurl = ""
 html_copy_source = False
 html_favicon = "_static/img/favicon.png"
 html_theme_options = {
-    "light_logo": "img/darkgoat.png",
-    "dark_logo": "img/lightgoat.png",
+    "light_logo": "../darkgoat.png",
+    "dark_logo": "../header/lightgoat.png",
     "versioning": True,
     "description": "A FreeRangeZoo extension for Openness"
 }
 
-html_static_path = ["source/_static"]
+# -- copy source static content --
+html_static_path = ["_static"]
+html_extra_path = ["_static/header"]  #forced copy
 html_css_files = []
 
 # -- Options for MyST parser -------------------------------------------------
