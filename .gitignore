@@ -246,6 +246,7 @@ pip-selfcheck.json
 **/plotting/*-paper*
 
 !free_range_zoo/envs/**/env
+!docs/source/_static
 
 my_secrets.py
 unittest_logs
