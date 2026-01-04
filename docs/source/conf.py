@@ -59,7 +59,7 @@ html_copy_source = False
 html_favicon = "_static/img/favicon.png"
 html_theme_options = {
     "light_logo": "../darkgoat.png",
-    "dark_logo": "../header/lightgoat.png",
+    "dark_logo": "../lightgoat.png",
     "versioning": True,
     "description": "A FreeRangeZoo extension for Openness"
 }
