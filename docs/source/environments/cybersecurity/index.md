@@ -7,6 +7,12 @@ specification
 baselines
 ```
 
+```{eval-rst}
+.. image:: /_static/gif/cybersecurity_rendering.gif
+   :width: 500px
+   :align: center
+```
+
 ## Description
 The cybersecurity domain simulates a network environment where nodes are either attacked or patched by agents, with
 the goal of protecting or exploiting the system. The environment is partially observable, with defenders needing to

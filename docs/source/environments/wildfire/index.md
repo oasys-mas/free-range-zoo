@@ -7,6 +7,12 @@ specification
 baselines
 ```
 
+```{eval-rst}
+.. image:: /_static/gif/wildfire_rendering.gif
+   :width: 500px
+   :align: center
+```
+
 ## Description
 
 The wildfire domain simulates a grid-based environment where fires can spread and agents are tasked with extinguishing

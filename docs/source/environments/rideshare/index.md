@@ -7,6 +7,10 @@ specification
 baselines
 ```
 
+```{eval-rst}
+.. image:: /_static/gif/rideshare_rendering.gif
+```
+
 ## Description
 
 The rideshare domain simulates a grid-based environment where apssengers can appear and agents are tasked with

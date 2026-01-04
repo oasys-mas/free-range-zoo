@@ -1,7 +1,5 @@
 # Wildfire
-<p align="center">
-    <img src="env/assets/rendering.gif" width="300" height="300">
-</p>
+
 ## Description
 
 The wildfire domain simulates a grid-based environment where fires can spread and agents are tasked with extinguishing

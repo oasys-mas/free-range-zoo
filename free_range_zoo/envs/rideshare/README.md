@@ -1,7 +1,4 @@
 # Rideshare
-<p align="center">
-    <img src="env/assets/rendering.gif" width="300" height="300">
-</p>
 ## Description
 
 The rideshare domain simulates a grid-based environment where apssengers can appear and agents are tasked with
