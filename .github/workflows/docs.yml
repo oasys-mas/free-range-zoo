@@ -25,7 +25,7 @@ jobs:
         with:
           arguments: ".#ci"
       - name: install dependencies
-        run: poetry install --with oasys
+        run: poetry install --with docs
       - name: Build documentation
         run: poetry run build
       - name: upload documentation artifact
