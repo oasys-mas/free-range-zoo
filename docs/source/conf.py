@@ -58,8 +58,8 @@ html_baseurl = ""
 html_copy_source = False
 html_favicon = "_static/img/favicon.png"
 html_theme_options = {
-    "light_logo": "_static/img/darkgoat.png",
-    "dark_logo": "_static/img/lightgoat.png",
+    "light_logo": "img/darkgoat.png",
+    "dark_logo": "img/lightgoat.png",
     "versioning": True,
     "description": "A FreeRangeZoo extension for Openness"
 }
