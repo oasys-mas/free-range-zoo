@@ -109,11 +109,12 @@ adjacent tiles and vary in intensity. Fires can also burn out once they reach a 
 
 from typing import Tuple, Dict, Any, Union, List, Optional, Callable
 
-import torch
+from pettingzoo.utils.wrappers import OrderEnforcingWrapper
 from tensordict.tensordict import TensorDict
 import gymnasium
+import math
 import pandas as pd
-from pettingzoo.utils.wrappers import OrderEnforcingWrapper
+import torch
 
 from free_range_zoo.utils.env import BatchedAECEnv
 from free_range_zoo.utils.conversions import batched_aec_to_batched_parallel
@@ -220,15 +221,16 @@ class raw_env(BatchedAECEnv):
             other_agents = agent_ids[agent_ids != agent_idx]
             self.observation_ordering[agent] = other_agents
 
-        self.agent_observation_bounds = (
-            self.max_y,
-            self.max_x,
-            self.agent_config.max_effective_power,
-            self.agent_config.max_effective_suppressant,
-            self.agent_config.max_effective_range,
-            self.agent_config.max_effective_capacity,
-            self.agent_config.max_equipment_state,
-        )
+        self.agent_observation_bounds = tuple(
+            int(math.ceil(x)) for x in [
+                self.max_y,
+                self.max_x,
+                self.agent_config.max_effective_power,
+                self.agent_config.max_effective_suppressant,
+                self.agent_config.max_effective_range,
+                self.agent_config.max_effective_capacity,
+                self.agent_config.max_equipment_state,
+            ])
         self.fire_observation_bounds = tuple([
             self.max_y,
             self.max_x,
