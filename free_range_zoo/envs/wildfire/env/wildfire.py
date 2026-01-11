@@ -175,6 +175,9 @@ class raw_env(BatchedAECEnv):
                  *args,
                  observe_other_suppressant: bool = False,
                  observe_other_power: bool = False,
+                 observe_other_range: bool = False,
+                 observe_other_capacity: bool = False,
+                 observe_other_equipment: bool = False,
                  show_bad_actions: bool = False,
                  **kwargs) -> None:
         """
@@ -189,6 +192,9 @@ class raw_env(BatchedAECEnv):
 
         self.observe_other_suppressant = observe_other_suppressant
         self.observe_other_power = observe_other_power
+        self.observe_other_range = observe_other_range
+        self.observe_other_capacity = observe_other_capacity
+        self.observe_other_equipment = observe_other_equipment
         self.show_bad_actions = show_bad_actions
 
         self.possible_agents = tuple(f"firefighter_{i}" for i in range(1, self.agent_config.num_agents + 1))
@@ -214,12 +220,15 @@ class raw_env(BatchedAECEnv):
             other_agents = agent_ids[agent_ids != agent_idx]
             self.observation_ordering[agent] = other_agents
 
-        self.agent_observation_bounds = tuple([
+        self.agent_observation_bounds = (
             self.max_y,
             self.max_x,
-            self.agent_config.max_fire_reduction_power,
-            self.agent_config.suppressant_states,
-        ])
+            self.agent_config.max_effective_power,
+            self.agent_config.max_effective_suppressant,
+            self.agent_config.max_effective_range,
+            self.agent_config.max_effective_capacity,
+            self.agent_config.max_equipment_state,
+        )
         self.fire_observation_bounds = tuple([
             self.max_y,
             self.max_x,
@@ -227,9 +236,13 @@ class raw_env(BatchedAECEnv):
             self.fire_config.num_fire_states,
         ])
 
-        observation_mask = torch.ones(4, dtype=torch.bool, device=self.device)
+        # Observation mask for others: [y, x, power, suppressant, range, capacity, equipment]
+        observation_mask = torch.ones(7, dtype=torch.bool, device=self.device)
         observation_mask[2] = self.observe_other_power
         observation_mask[3] = self.observe_other_suppressant
+        observation_mask[4] = self.observe_other_range
+        observation_mask[5] = self.observe_other_capacity
+        observation_mask[6] = self.observe_other_equipment
         self.agent_observation_mask = lambda agent_name: observation_mask
 
         # Initialize all of the transition layers based on the environment configurations
@@ -671,15 +684,41 @@ class raw_env(BatchedAECEnv):
         Update the observations for the agents.
 
         Observations consist of the following:
-            - Agent observation format: (batch, 1, (y, x, power, suppressant))
-            - Others observation format: (batch, agents - 1, (y, x, power, suppressant))
+            - Agent observation format: (batch, 1, (y, x, power, suppressant, range, capacity, equipment))
+            - Others observation format: (batch, agents - 1, (y, x, power, suppressant, range, capacity, equipment)),
+              with fields masked according to observe_other_* flags.
             - Fire observation format: (batch, fires, (y, x, heat, intensity))
         """
-        # Build the agent observations
         agent_positions = self._state.agents.expand(self.parallel_envs, -1, -1)
-        fire_reduction_power = self.fire_reduction_power.unsqueeze(-1).expand(self.parallel_envs, -1, -1)
+
+        equipment_states = self._state.equipment
+
+        # Calculate current capacity + equipment bonuses
+        capacity_bonuses = self.agent_config.equipment_states[equipment_states, 0]
+        effective_capacity = (self._state.capacity + capacity_bonuses).unsqueeze(-1)
+
+        # Calculate power + equipment bonuses
+        power_bonuses = self.agent_config.equipment_states[equipment_states, 1]
+        effective_power = (self.fire_reduction_power + power_bonuses).unsqueeze(-1)
+
+        # Calculate range + equipment bonuses
+        range_bonuses = self.agent_config.equipment_states[equipment_states, 2]
+        effective_range = (self.agent_config.attack_range + range_bonuses).unsqueeze(-1)
+
+        # Calculate current suppressant
         suppressants = self._state.suppressants.unsqueeze(-1)
-        agent_observations = torch.cat((agent_positions, fire_reduction_power, suppressants), dim=2)
+
+        # Build full observation vector: [y, x, power, suppressant, range, capacity, equipment]
+        agent_observations = torch.cat(
+            [
+                agent_positions,  # y, x
+                effective_power,  # power
+                suppressants,  # suppressant
+                effective_range,  # range
+                effective_capacity,  # capacity
+                equipment_states.unsqueeze(-1).float()  # equipment
+            ],
+            dim=2)
 
         # Build the fire observations
         lit_fires = torch.where(self._state.fires > 0, 1, 0)
@@ -701,7 +740,6 @@ class raw_env(BatchedAECEnv):
         # Aggregate the full observation space
         self.observations = {}
         for agent in self.agents:
-            observation_mask = self.agent_observation_mask(agent)
             agent_index = self.agent_name_mapping[agent]
             agent_mask = torch.ones(self.agent_config.num_agents, dtype=torch.bool, device=self.device)
             agent_mask[agent_index] = False
@@ -709,7 +747,7 @@ class raw_env(BatchedAECEnv):
             self.observations[agent] = TensorDict(
                 {
                     'self': agent_observations[:, agent_index],
-                    'others': agent_observations[:, agent_mask][:, :, observation_mask],
+                    'others': agent_observations[:, agent_mask][:, :, self.agent_observation_mask(agent)],
                     'tasks': fire_observations
                 },
                 batch_size=[self.parallel_envs],
