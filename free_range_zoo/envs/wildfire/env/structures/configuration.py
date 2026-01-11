@@ -193,7 +193,7 @@ class AgentConfiguration(Configuration):
     suppressant_refill_probability: float
 
     initial_equipment_state: int
-    equipment_states: torch.FlaotTensor
+    equipment_states: torch.FloatTensor
     repair_probability: float
     degrade_probability: float
     critical_error_probability: float
@@ -209,9 +209,29 @@ class AgentConfiguration(Configuration):
         return self.agents.shape[0]
 
     @functools.cached_property
-    def max_fire_reduction_power(self) -> float:
-        """Return the maximum fire reduction power of the agents."""
-        return self.fire_reduction_power.max().item()
+    def max_effective_power(self) -> float:
+        """Return the maximum possible fire reduction power after equipment bonuses."""
+        return self.fire_reduction_power.max().item() + self.equipment_states[:, 1].max().item()
+
+    @functools.cached_property
+    def max_effective_suppressant(self) -> float:
+        """Return the maximum possible suppressant after equipment bonuses."""
+        return self.suppressant_states + self.equipment_states[:, 0].max().item()
+
+    @functools.cached_property
+    def max_effective_range(self) -> float:
+        """Return the maximum possible attack range after equipment bonuses."""
+        return self.attack_range.max().item() + self.equipment_states[:, 2].max().item()
+
+    @functools.cached_property
+    def max_effective_capacity(self) -> float:
+        """Return the maximum possible capacity after equipment bonuses."""
+        return self.possible_capacities.max().item() + self.equipment_states[:, 0].max().item()
+
+    @functools.cached_property
+    def max_equipment_state(self) -> int:
+        """Return the maximum equipment state index."""
+        return self.equipment_states.shape[0] - 1
 
     @functools.cached_property
     def num_equipment_states(self) -> int:

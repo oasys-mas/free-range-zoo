@@ -2,14 +2,13 @@
 from typing import Tuple, List
 import functools
 
-import numpy as np
-
 import free_range_rust
 from free_range_rust import Space
 
 
 def build_observation_space(environment_task_counts, num_agents: int, agent_high: Tuple[int], fire_high: Tuple[int],
-                            include_suppressant: bool, include_power: bool) -> List[free_range_rust.Space]:
+                            include_power: bool, include_suppressant: bool, include_range: bool, include_capacity: bool,
+                            include_equipment: bool) -> List[free_range_rust.Space]:
     """
     Build the observation space for all environments in a batched environment.
 
@@ -24,7 +23,8 @@ def build_observation_space(environment_task_counts, num_agents: int, agent_high
         List[free_range_rust.Space] - The observation spaces for the environments
     """
     return [
-        build_single_observation_space(agent_high, fire_high, task_count, num_agents, include_suppressant, include_power)
+        build_single_observation_space(agent_high, fire_high, task_count, num_agents, include_power, include_suppressant,
+                                       include_range, include_capacity, include_equipment)
         for task_count in environment_task_counts
     ]
 
@@ -35,7 +35,10 @@ def build_single_observation_space(agent_high: Tuple[int],
                                    num_tasks: int,
                                    num_agents: int,
                                    include_power: bool = True,
-                                   include_suppressant: bool = True) -> free_range_rust.Space:
+                                   include_suppressant: bool = True,
+                                   include_range: bool = False,
+                                   include_capacity: bool = False,
+                                   include_equipment: bool = False) -> free_range_rust.Space:
     """
     Build the observation space for a single environment.
 
@@ -49,14 +52,9 @@ def build_single_observation_space(agent_high: Tuple[int],
     Returns:
         gymnasium.Space - The observation space for the environment
     """
-    if include_suppressant and not include_power:
-        other_high = agent_high[0], agent_high[1], agent_high[3]
-    elif not include_suppressant and include_power:
-        other_high = agent_high[0], agent_high[1], agent_high[2]
-    elif not include_suppressant and not include_power:
-        other_high = agent_high[0], agent_high[1]
-    else:
-        other_high = agent_high
+    # Full order: [y, x, power, suppressant, range, capacity, equipment]
+    mask = [True, True, include_power, include_suppressant, include_range, include_capacity, include_equipment]
+    other_high = tuple([h for h, m in zip(agent_high, mask) if m])
 
     return Space.Dict({
         'self': build_single_agent_observation_space(agent_high),
@@ -71,15 +69,15 @@ def build_single_agent_observation_space(high: Tuple[int]):
     Build the observation space for a single agent.
 
     The agent observation space is defined as follows:
-        - If the agent observation space includes both the suppressant and the power, the space is (y, x, power, suppressant)
-        - If the agent observation space includes the suppressant but not the power, the space is (y, x, suppressant)
-        - If the agent observation space includes the power but not the suppressant, the space is (y, x, power)
-        - If the agent observation space includes neither the suppressant nor the power, the space is (y, x)
+        - The full space is (y, x, power, suppressant, range, capacity, equipment)
+        - For 'self', all fields are always included.
+        - For 'others', the fields included are determined by the observe_other_* flags (power, suppressant, range, capacity, equipment).
+        - The order is always: (y, x, power, suppressant, range, capacity, equipment), with fields masked as needed.
 
     Args:
-        high: Tuple[int] - The high values for the agent observation space (y, x, power, suppressant) if unfiltered
+        high: Tuple[int] - The high values for the agent observation space (y, x, power, suppressant, range, capacity, equipment) if unfiltered/masked
     Returns:
-        gymnasium.Space - The observation space for the agent
+        free_range_rust.Space - The observation space for the agent, with fields masked according to the observe_other_* flags for 'others', and all fields for 'self'.
     """
     return Space.Box(low=[0] * len(high), high=high)
 
