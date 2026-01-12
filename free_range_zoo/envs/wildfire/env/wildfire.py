@@ -185,8 +185,11 @@ class raw_env(BatchedAECEnv):
         Initialize the Wildfire environment.
 
         Args:
-            observe_others_suppressant: bool - whether to observe the suppressant of other agents
+            observe_other_suppressant: bool - whether to observe the suppressant of other agents
             observe_other_power: bool - whether to observe the power of other agents
+            observe_other_range: bool - whether to observe the range of other agents
+            observe_other_capacity: bool - whether to observe the capacity of other agents
+            observe_other_equipment: bool - whether to observe the equipment state of other agents
             show_bad_actions: bool  - whether to show bad actions
         """
         super().__init__(*args, **kwargs)
@@ -310,6 +313,9 @@ class raw_env(BatchedAECEnv):
         Args:
             seed: Union[List[int], int] - the seed to use
             options: Dict[str, Any] - the options for the reset
+                options['initial_state']: Optional - initial state for the environment
+                options['skip_observations']: Optional[bool] - if True, skip updating observations
+                options['skip_actions']: Optional[bool] - if True, skip updating actions
         """
         super().reset(seed=seed, options=options)
 
@@ -399,6 +405,7 @@ class raw_env(BatchedAECEnv):
             batch_indices: torch.Tensor - the batch indices to reset
             seed: Optional[List[int]] - the seed to use
             options: Optional[Dict[str, Any]] - the options for the reset
+                options['initial_state']: Optional - initial state for the batch reset
         """
         super().reset_batches(batch_indices, seed, options)
 
@@ -415,6 +422,10 @@ class raw_env(BatchedAECEnv):
     def step_environment(self) -> Tuple[Dict[str, torch.Tensor], Dict[str, torch.Tensor], Dict[str, Dict[str, bool]]]:
         """
         Perform a simultaneous action wildfire environment step.
+        Returns:
+            rewards: dict - agent rewards for each environment
+            terminations: dict - environment termination flags for each agent
+            infos: dict - additional information such as burnouts/putouts
         """
         # Initialize storages
         rewards = {agent: torch.zeros(self.parallel_envs, dtype=torch.float32, device=self.device) for agent in self.agents}
@@ -600,7 +611,7 @@ class raw_env(BatchedAECEnv):
 
     @torch.no_grad()
     def update_actions(self) -> None:
-        """Update the action space for all agents."""
+        """Update the action space for all agents. Updates the list of valid actions per agent."""
         # Gather all the tasks in the environment
         fires = self._state.fires > 0
         num_tasks_per_environment = fires.sum(dim=(1, 2))
@@ -683,7 +694,7 @@ class raw_env(BatchedAECEnv):
     @torch.no_grad()
     def update_observations(self) -> None:
         """
-        Update the observations for the agents.
+        Update the observations for the agents. Updates the observation dicts for all agents.
 
         Observations consist of the following:
             - Agent observation format: (batch, 1, (y, x, power, suppressant, range, capacity, equipment))
@@ -760,11 +771,11 @@ class raw_env(BatchedAECEnv):
     def action_space(self, agent: str) -> List[gymnasium.Space]:
         """
         Return the action space for the given agent.
-
+        
         Args:
             agent: str - the name of the agent to retrieve the action space for
         Returns:
-            List[gymnasium.Space]: the action space for the given agent
+            List[gymnasium.Space]: the action space for the given agent (may depend on agent and batch)
         """
         if self.show_bad_actions:
             num_tasks_in_environment = self.environment_task_count
@@ -781,7 +792,7 @@ class raw_env(BatchedAECEnv):
         Args:
             agent: str - the name of the agent to retrieve the observation space for
         Returns:
-            List[gymnasium.Space]: the observation space for the given agent
+            List[gymnasium.Space]: the observation space for the given agent (may depend on agent and batch)
         """
         return observations.build_observation_space(
             environment_task_counts=self.environment_task_count,

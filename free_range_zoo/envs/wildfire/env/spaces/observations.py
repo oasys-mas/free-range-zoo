@@ -17,8 +17,11 @@ def build_observation_space(environment_task_counts, num_agents: int, agent_high
         num_agents: int - The number of agents in the environment
         agent_high: Tuple[int] - The high values for the agent observation space
         fire_high: Tuple[int] - The high values for the fire observation space
-        include_suppressant: bool - Whether to include the suppressant in the observation space
         include_power: bool - Whether to include the power in the observation space
+        include_suppressant: bool - Whether to include the suppressant in the observation space
+        include_range: bool - Whether to include range in the observation space
+        include_capacity: bool - Whether to include capacity in the observation space
+        include_equipment: bool - Whether to include equipment in the observation space
     Returns:
         List[free_range_rust.Space] - The observation spaces for the environments
     """
@@ -49,8 +52,11 @@ def build_single_observation_space(agent_high: Tuple[int],
         num_agents: int - The number of agents in the environment
         include_power: bool - Whether to include the power in the observation space
         include_suppressant: bool - Whether to include the suppressant in the observation space
+        include_range: bool - Whether to include range in the observation space
+        include_capacity: bool - Whether to include capacity in the observation space
+        include_equipment: bool - Whether to include equipment in the observation space
     Returns:
-        gymnasium.Space - The observation space for the environment
+        free_range_rust.Space - The observation space for the environment
     """
     # Full order: [y, x, power, suppressant, range, capacity, equipment]
     mask = [True, True, include_power, include_suppressant, include_range, include_capacity, include_equipment]
@@ -77,7 +83,7 @@ def build_single_agent_observation_space(high: Tuple[int]):
     Args:
         high: Tuple[int] - The high values for the agent observation space (y, x, power, suppressant, range, capacity, equipment) if unfiltered/masked
     Returns:
-        free_range_rust.Space - The observation space for the agent, with fields masked according to the observe_other_* flags for 'others', and all fields for 'self'.
+        free_range_rust.Space - The observation space for the agent, with fields masked according to the observation flags for 'others', and all fields for 'self'.
     """
     return Space.Box(low=[0] * len(high), high=high)
 
@@ -94,6 +100,6 @@ def build_single_fire_observation_space(high: Tuple[int], num_tasks: int):
         high: Tuple[int] - The high values for the fire observation space (y, x, level, intensity) if unfiltered
         num_tasks: int - The number of tasks in the environment
     Returns:
-        gymnasium.Space - The observation space for the fire
+        gymnasium.Space - The observation space for the fire, as a Space.Tuple of Box spaces (one per fire task)
     """
     return Space.Tuple([Space.Box([0] * len(high), high=high) for _ in range(num_tasks)])
