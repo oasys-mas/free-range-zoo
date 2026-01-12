@@ -799,11 +799,7 @@ class raw_env(BatchedAECEnv):
             num_agents=self.agent_config.num_agents,
             agent_high=self.agent_observation_bounds,
             fire_high=self.fire_observation_bounds,
-            include_power=self.observe_other_power,
-            include_suppressant=self.observe_other_suppressant,
-            include_range=self.observe_other_range,
-            include_capacity=self.observe_other_capacity,
-            include_equipment=self.observe_other_equipment,
+            include_mask=tuple(self.agent_observation_mask(agent)[2:].tolist()),
         )
 
     def _log_environment(self, *args, **kwargs) -> None:

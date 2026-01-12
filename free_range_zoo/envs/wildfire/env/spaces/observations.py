@@ -7,8 +7,7 @@ from free_range_rust import Space
 
 
 def build_observation_space(environment_task_counts, num_agents: int, agent_high: Tuple[int], fire_high: Tuple[int],
-                            include_power: bool, include_suppressant: bool, include_range: bool, include_capacity: bool,
-                            include_equipment: bool) -> List[free_range_rust.Space]:
+                            include_mask: Tuple[bool, bool, bool, bool, bool]) -> List[free_range_rust.Space]:
     """
     Build the observation space for all environments in a batched environment.
 
@@ -17,31 +16,23 @@ def build_observation_space(environment_task_counts, num_agents: int, agent_high
         num_agents: int - The number of agents in the environment
         agent_high: Tuple[int] - The high values for the agent observation space
         fire_high: Tuple[int] - The high values for the fire observation space
-        include_power: bool - Whether to include the power in the observation space
-        include_suppressant: bool - Whether to include the suppressant in the observation space
-        include_range: bool - Whether to include range in the observation space
-        include_capacity: bool - Whether to include capacity in the observation space
-        include_equipment: bool - Whether to include equipment in the observation space
+        include_mask: Tuple[bool, bool, bool, bool, bool] - Mask for including (power, suppressant, range, capacity, equipment) in the observation space.
     Returns:
         List[free_range_rust.Space] - The observation spaces for the environments
     """
     return [
-        build_single_observation_space(agent_high, fire_high, task_count, num_agents, include_power, include_suppressant,
-                                       include_range, include_capacity, include_equipment)
+        build_single_observation_space(agent_high, fire_high, task_count, num_agents, include_mask)
         for task_count in environment_task_counts
     ]
 
 
 @functools.lru_cache(maxsize=100)
-def build_single_observation_space(agent_high: Tuple[int],
-                                   fire_high: Tuple[int],
-                                   num_tasks: int,
-                                   num_agents: int,
-                                   include_power: bool = True,
-                                   include_suppressant: bool = True,
-                                   include_range: bool = False,
-                                   include_capacity: bool = False,
-                                   include_equipment: bool = False) -> free_range_rust.Space:
+def build_single_observation_space(
+    agent_high: Tuple[int],
+    fire_high: Tuple[int],
+    num_tasks: int,
+    num_agents: int,
+    include_mask: Tuple[bool, bool, bool, bool, bool] = (True, True, False, False, False)) -> free_range_rust.Space:
     """
     Build the observation space for a single environment.
 
@@ -50,16 +41,12 @@ def build_single_observation_space(agent_high: Tuple[int],
         fire_high: Tuple[int] - The high values for the fire observation space (y, x, level, intensity)
         num_tasks: int - The number of tasks in the environment
         num_agents: int - The number of agents in the environment
-        include_power: bool - Whether to include the power in the observation space
-        include_suppressant: bool - Whether to include the suppressant in the observation space
-        include_range: bool - Whether to include range in the observation space
-        include_capacity: bool - Whether to include capacity in the observation space
-        include_equipment: bool - Whether to include equipment in the observation space
+        include_mask: Tuple[bool, bool, bool, bool, bool] - Mask for including (power, suppressant, range, capacity, equipment) in the observation space.
     Returns:
         free_range_rust.Space - The observation space for the environment
     """
     # Full order: [y, x, power, suppressant, range, capacity, equipment]
-    mask = [True, True, include_power, include_suppressant, include_range, include_capacity, include_equipment]
+    mask = [True, True] + list(include_mask)
     other_high = tuple([h for h, m in zip(agent_high, mask) if m])
 
     return Space.Dict({
