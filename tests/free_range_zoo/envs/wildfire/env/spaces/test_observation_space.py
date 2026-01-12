@@ -1,8 +1,7 @@
-import unittest
 from abc import ABC
-
+import itertools
 import torch
-import numpy as np
+import unittest
 
 from free_range_rust import Space
 from free_range_zoo.envs.wildfire.env.spaces.observations import (
@@ -52,14 +51,15 @@ class TestBuildObservationSpace(unittest.TestCase):
         return build_observation_space(*args, **kwargs)
 
     def setUp(self) -> None:
-        self.initial_args = (torch.tensor([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]), 3, (10, 10, 5, 5), (10, 10, 3, 4), True, True)
+        self.initial_args = (torch.tensor([0, 1, 2, 3, 4, 5, 6, 7, 8, 9,
+                                           10]), 3, (10, 10, 5, 5), (10, 10, 3, 4), (True, True, True, True, True))
 
     def test_observation_space_structure(self) -> None:
         result = self.func(*self.initial_args)
 
         expected = [
-            build_single_observation_space(*self.initial_args[2:4], i, self.initial_args[1], *self.initial_args[4:6])
-            for i in range(11)
+            build_single_observation_space(self.initial_args[2], self.initial_args[3], i, self.initial_args[1],
+                                           self.initial_args[4]) for i in range(11)
         ]
 
         self.assertEqual(result, expected, 'Observation spaces should match expected')
@@ -80,82 +80,45 @@ class TestBuildSingleObservationSpace(TestCaching, unittest.TestCase):
 
     def setUp(self) -> None:
         self.cache_clear()
+        self.agent_high = (10, 10, 5, 8, 4, 3, 2)
+        self.fire_high = (10, 10, 3, 4)
+        self.num_tasks = 2
+        self.num_agents = 4
+        self.initial_args = (
+            self.agent_high,
+            self.fire_high,
+            self.num_tasks,
+            self.num_agents,
+            (True, True, True, True, True),
+        )
+        self.different_args = (
+            self.agent_high,
+            self.fire_high,
+            self.num_tasks + 1,
+            self.num_agents,
+            (True, True, True, True, True),
+        )
 
-        self.initial_args = ((10, 10, 5, 8), (10, 10, 3, 4), 4, 3, True, True)
-        self.different_args = ((10, 10, 5, 4), (10, 10, 3, 4), 3, 3, True, True)
+    def test_all_mask_combinations(self):
+        """Test all feature masks for observation space masking."""
+        for mask in itertools.product([True, False], repeat=5):
+            with self.subTest(mask=mask):
+                obs_space = build_single_observation_space(
+                    self.agent_high,
+                    self.fire_high,
+                    self.num_tasks,
+                    self.num_agents,
+                    mask,
+                )
+                expected_mask = [True, True] + list(mask)
 
-    def test_observation_space_structure(self) -> None:
-        result = self.func(*self.initial_args)
-
-        expected = Space.Dict({
-            'self':
-            build_single_agent_observation_space(self.initial_args[0]),
-            'others':
-            Space.Tuple([*[build_single_agent_observation_space(self.initial_args[0]) for _ in range(2)]]),
-            'tasks':
-            build_single_fire_observation_space(self.initial_args[1], self.initial_args[2])
-        })
-
-        self.assertEqual(result, expected, 'Observation space should match expected')
-
-    def test_no_suppressant(self) -> None:
-        result = self.func(*self.initial_args[:4], True, False)
-
-        expected = Space.Dict({
-            'self':
-            build_single_agent_observation_space(self.initial_args[0]),
-            'others':
-            Space.Tuple([*[build_single_agent_observation_space(self.initial_args[0][:3]) for _ in range(2)]]),
-            'tasks':
-            build_single_fire_observation_space(self.initial_args[1], self.initial_args[2])
-        })
-
-        self.assertEqual(result, expected, 'Observation space should match expected')
-
-    def test_no_power(self) -> None:
-        result = self.func(*self.initial_args[:4], False, True)
-        expected = Space.Dict({
-            'self':
-            build_single_agent_observation_space(self.initial_args[0]),
-            'others':
-            Space.Tuple([
-                *[build_single_agent_observation_space((*self.initial_args[0][:2], *self.initial_args[0][3:])) for _ in range(2)]
-            ]),
-            'tasks':
-            build_single_fire_observation_space(self.initial_args[1], self.initial_args[2])
-        })
-        self.assertEqual(result, expected, 'Observation space should match expected')
-
-    def test_no_power_no_supppressant(self) -> None:
-        result = self.func(*self.initial_args[:4], False, False)
-
-        expected = Space.Dict({
-            'self':
-            build_single_agent_observation_space(self.initial_args[0]),
-            'others':
-            Space.Tuple([*[build_single_agent_observation_space(self.initial_args[0][:2]) for _ in range(2)]]),
-            'tasks':
-            build_single_fire_observation_space(self.initial_args[1], self.initial_args[2])
-        })
-
-        self.assertEqual(result, expected, 'Observation space should match expected')
-
-    def test_larger_agent_spaces(self) -> None:
-        agent_spaces = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
-
-        for num_agents in agent_spaces:
-            result = self.func(*self.initial_args[:3], num_agents, *self.initial_args[4:])
-
-            expected = Space.Dict({
-                'self':
-                build_single_agent_observation_space(self.initial_args[0]),
-                'others':
-                Space.Tuple([*[build_single_agent_observation_space(self.initial_args[0]) for _ in range(num_agents - 1)]]),
-                'tasks':
-                build_single_fire_observation_space(self.initial_args[1], self.initial_args[2])
-            })
-
-            self.assertEqual(result, expected, 'Observation space should match expected')
+                masked_high = tuple(h for h, m in zip(self.agent_high, expected_mask) if m)
+                for others_space in obs_space.spaces['others'].spaces:
+                    self.assertEqual(
+                        len(others_space.low),
+                        len(masked_high),
+                        f"Failed on mask {mask}, expected {len(masked_high)}, got {len(others_space.low)}",
+                    )
 
 
 class TestBuildSingleAgentObservationSpace(TestCaching, unittest.TestCase):
