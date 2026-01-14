@@ -25,6 +25,7 @@ below.
 
 ```python
 import pickle
+import torch
 
 with open('<path to configuration>.pkl', 'rb') as f:
     configuration = pickle.load(f)
@@ -59,7 +60,7 @@ from free_range_zoo.wrappers.action_task import action_mapping_wrapper_v0
 env = action_mapping_wrapper_v0(env)
 ```
 
-## step #3: Environment Step
+## Step #3: Environment Step
 
 Now we can create our baseline agents and execute our policy. Here each `agent`
 must perform `observe` before each `act` which stores and process the prior
@@ -69,17 +70,17 @@ observation.
 from free_range_zoo.envs.rideshare.baselines import NoopBaseline, RandomBaseline
 
 agents = {
-    env.agents[0]: NoopBaseline(agent_name = "agent_0", parallel_envs = 1),
-    env.agents[1]: RandomBaseline(agent_name = "agent_1", parallel_envs = 1)
+    env.agents[0]: NoopBaseline(agent_name = "driver_1", parallel_envs = 1),
+    env.agents[1]: NoopBaseline(agent_name = "driver_2", parallel_envs = 1),
+    env.agents[2]: NoopBaseline(agent_name = "driver_3", parallel_envs = 1),
 }
 
 while not torch.all(env.finished):
-    
     for agent_name, agent in agents.items():
-        agent.observe(observations[agent_name][0])  # Policy observation 
+        agent.observe(observations[agent_name])  # Policy observation 
 
     agent_actions = {
-            agent_name:agents[agent_name].act(action_space = env.action_space(agent_name))
+        agent_name: agents[agent_name].act(env.action_space(agent_name))
         for agent_name in env.agents
     }  # Policy action determination here
 
@@ -114,18 +115,19 @@ observations, infos = env.reset()
 
 from free_range_zoo.envs.rideshare.baselines import NoopBaseline, RandomBaseline
 
+# Modify agents based on loaded pkl configuration file  
 agents = {
-    env.agents[0]: NoopBaseline(agent_name = "agent_0", parallel_envs = 1),
-    env.agents[1]: RandomBaseline(agent_name = "agent_1", parallel_envs = 1)
+    env.agents[0]: NoopBaseline(agent_name = "driver_1", parallel_envs = 1),
+    env.agents[1]: NoopBaseline(agent_name = "driver_2", parallel_envs = 1),
+    env.agents[2]: NoopBaseline(agent_name = "driver_3", parallel_envs = 1),
 }
 
 while not torch.all(env.finished):
-    
     for agent_name, agent in agents.items():
-        agent.observe(observations[agent_name][0])  # Policy observation 
+        agent.observe(observations[agent_name])  # Policy observation 
 
     agent_actions = {
-            agent_name:agents[agent_name].act(action_space = env.action_space(agent_name))
+        agent_name: agents[agent_name].act(env.action_space(agent_name))
         for agent_name in env.agents
     }  # Policy action determination here
 
