@@ -169,6 +169,7 @@ class raw_env(BatchedAECEnv):
         "name": "wildfire_v0",
         "is_parallelizable": True,
         "render_fps": 2,
+        "action_dtype": torch.int32,
     }
 
     @torch.no_grad()

@@ -55,6 +55,9 @@ class BatchedAECEnv(ABC, AECEnv):
         self.single_seeding = single_seeding
         self.log_description = None
 
+        if 'action_dtype' not in self.metadata:
+            self.metadata['action_dtype'] = torch.int32
+
         if configuration is not None:
             self.config = configuration.to(device)
 
@@ -214,7 +217,10 @@ class BatchedAECEnv(ABC, AECEnv):
 
         self._clear_rewards()
         agent = self.agent_selection
+
         self.actions[agent] = actions
+        if isinstance(actions, torch.Tensor):
+            self.actions[agent] = torch.tensor(actions, device=self.device, dtype=self.metadata['action_dtype'])
 
         # Step the environment after all agents have taken actions
         if self.agent_selector.is_last():

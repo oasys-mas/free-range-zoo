@@ -130,7 +130,7 @@ while not torch.all(env.finished):
         agent.observe(observations[agent_name])  # Policy observation 
 
     agent_actions = {
-            agent_name:agents[agent_name].act(env.action_space(agent_name))
+        agent_name:agents[agent_name].act(env.action_space(agent_name))
         for agent_name in env.agents
     }  # Policy action determination here
 

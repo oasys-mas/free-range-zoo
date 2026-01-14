@@ -8,6 +8,7 @@ from free_range_zoo.utils.random_generator import RandomGenerator
 
 
 class MockedBatchedAECEnv(BatchedAECEnv):
+    metadata = {}
 
     def step_environment(self) -> None:
         pass

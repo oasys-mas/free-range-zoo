@@ -154,7 +154,8 @@ class raw_env(BatchedAECEnv):
         "name": "cybersecurity_v0",
         "is_parallelizable": True,
         "render_fps": 2,
-        "null_value": -100
+        "null_value": -100,
+        "action_dtype": torch.int32
     }
 
     @torch.no_grad()
