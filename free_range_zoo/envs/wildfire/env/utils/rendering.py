@@ -212,7 +212,7 @@ def draw_time(window, t, screen_size, font):
     """
     Displays the current step/time near top-center of screen.
     """
-    time_text = font.render(f"Step: {t}", True, (0, 0, 0))
+    time_text = font.render(f"Step: {t+1}", True, (0, 0, 0))
     text_rect = time_text.get_rect(center=(screen_size // 2, 20))
     window.blit(time_text, text_rect)
 
@@ -356,17 +356,10 @@ def render(path: str,
             df[col] = df[col].apply(lambda s: s.replace("nan", "[]") if isinstance(s, str) else s)
             df[col] = df[col].apply(literal_eval)
 
-    # Agent action columns may or may not exist
-    possible_agent_cols = [
-        'firefighter_1_action',
-        'firefighter_2_action',
-        'firefighter_3_action',
-    ]
-    for col in possible_agent_cols:
-        if col not in df.columns:
-            df[col] = ""
-        else:
-            df[col] = df[col].fillna("")
+    # Dynamically detect agent action columns (support any number of agents)
+    agent_action_cols = [col for col in df.columns if col.startswith('firefighter_') and col.endswith('_action')]
+    for col in agent_action_cols:
+        df[col] = df[col].fillna("")
 
     # If checkpoint is specified, filter the DataFrame
     if checkpoint is not None:
@@ -382,7 +375,7 @@ def render(path: str,
 
     # Extract a name from the file path (for debug/UI)
     episode_name_str = os.path.basename(path)
-    print(f"Episode: {episode_name_str}, Total steps: {max_time}")
+    print(f"Log: {episode_name_str}, Total steps: {max_time+1}")
 
     # ----------------------------------------------------------------
     # Infer the grid size from the first row's 'fires' data
@@ -466,13 +459,9 @@ def render(path: str,
                 continue
             ay, ax = agent_pos  # (row, col) from CSV
 
-            # Read the action from the CSV
-            if a_id == 0:
-                action_str = row['firefighter_1_action']
-            elif a_id == 1:
-                action_str = row['firefighter_2_action']
-            else:
-                action_str = row['firefighter_3_action']
+            # Read the action from the CSV dynamically
+            action_col = f'firefighter_{a_id + 1}_action'
+            action_str = row[action_col] if action_col in df.columns else ""
 
             try:
                 action_data = literal_eval(action_str) if isinstance(action_str, str) and action_str.strip() else []
@@ -513,7 +502,7 @@ def render(path: str,
     last_time = time.time()
 
     font = pygame.font.SysFont(None, 32)
-    small_font = pygame.font.SysFont(None, 10)
+    small_font = pygame.font.SysFont(None, 20)  # Consistent size for log labels and info text
     big_font = pygame.font.SysFont(None, 30)
     slider_width = 300
     slider_height = 10
@@ -583,7 +572,7 @@ def render(path: str,
         draw_time(window, t, screen_size, font)
 
         # Extra text: episode name, current step
-        episode_info_text = f"Episode: {episode_name_str}  Step: {t}/{max_time}"
+        episode_info_text = f"Log: {episode_name_str}  Step: {t+1}/{max_time+1}"
         episode_info_surf = small_font.render(episode_info_text, True, (0, 0, 0))
         window.blit(episode_info_surf, (slider_x, screen_size + 5))
 
@@ -642,7 +631,6 @@ def render(path: str,
 
                 fire_index += 1
 
-                small_font = pygame.font.SysFont(None, 20)
                 for idx, line in enumerate(fire_text):
                     line_surf = small_font.render(line, True, (0, 0, 0))
                     window.blit(line_surf, (cell_x + 5, cell_y + 5 + idx * 15))
