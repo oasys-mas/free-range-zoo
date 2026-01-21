@@ -331,6 +331,10 @@ def render(path: str,
     clock = pygame.time.Clock()
     df = pd.read_csv(path)
 
+    # Store original intensity BEFORE shifting (needed for action_map lookups)
+    # The action_map at row n corresponds to the fires visible in the ORIGINAL intensity at row n
+    original_intensity = df['intensity'].copy()
+
     # Shift only these state columns down by 1 step
     state_cols = ["fires", "intensity", "suppressants", "capacity", "equipment", "agents"]
     for c in state_cols:
@@ -338,6 +342,8 @@ def render(path: str,
             df[c] = df[c].shift(1)
 
     # Drop the first row (now has NaNs for shifted state)
+    # Also drop from original_intensity to keep indices aligned
+    original_intensity = original_intensity.iloc[1:].reset_index(drop=True)
     df = df.iloc[1:].reset_index(drop=True)
 
     # Convert certain columns from string to actual Python lists
@@ -356,10 +362,25 @@ def render(path: str,
             df[col] = df[col].apply(lambda s: s.replace("nan", "[]") if isinstance(s, str) else s)
             df[col] = df[col].apply(literal_eval)
 
+    # Parse original_intensity the same way (for action_map lookups)
+    original_intensity = original_intensity.fillna("[]")
+    original_intensity = original_intensity.apply(lambda s: s.replace("nan", "[]") if isinstance(s, str) else s)
+    original_intensity = original_intensity.apply(literal_eval)
+
     # Dynamically detect agent action columns (support any number of agents)
     agent_action_cols = [col for col in df.columns if col.startswith('firefighter_') and col.endswith('_action')]
     for col in agent_action_cols:
         df[col] = df[col].fillna("")
+
+    # Dynamically detect and parse agent action_map columns
+    agent_action_map_cols = [col for col in df.columns if col.startswith('firefighter_') and col.endswith('_action_map')]
+    for col in agent_action_map_cols:
+        df[col] = df[col].fillna("[]")
+        df[col] = df[col].apply(lambda s: s.replace("nan", "[]") if isinstance(s, str) else s)
+        df[col] = df[col].apply(lambda s: literal_eval(s) if isinstance(s, str) else s)
+
+    # Add original_intensity as a column so it gets filtered along with df
+    df['_original_intensity'] = original_intensity
 
     # If checkpoint is specified, filter the DataFrame
     if checkpoint is not None:
@@ -368,14 +389,34 @@ def render(path: str,
             print(f"No steps found for label={checkpoint}")
             return None
 
-    max_time = len(df) - 1
-    if max_time < 0:
+    # Filter out rows where step < 0
+    if 'step' in df.columns:
+        df = df[df['step'] >= 0].reset_index(drop=True)
+
+    if len(df) == 0:
         print("No data to render. Exiting.")
         return None
 
+    # Use step field from CSV; create a mapping from step to dataframe index
+    step_to_idx = {int(row['step']): i for i, row in df.iterrows()}
+    all_steps = sorted(step_to_idx.keys())
+    
+    # Skip the first step since there's no previous action_map for it
+    # (Logs show <s', a> format: action_map at row n-1 applies to action at row n)
+    if len(all_steps) > 1:
+        steps = all_steps[1:]  # Start from second step
+    else:
+        print("Only one step in data, cannot render (no previous action_map available)")
+        return None
+    
+    min_step = min(steps)
+    max_step = max(steps)
+    num_steps = len(steps)
+    max_time = num_steps - 1
+
     # Extract a name from the file path (for debug/UI)
     episode_name_str = os.path.basename(path)
-    print(f"Log: {episode_name_str}, Total steps: {max_time+1}")
+    print(f"Log: {episode_name_str}, Steps: {min_step} to {max_step}, Total: {num_steps}")
 
     # ----------------------------------------------------------------
     # Infer the grid size from the first row's 'fires' data
@@ -549,9 +590,13 @@ def render(path: str,
             if max_time > 0:
                 slider_position = min(slider_width, slider_position + slider_width / max_time)
 
-        # Compute current time-step from slider
+        # Compute current time-step from slider (t is index into steps list)
         t = int((slider_position / slider_width) * max_time)
         t = max(0, min(max_time, t))
+        
+        # Get the actual step value and dataframe index
+        current_step = steps[t]
+        df_idx = step_to_idx[current_step]
 
         # -------------------- Clear screen --------------------
         window.fill((255, 255, 255))
@@ -571,20 +616,20 @@ def render(path: str,
             draw_button(window, is_playing, button_x, button_y, button_size)
         draw_time(window, t, screen_size, font)
 
-        # Extra text: episode name, current step
-        episode_info_text = f"Log: {episode_name_str}  Step: {t+1}/{max_time+1}"
+        # Extra text: episode name, current step (show actual step number from CSV)
+        episode_info_text = f"Log: {episode_name_str}  Step: {current_step} ({t+1}/{num_steps})"
         episode_info_surf = small_font.render(episode_info_text, True, (0, 0, 0))
         window.blit(episode_info_surf, (slider_x, screen_size + 5))
 
         # -------------------- Render the state for this time-step --------------------
         fire_index = 0  # Just for labeling fires
         # -------------------- Render the state for this time-step --------------------
-        fires_now = df["fires"].iloc[t]  # SIZE grid (0,1,2,3,4)
-        intensity_now = df["intensity"].iloc[t]  # intensity grid
-        fuel_now = df["fuel"].iloc[t]  # fuel grid
+        fires_now = df["fires"].iloc[df_idx]  # SIZE grid (0,1,2,3,4)
+        intensity_now = df["intensity"].iloc[df_idx]  # intensity grid
+        fuel_now = df["fuel"].iloc[df_idx]  # fuel grid
 
         fire_index = 0  # Just for labeling fires
-        for obj in state_record[t]:
+        for obj in state_record[df_idx]:
             cell_x = x_offset + obj["col"] * cell_size
             cell_y = y_offset + obj["row"] * cell_size
             if obj["type"] == "fire":
@@ -673,35 +718,68 @@ def render(path: str,
                         window.blit(z_surf, z_rect)
                     # supress
                     if power == 0:
-                        # Use the *current step* fires grid, not a global precomputed list
-                        intensity_now = df['intensity'].iloc[t]
-                        target = resolve_fire_target_clockwise(
-                            intensity_2d=intensity_now,
-                            agent_row=obj["row"],
-                            agent_col=obj["col"],
-                            fire_rank=fire_num,
-                            rng=1,
-                        )
-
-                        if target is None:
-                            # No valid in-range target for that rank, treat as NOOP visually
-                            z_surf = big_font.render("NO VALID TARGET", True, (250, 0, 0))
+                        # Get the action_map for this agent from the PREVIOUS step
+                        # Logs show <s', a> format: action_map at row n-1 is what was available 
+                        # when action at row n was taken
+                        action_map_col = f'firefighter_{obj["id"] + 1}_action_map'
+                        action_map = []
+                        
+                        # Current step value and find the previous step in all_steps
+                        current_step_val = steps[t]
+                        all_steps_idx = all_steps.index(current_step_val)
+                        
+                        # Since we skip step 0, there's always a previous step
+                        prev_step = all_steps[all_steps_idx - 1]
+                        prev_df_idx = step_to_idx[prev_step]
+                        if action_map_col in df.columns:
+                            action_map = df[action_map_col].iloc[prev_df_idx]
+                        
+                        # If action_map is empty but agent tries to suppress, that's an error
+                        # Per Daniel Redder: "The case where an agent fights a fire not in action_map is impossible. Throw an error."
+                        if not isinstance(action_map, list) or len(action_map) == 0:
+                            error_msg = f"ERROR: Agent {obj['id']} action [{fire_num}, {power}] but action_map is empty at prev step!"
+                            print(error_msg)
+                            z_surf = big_font.render("ERR: EMPTY MAP", True, (255, 0, 0))
                             z_rect = z_surf.get_rect(center=(draw_x + 45, draw_y + img_height + 35))
                             window.blit(z_surf, z_rect)
+                            raise ValueError(error_msg)
+                        elif fire_num >= len(action_map):
+                            error_msg = f"ERROR: Agent {obj['id']} action index {fire_num} out of range for action_map {action_map}!"
+                            print(error_msg)
+                            z_surf = big_font.render("ERR: IDX OOB", True, (255, 0, 0))
+                            z_rect = z_surf.get_rect(center=(draw_x + 45, draw_y + img_height + 35))
+                            window.blit(z_surf, z_rect)
+                            raise ValueError(error_msg)
                         else:
-                            fire_row, fire_col = target
+                            # fire_num is an index into action_map, giving us the global fire ID
+                            global_fire_id = action_map[fire_num]
+                            
+                            # Find the position of this global fire ID using the ORIGINAL (unshifted) intensity
+                            # The action_map corresponds to fires visible in the original intensity at prev step
+                            prev_orig_intensity = df['_original_intensity'].iloc[prev_df_idx]
+                            target = find_fire_position_by_global_id(prev_orig_intensity, global_fire_id)
 
-                            z_surf = big_font.render(f"Suppress {fire_num}", True, (0, 0, 250))
-                            z_rect = z_surf.get_rect(center=(draw_x + 45, draw_y + img_height + 35))
-                            window.blit(z_surf, z_rect)
+                            if target is None:
+                                # Fire may have been extinguished between steps
+                                z_surf = big_font.render("NO VALID TARGET", True, (250, 0, 0))
+                                z_rect = z_surf.get_rect(center=(draw_x + 45, draw_y + img_height + 35))
+                                window.blit(z_surf, z_rect)
+                            else:
+                                fire_row, fire_col = target
 
-                            draw_arrow(
-                                window,
-                                start_pos=(obj["col"], obj["row"]),  # (x, y)
-                                end_pos=(fire_col, fire_row),  # (x, y)
-                                cell_size=cell_size,
-                                x_offset=x_offset,
-                                y_offset=y_offset)
+                                # Show global fire ID in the label
+                                label_text = f"Suppress Fire {global_fire_id}"
+                                z_surf = big_font.render(label_text, True, (0, 0, 250))
+                                z_rect = z_surf.get_rect(center=(draw_x + 45, draw_y + img_height + 35))
+                                window.blit(z_surf, z_rect)
+
+                                draw_arrow(
+                                    window,
+                                    start_pos=(obj["col"], obj["row"]),  # (x, y)
+                                    end_pos=(fire_col, fire_row),  # (x, y)
+                                    cell_size=cell_size,
+                                    x_offset=x_offset,
+                                    y_offset=y_offset)
 
         # -------------------- Flip display or record frame --------------------
         if render_mode == "human":
