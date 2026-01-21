@@ -51,7 +51,7 @@ class PatchedAttackerBaseline(Agent):
         for i in range(self.observation['tasks'].shape[0]):
             min_indices = torch.where(self.observation['tasks'][i, 0] == min_values[i])[0]
             if min_indices.shape[0] > 0:
-                new_targets[i] = min_indices[torch.randint(0, min_indices.shape[0], (1, ))]
+                new_targets[i] = min_indices[torch.randint(0, min_indices.shape[0], (1, ), generator=self.generator)]
 
         self.target_node = torch.where(self.target_node == -1, new_targets, self.target_node)
 
@@ -126,7 +126,7 @@ class PatchedDefenderBaseline(Agent):
             min_indices = torch.where(task_mask[i] == min_values[i])[0]
             if min_indices.shape[0] > 0:
                 # Randomly select one index
-                new_targets[i] = min_indices[torch.randint(0, min_indices.shape[0], (1, ))]
+                new_targets[i] = min_indices[torch.randint(0, min_indices.shape[0], (1, ), generator=self.generator)]
 
         self.target_node = torch.where(last_monitor, new_targets, self.target_node)
 

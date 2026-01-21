@@ -59,8 +59,7 @@ class FirstInFirstOutTglobalBaseline(Agent):
             max_indices = torch.where(argmin_store[batch] == max_val)[0]
 
             if max_indices.shape[0] > 0:
-
-                act = max_indices[torch.randint(0, max_indices.shape[0], (1, ))]
+                act = max_indices[torch.randint(0, max_indices.shape[0], (1, ), generator=self.generator)]
                 self.actions[batch, 0] = act
 
                 if riding[batch][self.actions[batch, 0]]:

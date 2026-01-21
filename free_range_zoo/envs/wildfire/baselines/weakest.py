@@ -56,7 +56,7 @@ class WeakestBaseline(Agent):
             min_val = argmax_store[batch].min()
             min_indices = torch.where(argmax_store[batch] == min_val)[0]
             if min_indices.shape[0] > 0:
-                act = min_indices[torch.randint(0, min_indices.shape[0], (1, ))]
+                act = min_indices[torch.randint(0, min_indices.shape[0], (1, ), generator=self.generator)]
 
             self.actions[batch, 0] = act
             self.actions[batch, 1] = 0
