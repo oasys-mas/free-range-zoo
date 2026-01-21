@@ -1,13 +1,22 @@
-"""Agent that picks the most patched node and continues to patch / attack it, repositioning every three timesteps."""
+"""
+Patched node attacker and defender baselines for cybersecurity environments.
 
-from typing import List, Dict, Any
-import torch
+This module provides baseline agents that focus on the most patched node in the environment, either attacking
+or patching it for a fixed number of steps before selecting a new target. These agents demonstrate focused,
+state-driven strategies for benchmarking purposes.
+"""
+from typing import Any, Dict
+
 import free_range_rust
+import torch
+
 from free_range_zoo.utils.agent import Agent
 
 
 class PatchedAttackerBaseline(Agent):
-    """Agent that picks the most patched node and attacks it for three consecutive steps."""
+    """Attacker agent that targets the most patched node for three steps.
+
+    This agent identifies the node with the highest patch state and attacks it for up to three consecutive steps before selecting a new target. If multiple nodes are equally patched, it randomly selects among them. The agent demonstrates a focused, persistent attack strategy for benchmarking in cybersecurity environments."""
 
     def __init__(self, *args, **kwargs) -> None:
         """Initialize the agent."""
@@ -24,7 +33,7 @@ class PatchedAttackerBaseline(Agent):
         Args:
             action_space: free_range_rust.Space - Current action space available to the agent.
         Returns:
-            torch.IntTensor - List of actions, one for each parallel environment.
+            torch.IntTensor: Tensor of actions, one for each parallel environment.
         """
         return self.actions
 
@@ -72,7 +81,9 @@ class PatchedAttackerBaseline(Agent):
 
 
 class PatchedDefenderBaseline(Agent):
-    """Agent that picks the most patched node and patches it for three consecutive steps."""
+    """Defender agent that patches the most patched node for three steps.
+
+    This agent identifies the node with the highest patch state and patches it for up to three consecutive steps before selecting a new target. If multiple nodes are equally patched, it randomly selects among them. The agent demonstrates a focused, persistent defense strategy for benchmarking in cybersecurity environments."""
 
     def __init__(self, *args, **kwargs) -> None:
         """Initialize the agent."""
@@ -82,14 +93,14 @@ class PatchedDefenderBaseline(Agent):
         self.time_focused = torch.zeros((self.parallel_envs, ), dtype=torch.int32)
         self.actions = torch.zeros((self.parallel_envs, 2), dtype=torch.int32)
 
-    def act(self, action_space: free_range_rust.Space) -> List[List[int]]:
+    def act(self, action_space: free_range_rust.Space) -> torch.IntTensor:
         """
         Return a list of actions, one for each parallel environment.
 
         Args:
             action_space: free_range_rust.Space - Current action space available to the agent.
         Returns:
-            List[List[int]] - List of actions, one for each parallel environment.
+            torch.IntTensor: Tensor of actions, one for each parallel environment.
         """
         return self.actions
 

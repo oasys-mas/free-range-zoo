@@ -1,36 +1,44 @@
-"""Agent that always fights the strongest available fire."""
-from typing import List, Dict, Any
-import torch
+"""
+Strongest fire targeting baseline agent for wildfire environments.
+
+This module provides a baseline agent that always targets the fire with the highest intensity in the wildfire
+environment. If multiple fires share the maximum strength, one is selected at random. This agent is useful for
+benchmarking and as a deterministic control policy.
+"""
+from typing import Any, Dict
+
 import free_range_rust
+import torch
+
 from free_range_zoo.utils.agent import Agent
 
 
 class StrongestBaseline(Agent):
-    """Agent that always fights the strongest available fire."""
+    """
+    Target the strongest available fire in the wildfire environment.
 
-    def __init__(self, *args, **kwargs) -> None:
-        """Initialize the agent."""
-        super().__init__(*args, **kwargs)
+    This baseline agent always selects the fire with the highest intensity for each agent in every parallel
+    environment. If multiple fires share the maximum strength, one is selected at random. Agents without suppressant
+    perform a no-op action.
+    """
 
-        self.actions = torch.zeros((self.parallel_envs, 2), dtype=torch.int32)
-
-    def act(self, action_space: free_range_rust.Space) -> List[List[int]]:
+    def act(self, action_space: free_range_rust.Space) -> torch.IntTensor:
         """
-        Return a list of actions, one for each parallel environment.
+        Select and return actions for each parallel environment.
 
         Args:
-            action_space: free_range_rust.Space - Current action space available to the agent.
+            action_space: free_range_rust.Space - The current action space available to the agent.
         Returns:
-            List[List[int]] - List of actions, one for each parallel environment.
+            torch.IntTensor: Tensor of actions, one for each parallel environment.
         """
         return self.actions
 
     def observe(self, observation: Dict[str, Any]) -> None:
         """
-        Observe the environment.
+        Update internal state with the current environment observation.
 
         Args:
-            observation: Dict[str, Any] - Current observation from the environment.
+            observation: Dict[str, Any] - The current observation from the environment.
         """
         self.observation, self.t_mapping = observation
         self.t_mapping = self.t_mapping['agent_action_mapping']

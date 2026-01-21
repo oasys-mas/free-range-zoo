@@ -1,18 +1,27 @@
-"""Agent that always performs a no-op action."""
-from typing import List
+"""
+Greedy global task selection baseline agent for the rideshare environment.
+
+This module provides a baseline agent that always selects the passenger with the soonest completion globally for each agent in every parallel environment. If multiple passengers share the minimum, one is selected at random. The agent works on a task until completion, performing pickup, dropoff, or accept actions as appropriate, and serves as a deterministic benchmark for rideshare task allocation.
+"""
 import torch
 
 import free_range_rust
+
 from free_range_zoo.utils.agent import Agent
 from free_range_zoo.envs.rideshare.env.transitions.movement import MovementTransition
 from free_range_zoo.envs.rideshare.env.structures.configuration import AgentConfiguration
 
 
 class GreedyTaskGlobal(Agent):
-    """Agent that acts on the soonest to completion passenger. i.e. minimum total distance to completion. (works on a task until completion)"""
+    """
+    Always select the passenger with the soonest completion globally.
 
-    def __init__(self, *args, agent_configuration: AgentConfiguration, **kwargs) -> None:
-        """Initialize the agent."""
+    This baseline agent chooses the globally minimum total distance to completion (pickup plus dropoff) for each
+    agent in every parallel environment. If multiple passengers share the minimum, one is selected at random. The
+    agent will work on a task until completion, performing pickup, dropoff, or accept actions as appropriate.
+    """
+
+    def __init__(self, *args, agent_configuration: AgentConfiguration, **kwargs):
         super().__init__(*args, **kwargs)
 
         self.use_diagonal_travel = agent_configuration.use_diagonal_travel
@@ -23,20 +32,20 @@ class GreedyTaskGlobal(Agent):
             diagonal_travel=self.use_diagonal_travel,
         )
 
-    def act(self, action_space: free_range_rust.Space) -> List[List[int]]:
+    def act(self, action_space: free_range_rust.Space) -> torch.IntTensor:
         """
-        Return a list of actions, one for each parallel environment.
+        Select and return actions for each parallel environment.
 
         Args:
-            action_space: free_range_rust.Space - Current action space available to the agent.
+            action_space: free_range_rust.Space - The current action space available to the agent.
         Returns:
-            List[List[int]] - List of actions, one for each parallel environment.
+            torch.IntTensor: Tensor of actions, one for each parallel environment.
         """
         return self.actions
 
     def observe(self, observation: torch.Tensor) -> None:
         """
-        Observe the current state of the environment.
+        Update internal state with the current environment observation.
 
         Args:
             observation: torch.Tensor - The observation from the environment.

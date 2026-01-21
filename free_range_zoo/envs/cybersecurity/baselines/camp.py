@@ -1,37 +1,38 @@
-"""Agent that moves to the modulo of its agent index and then continually patches."""
+"""Camp defender and patcher baselines for cybersecurity environments.
 
-from typing import List, Dict, Any
-import torch
+This module provides baseline agents for cybersecurity environments that move to a target node (based on agent
+index modulo the number of nodes) and continually patch that node. These agents demonstrate a simple, deterministic
+defense strategy for benchmarking and comparison purposes.
+"""
+from typing import Any, Dict
 import free_range_rust
+import torch
+
 from free_range_zoo.utils.agent import Agent
 
 
 class CampDefenderBaseline(Agent):
-    """Agent that moves to the modulo of its agent index and then continually patches."""
+    """Defender agent that moves to a target node and continually patches it.
 
-    def __init__(self, *args, **kwargs) -> None:
-        """Initialize the agent."""
-        super().__init__(*args, **kwargs)
+    This agent selects a target node based on its agent index modulo the number of nodes, moves to that node,
+    and repeatedly issues patch actions as long as it remains present. If the agent is absent, it performs a
+    no-op. This baseline demonstrates a simple, deterministic defense strategy for cybersecurity environments.
+    """
 
-        self.agent_index = int(self.agent_name.split('_')[-1])
-
-        self.target_node = -1
-        self.actions = torch.zeros((self.parallel_envs, 2), dtype=torch.int32)
-
-    def act(self, action_space: free_range_rust.Space) -> List[List[int]]:
+    def act(self, action_space: free_range_rust.Space) -> torch.IntTensor:
         """
-        Return a list of actions, one for each parallel environment.
+        Select and return actions for each parallel environment.
 
         Args:
-            action_space: free_range_rust.Space - Current action space available to the agent.
+            action_space: free_range_rust.Space - The current action space available to the agent.
         Returns:
-            List[List[int]] - List of actions, one for each parallel environment.
+            torch.IntTensor: Tensor of actions, one for each parallel environment.
         """
         return self.actions
 
     def observe(self, observation: Dict[str, Any]) -> None:
         """
-        Observe the environment.
+        Update internal state with the current environment observation.
 
         Args:
             observation: Dict[str, Any] - Current observation from the environment.

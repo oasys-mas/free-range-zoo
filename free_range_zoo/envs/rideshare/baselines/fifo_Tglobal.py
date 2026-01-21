@@ -1,28 +1,34 @@
-"""Agent that always performs a no-op action."""
-from typing import List
+"""
+Global FIFO passenger selection baseline agent for the rideshare environment.
+
+This module provides a baseline agent that always selects the globally earliest-arrived passenger for each agent in
+every parallel environment. If multiple passengers share the earliest arrival, one is selected at random. The agent
+performs pickup, dropoff, or accept actions as appropriate based on passenger state, serving as a deterministic
+benchmark for rideshare task allocation.
+"""
+import free_range_rust
 import torch
 
-import free_range_rust
 from free_range_zoo.utils.agent import Agent
 
 
 class FirstInFirstOutTglobalBaseline(Agent):
-    """Agent that always acts on the first arrived passenger."""
+    """
+    Always select the first arrived passenger globally in the rideshare environment.
 
-    def __init__(self, *args, **kwargs) -> None:
-        """Initialize the agent."""
-        super().__init__(*args, **kwargs)
+    This baseline agent always chooses the globally earliest-arrived passenger for each agent in every parallel
+    environment. If multiple passengers share the earliest arrival, one is selected at random. The agent will
+    perform pickup, dropoff, or accept actions as appropriate based on passenger state.
+    """
 
-        self.actions = torch.zeros((self.parallel_envs, 2), dtype=torch.int32)
-
-    def act(self, action_space: free_range_rust.Space) -> List[List[int]]:
+    def act(self, action_space: free_range_rust.Space) -> torch.IntTensor:
         """
         Return a list of actions, one for each parallel environment.
 
         Args:
             action_space: free_range_rust.Space - Current action space available to the agent.
         Returns:
-            List[List[int]] - List of actions, one for each parallel environment.
+            torch.IntTensor: Tensor of actions, one for each parallel environment.
         """
         return self.actions
 
