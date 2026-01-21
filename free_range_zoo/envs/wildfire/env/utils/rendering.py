@@ -18,6 +18,32 @@ this_dir = os.path.dirname(__file__)
 ########################################################
 #                IMAGE AND COLOR HELPERS              #
 ########################################################
+def find_fire_position_by_global_id(intensity_2d, global_fire_id):
+    """
+    Find the (row, col) position of a fire given its global fire ID.
+    
+    Global fire IDs are assigned in row-major order by scanning all cells
+    with active fires (intensity in {1, 2, 3}).
+    
+    Args:
+        intensity_2d : 2D list of fire intensities
+        global_fire_id : the global fire ID to find
+    Returns:
+        (row, col) of the fire, or None if not found
+    """
+    H = len(intensity_2d)
+    W = len(intensity_2d[0]) if H > 0 else 0
+    
+    fire_count = 0
+    for r in range(H):
+        for c in range(W):
+            if intensity_2d[r][c] in (1, 2, 3):
+                if fire_count == global_fire_id:
+                    return (r, c)
+                fire_count += 1
+    return None
+
+
 def resolve_fire_target_clockwise(intensity_2d, agent_row, agent_col, fire_rank, rng=1):
     """
     fire_rank = k-th *active* fire cell in clockwise order within Chebyshev range <= rng.
