@@ -401,13 +401,8 @@ def render(path: str,
     step_to_idx = {int(row['step']): i for i, row in df.iterrows()}
     all_steps = sorted(step_to_idx.keys())
     
-    # Skip the first step since there's no previous action_map for it
-    # (Logs show <s', a> format: action_map at row n-1 applies to action at row n)
-    if len(all_steps) > 1:
-        steps = all_steps[1:]  # Start from second step
-    else:
-        print("Only one step in data, cannot render (no previous action_map available)")
-        return None
+    # Render all steps; for the first step (no previous action_map), we skip drawing arrows
+    steps = all_steps
     
     min_step = min(steps)
     max_step = max(steps)
@@ -617,7 +612,7 @@ def render(path: str,
         draw_time(window, t, screen_size, font)
 
         # Extra text: episode name, current step (show actual step number from CSV)
-        episode_info_text = f"Log: {episode_name_str}  Step: {current_step} ({t+1}/{num_steps})"
+        episode_info_text = f"Log: {episode_name_str}  Step: {t+1}/{num_steps}"
         episode_info_surf = small_font.render(episode_info_text, True, (0, 0, 0))
         window.blit(episode_info_surf, (slider_x, screen_size + 5))
 
@@ -723,20 +718,28 @@ def render(path: str,
                         # when action at row n was taken
                         action_map_col = f'firefighter_{obj["id"] + 1}_action_map'
                         action_map = []
+                        has_prev_step = False
                         
                         # Current step value and find the previous step in all_steps
                         current_step_val = steps[t]
                         all_steps_idx = all_steps.index(current_step_val)
                         
-                        # Since we skip step 0, there's always a previous step
-                        prev_step = all_steps[all_steps_idx - 1]
-                        prev_df_idx = step_to_idx[prev_step]
-                        if action_map_col in df.columns:
-                            action_map = df[action_map_col].iloc[prev_df_idx]
+                        # Check if there's a previous step
+                        if all_steps_idx > 0:
+                            has_prev_step = True
+                            prev_step = all_steps[all_steps_idx - 1]
+                            prev_df_idx = step_to_idx[prev_step]
+                            if action_map_col in df.columns:
+                                action_map = df[action_map_col].iloc[prev_df_idx]
                         
+                        # If no previous step, just show "" without arrow
+                        if not has_prev_step:
+                            z_surf = big_font.render("", True, (0, 0, 250))
+                            z_rect = z_surf.get_rect(center=(draw_x + 45, draw_y + img_height + 35))
+                            window.blit(z_surf, z_rect)
                         # If action_map is empty but agent tries to suppress, that's an error
                         # Per Daniel Redder: "The case where an agent fights a fire not in action_map is impossible. Throw an error."
-                        if not isinstance(action_map, list) or len(action_map) == 0:
+                        elif not isinstance(action_map, list) or len(action_map) == 0:
                             error_msg = f"ERROR: Agent {obj['id']} action [{fire_num}, {power}] but action_map is empty at prev step!"
                             print(error_msg)
                             z_surf = big_font.render("ERR: EMPTY MAP", True, (255, 0, 0))
