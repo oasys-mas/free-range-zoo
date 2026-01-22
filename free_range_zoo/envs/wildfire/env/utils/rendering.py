@@ -573,17 +573,13 @@ def render(path: str,
                 if event.type == pygame.MOUSEMOTION and dragging_slider:
                     slider_position = max(0, min(event.pos[0] - slider_x, slider_width))
 
-        # -------------------- Auto-advance if playing --------------------
+        # -------------------- Auto-advance if playing (human mode only here) --------------------
         if render_mode == "human":
             if is_playing and (time.time() - last_time >= 1.0) and not dragging_slider:
                 last_time = time.time()
                 if max_time > 0:
                     # Move the slider by one frame
                     slider_position = min(slider_width, slider_position + slider_width / max_time)
-        else:
-            # In rgb_array mode, move forward automatically each loop
-            if max_time > 0:
-                slider_position = min(slider_width, slider_position + slider_width / max_time)
 
         # Compute current time-step from slider (t is index into steps list)
         t = int((slider_position / slider_width) * max_time)
@@ -795,6 +791,10 @@ def render(path: str,
             # Convert to array and store
             arr = pygame.surfarray.array3d(window)
             frames.append(arr)
+
+            # Advance slider for next frame (after capturing current frame)
+            if max_time > 0:
+                slider_position = min(slider_width, slider_position + slider_width / max_time)
 
             # If at last time-step, stop
             if t == max_time:
