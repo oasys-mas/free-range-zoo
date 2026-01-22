@@ -157,9 +157,9 @@ class AgentGridPlacer:
         
         # Defenders are closer to center, attackers are at the edge
         if agent_type == 'defender':
-            edge_offset = 65  # Distance from edge for defenders (inner)
+            edge_offset = 55  # Distance from edge for defenders (inner)
         else:
-            edge_offset = 65  # Distance from edge for attackers (outer)
+            edge_offset = 55  # Distance from edge for attackers (outer) same for both for now,
         
         # Find an available sub-slot for this node
         occupied = self.occupied[node_idx]
@@ -169,19 +169,19 @@ class AgentGridPlacer:
         occupied.add(sub_slot)
         
         # Sub-slot offset with padding (spread multiple agents targeting same node)
-        slot_spacing = 120  # Padding between agents
+        slot_spacing = 100  # Padding between agents
         sub_offset = sub_slot * slot_spacing
         
         # Position agent on the edge, aligned with the node's coordinate
         if side == 'left':
-            x = self.margin + edge_offset
+            x = self.margin + edge_offset +30
             y = edge_coord + sub_offset
         elif side == 'right':
             x = self.screen_size - self.margin - edge_offset
             y = edge_coord + sub_offset
         elif side == 'top':
-            x = edge_coord + sub_offset
-            y = self.margin + edge_offset
+            x = edge_coord + sub_offset + 30
+            y = self.margin + edge_offset + 20
         else:  # bottom
             x = edge_coord + sub_offset
             y = self.screen_size - self.margin - edge_offset
@@ -529,7 +529,7 @@ def render(path: str,
             t = draw_slider(window, slider_x, slider_y, slider_width, slider_height, slider_position, max_time, t)
             draw_button(window, is_playing, button_x, button_y, button_size)
 
-        draw_time(window, t, screen_size, font)
+        # draw_time(window, t, screen_size, font)
 
         info_text = f"Log: {episode_name_str} | Step: {t}/{max_time}"
         info_surf = small_font.render(info_text, True, (0, 0, 0))
@@ -582,9 +582,22 @@ def render(path: str,
             label_rect = label_surf.get_rect(center=(nx, ny))
             window.blit(label_surf, label_rect)
 
-            # Show latency
+            # Show latency - position based on node's side
             lat_surf = small_font.render(f"latency={latency}", True, (0, 0, 0))
-            window.blit(lat_surf, (nx - 25, ny + 22))
+            # Determine node side based on angle from center
+            angle = math.atan2(ny - center_y, nx - center_x)
+            deg = math.degrees(angle)
+            lat_offset = 20  # Distance from node center
+            
+            if -45 <= deg < 45:  # Right side -> latency on left
+                lat_rect = lat_surf.get_rect(midright=(nx - lat_offset, ny))
+            elif 45 <= deg < 135:  # Bottom side -> latency on top
+                lat_rect = lat_surf.get_rect(midbottom=(nx, ny - lat_offset))
+            elif deg >= 135 or deg < -135:  # Left side -> latency on right
+                lat_rect = lat_surf.get_rect(midleft=(nx + lat_offset, ny))
+            else:  # Top side (-135 to -45) -> latency on bottom
+                lat_rect = lat_surf.get_rect(midtop=(nx, ny + lat_offset))
+            window.blit(lat_surf, lat_rect)
 
         # Separate defenders/attackers by name
         all_agent_names = sorted(agent_data.keys())
