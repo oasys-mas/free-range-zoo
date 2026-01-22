@@ -181,7 +181,7 @@ class AgentGridPlacer:
             y = edge_coord + sub_offset
         elif side == 'top':
             x = edge_coord + sub_offset + 30
-            y = self.margin + edge_offset + 20
+            y = self.margin + edge_offset + 10
         else:  # bottom
             x = edge_coord + sub_offset
             y = self.screen_size - self.margin - edge_offset
@@ -243,6 +243,22 @@ def _point_on_node_edge(node_center, agent_pos, NODE_RADIUS=20):
     if dist < 1e-9:
         return (nx, ny)
     ratio = (dist - NODE_RADIUS) / dist
+    return (ax + ratio * dx, ay + ratio * dy)
+
+
+def _arrow_start_from_agent(agent_pos, target_pos, AGENT_RADIUS=25):
+    """
+    Helper that computes where an arrow should start from an agent's edge.
+    """
+    ax, ay = agent_pos
+    tx, ty = target_pos
+    dx = tx - ax
+    dy = ty - ay
+    dist = math.hypot(dx, dy)
+    if dist < 1e-9:
+        return (ax, ay)
+    # Move start point AGENT_RADIUS pixels toward the target
+    ratio = AGENT_RADIUS / dist
     return (ax + ratio * dx, ay + ratio * dy)
 
 
@@ -648,8 +664,9 @@ def render(path: str,
                 target_idx, code = action_list
                 if isinstance(target_idx, int) and 0 <= target_idx < total_nodes:
                     tx, ty = node_positions[target_idx]
+                    sx, sy = _arrow_start_from_agent((dx, dy), (tx, ty), AGENT_RADIUS=25)
                     ex, ey = _point_on_node_edge((tx, ty), (dx, dy), NODE_RADIUS=NODE_RADIUS)
-                    draw_aaline_arrow(window, (0, 255, 0), (dx, dy), (ex, ey), width=3)
+                    draw_aaline_arrow(window, (0, 255, 0), (sx, sy), (ex, ey), width=3)
 
                 a_str = action_name(code)
                 a_surf = small_font.render(a_str, True, (0, 255, 0))
@@ -699,8 +716,9 @@ def render(path: str,
             if has_valid_action:
                 a_str = action_name(code)
                 tx, ty = node_positions[target_idx]
+                sx, sy = _arrow_start_from_agent((ax, ay), (tx, ty), AGENT_RADIUS=25)
                 ex, ey = _point_on_node_edge((tx, ty), (ax, ay), NODE_RADIUS=NODE_RADIUS)
-                draw_aaline_arrow(window, (255, 0, 0), (ax, ay), (ex, ey), width=3)
+                draw_aaline_arrow(window, (255, 0, 0), (sx, sy), (ex, ey), width=3)
 
                 a_surf = small_font.render(a_str, True, (255, 0, 0))
                 a_rect = a_surf.get_rect(midbottom=(ax, ay - 25))
