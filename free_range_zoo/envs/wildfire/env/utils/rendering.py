@@ -18,100 +18,32 @@ this_dir = os.path.dirname(__file__)
 ########################################################
 #                IMAGE AND COLOR HELPERS              #
 ########################################################
-def find_fire_position_by_global_id(intensity_2d, global_fire_id):
+def find_fire_position_by_global_id(intensity_2d, global_fire_id, max_intensity=3):
     """
     Find the (row, col) position of a fire given its global fire ID.
     
     Global fire IDs are assigned in row-major order by scanning all cells
-    with active fires (intensity in {1, 2, 3}).
+    with active fires (intensity in range 1 to max_intensity inclusive).
     
     Args:
         intensity_2d : 2D list of fire intensities
         global_fire_id : the global fire ID to find
+        max_intensity : maximum intensity value for active fires (default: 3)
     Returns:
         (row, col) of the fire, or None if not found
     """
     H = len(intensity_2d)
     W = len(intensity_2d[0]) if H > 0 else 0
+    active_intensities = tuple(range(1, max_intensity + 1))
     
     fire_count = 0
     for r in range(H):
         for c in range(W):
-            if intensity_2d[r][c] in (1, 2, 3):
+            if intensity_2d[r][c] in active_intensities:
                 if fire_count == global_fire_id:
                     return (r, c)
                 fire_count += 1
     return None
-
-
-def resolve_fire_target_clockwise(intensity_2d, agent_row, agent_col, fire_rank, rng=1):
-    """
-    fire_rank = k-th *active* fire cell in clockwise order within Chebyshev range <= rng.
-    Active means intensity in {1,2,3}. Burnout (4) is excluded.
-    Returns (row, col) or None.
-
-    Args:
-        intensity_2d : 2D list of fire intensities
-        agent_row    : agent's row position
-        agent_col    : agent's column position
-        fire_rank    : kth active fire to target (0-based)
-        rng          : Chebyshev range to search within
-    Returns:
-        (row, col) of target fire cell, or None if not found
-    """
-    H = len(intensity_2d)
-    W = len(intensity_2d[0]) if H > 0 else 0
-
-    def ring_perimeter(d):
-        cells = []
-        top = agent_row - d
-        bottom = agent_row + d
-        left = agent_col - d
-        right = agent_col + d
-
-        # (agent_row, left), then go UP to top-left
-        for r in range(agent_row, top - 1, -1):  # left edge, up
-            cells.append((r, left))
-
-        # Top edge: left+1 -> right
-        for c in range(left + 1, right + 1):  # top edge, right
-            cells.append((top, c))
-
-        # Right edge: top+1 -> bottoma
-        for r in range(top + 1, bottom + 1):  # right edge, down
-            cells.append((r, right))
-
-        # Bottom edge: right-1 -> left
-        for c in range(right - 1, left - 1, -1):  # bottom edge, left
-            cells.append((bottom, c))
-
-        # Left edge: bottom-1 -> agent_row+1 (back up, without repeating start)
-        for r in range(bottom - 1, agent_row, -1):  # left edge, up
-            cells.append((r, left))
-
-        return cells
-
-    candidates = []
-    for d in range(1, rng + 1):
-        for r, c in ring_perimeter(d):
-            if 0 <= r < H and 0 <= c < W:
-                inten = intensity_2d[r][c]
-                if inten in (1, 2, 3):
-                    candidates.append((r, c))
-
-    if not candidates:
-        return None
-
-    try:
-        k = int(fire_rank)
-    except Exception as e:
-        return None
-
-    if k < 0 or k >= len(candidates):
-        return None
-
-    return candidates[k]
-
 
 def render_image(path, cell_size: int):
     """
@@ -312,7 +244,8 @@ def draw_arrow(window, start_pos, end_pos, cell_size, x_offset, y_offset, use_wa
 def render(path: str,
            render_mode: str = "human",
            frame_rate: Optional[int] = 15,
-           checkpoint: Optional[int] = None) -> Union[None, list]:
+           checkpoint: Optional[int] = None,
+           max_intensity: int = 3) -> Union[None, list]:
     """
     Renders the wildfire environment from a single CSV log (path).
 
@@ -321,6 +254,9 @@ def render(path: str,
         render_mode : "human" or "rgb_array"
         frame_rate  : integer FPS if in "human" mode; if None => no throttle
         checkpoint  : if not None, filter steps by 'label' in CSV that match checkpoint
+        max_intensity : maximum intensity value for active fires (default: 3).
+                       Active fires have intensity in range 1 to max_intensity inclusive.
+                       Burnout is max_intensity + 1.
 
     Returns:
         None (if render_mode="human"), or
@@ -756,7 +692,7 @@ def render(path: str,
                             # Find the position of this global fire ID using the ORIGINAL (unshifted) intensity
                             # The action_map corresponds to fires visible in the original intensity at prev step
                             prev_orig_intensity = df['_original_intensity'].iloc[prev_df_idx]
-                            target = find_fire_position_by_global_id(prev_orig_intensity, global_fire_id)
+                            target = find_fire_position_by_global_id(prev_orig_intensity, global_fire_id, max_intensity)
 
                             if target is None:
                                 # Fire may have been extinguished between steps
