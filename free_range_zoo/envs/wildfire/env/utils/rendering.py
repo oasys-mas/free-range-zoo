@@ -3,6 +3,7 @@ from typing import Union, Optional
 import os
 import time
 import math
+import traceback
 from copy import deepcopy
 from collections import defaultdict
 from ast import literal_eval
@@ -674,17 +675,35 @@ def render(path: str,
                         elif not isinstance(action_map, list) or len(action_map) == 0:
                             error_msg = f"ERROR: Agent {obj['id']} action [{fire_num}, {power}] but action_map is empty at prev step!"
                             print(error_msg)
+                            print(traceback.format_exc())
                             z_surf = big_font.render("ERR: EMPTY MAP", True, (255, 0, 0))
                             z_rect = z_surf.get_rect(center=(draw_x + 45, draw_y + img_height + 35))
                             window.blit(z_surf, z_rect)
-                            raise ValueError(error_msg)
+                            # Display error details at bottom of screen
+                            err_lines = [
+                                f"ERROR at Step {current_step}: Agent {obj['id']} action [{fire_num}, {power}]",
+                                f"action_map is empty at prev step (step {prev_step if has_prev_step else 'N/A'})",
+                                f"Agent position: row={obj['row']}, col={obj['col']}"
+                            ]
+                            for err_idx, err_line in enumerate(err_lines):
+                                err_surf = small_font.render(err_line, True, (255, 0, 0))
+                                window.blit(err_surf, (10, screen_size + 60 + err_idx * 18))
                         elif fire_num >= len(action_map):
                             error_msg = f"ERROR: Agent {obj['id']} action index {fire_num} out of range for action_map {action_map}!"
                             print(error_msg)
+                            print(traceback.format_exc())
                             z_surf = big_font.render("ERR: IDX OOB", True, (255, 0, 0))
                             z_rect = z_surf.get_rect(center=(draw_x + 45, draw_y + img_height + 35))
                             window.blit(z_surf, z_rect)
-                            raise ValueError(error_msg)
+                            # Display error details at bottom of screen
+                            err_lines = [
+                                f"ERROR at Step {current_step}: Agent {obj['id']} action index {fire_num} out of range",
+                                f"action_map has {len(action_map)} entries: {action_map}",
+                                f"Agent position: row={obj['row']}, col={obj['col']}"
+                            ]
+                            for err_idx, err_line in enumerate(err_lines):
+                                err_surf = small_font.render(err_line, True, (255, 0, 0))
+                                window.blit(err_surf, (10, screen_size + 60 + err_idx * 18))
                         else:
                             # fire_num is an index into action_map, giving us the global fire ID
                             global_fire_id = action_map[fire_num]
