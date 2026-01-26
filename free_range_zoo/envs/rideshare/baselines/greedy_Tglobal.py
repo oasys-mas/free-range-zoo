@@ -53,7 +53,7 @@ class GreedyTaskGlobal(Agent):
         self.observation, self.t_mapping = observation
         self.t_mapping = self.t_mapping['agent_action_mapping']
 
-        #no passengers, (all accepted by other agents)
+        # no passengers, (all accepted by other agents)
         if all([self.observation['tasks'][i].size(0) == 0 for i in range(self.parallel_envs)]):
             self.actions.fill_(-1)
             return
@@ -87,19 +87,19 @@ class GreedyTaskGlobal(Agent):
                 act = min_indices[torch.randint(0, min_indices.shape[0], (1, ), generator=self.generator)]
             self.actions[batch, 0] = act
 
-            #dropoff
+            # dropoff
             if riding[batch][self.actions[batch, 0]]:
                 self.actions[batch, 1] = 2
 
-            #pickup
+            # pickup
             elif accepted[batch][self.actions[batch, 0]]:
                 self.actions[batch, 1] = 1
 
-            #accept
+            # accept
             elif unaccepted[batch][self.actions[batch, 0]]:
                 self.actions[batch, 1] = 0
 
-            #noop
+            # noop
             else:
                 raise ValueError(
                     "Invalid Observation, if this is reached there exists >=1 passenger, but that passenger has no features")

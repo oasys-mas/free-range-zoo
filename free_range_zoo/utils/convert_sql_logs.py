@@ -20,12 +20,25 @@ logger = logging.getLogger('free_range_zoo')
 
 @event.listens_for(Engine, "before_cursor_execute")
 def intercept_read_only_writes(conn, cursor, statement, parameters, context, executemany):
+    """
+    Catch function to prevent writes on read-only connections
+
+    Args:
+        conn: SQLAlchemy Connection
+        cursor: DBAPI Cursor
+        statement: The SQL statement to be executed
+        parameters: The parameters for the SQL statement
+        context: Execution context
+        executemany: Boolean indicating if executemany is used
+    Raises:
+        RuntimeError: If a write operation is attempted on a read-only connection
+    """
+
     if conn.get_execution_options().get("is_readonly"):
-        #find writes
+        # find writes
         forbidden_keywords = ['INSERT', 'UPDATE', 'DELETE', 'DROP', 'ALTER', 'TRUNCATE']
         clean_statement = statement.strip().upper()
 
-        #!kill if write attempted...
         if any(clean_statement.startswith(kw) for kw in forbidden_keywords):
             raise RuntimeError(f"Write operation '{clean_statement.split()[0]}' blocked in read-only connection.")
 
@@ -80,7 +93,7 @@ class SQLLogConverter:
             name (Optional[str], optional): Partial Name of the episode to retrieve. Defaults to None.
             desc (Optional[str], optional): Partial Description of the episode to retrieve. Defaults to None.
             simulation_index (Optional[int], optional): Simulation index of the episode to retrieve. Defaults to None.
-        
+
         Writes:
             simulationindex_name \forall matching simulations
                 - environment_id.csv \forall matching episodes
@@ -124,8 +137,8 @@ class SQLLogConverter:
             for sim_ind, sim_name in sim_indices:
                 try:
                     os.makedirs(os.path.join(output_directory, f"{sim_ind}_{sim_name}"), exist_ok=False)
-                except:
-                    warnings.warn(f"Output directory for simulation '{sim_ind}_{sim_name}' already exists.")
+                except Exception as e:
+                    warnings.warn(f"Output directory for simulation '{sim_ind}_{sim_name}' already exists. Error: {e}")
                     if override_initialization_check:
                         logger.warning("Override flag set. Continuing and potentially overwriting existing files.")
                     else:
@@ -204,7 +217,7 @@ class SQLLogConverter:
         env_features = env_features.drop(columns=['id'], errors='ignore')
         time_env = pd.merge(time, env_features, left_on='id', right_on='simulation_timestep_id')
 
-        #to help with arbirary agent column renaming
+        # to help with arbirary agent column renaming
         agents = agents.drop(columns=['id'], errors='ignore').add_prefix('agent_')
         agents = agents.rename(columns={'agent_simulation_timestep_id': 'simulation_timestep_id', 'agent_agent_id': 'agent_id'})
 

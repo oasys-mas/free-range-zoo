@@ -23,7 +23,8 @@ class ActionSpaceValidatorModifier(BaseModifier):
         Args:
             env: BatchedAECEnv - The environment to wrap.
             subject_agent: str - The subject agent of the graph wrapper.
-            allow_flexible_task_tags: bool - Whether to allow task-agnostic actions to be used for any task instead of just the task-agnostic task.
+            allow_flexible_task_tags: bool - Whether to allow task-agnostic actions
+                to be used for any task instead of just the task-agnostic task.
         """
         self.env = env
         self.allow_flexible_task_tags = allow_flexible_task_tags

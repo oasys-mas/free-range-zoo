@@ -16,8 +16,8 @@ def list_wrappers(env):
     while hasattr(current, "env") or hasattr(current, "aec_env"):
         wrappers.append(type(current).__name__)
         if isinstance(current, shared_wrapper_parr) or \
-            isinstance(current, shared_wrapper_gym) or \
-            isinstance(current, shared_wrapper_aec):
+                isinstance(current, shared_wrapper_gym) or \
+                isinstance(current, shared_wrapper_aec):
             wrappers[-1] = wrappers[-1] + f":{current.modifier_class}"
 
         current = current.env if hasattr(current, "env") else current.aec_env

@@ -1,6 +1,6 @@
 import torch
 
-from free_range_zoo.envs.rideshare.env.structures.configuration import RewardConfiguration,\
+from free_range_zoo.envs.rideshare.env.structures.configuration import RewardConfiguration, \
     PassengerConfiguration, AgentConfiguration, RideshareConfiguration
 
 
@@ -30,7 +30,7 @@ def non_stochastic():
         long_wait_cost=-.2,
     )
 
-    #simple batch independent schedule
+    # simple batch independent schedule
     schedule = torch.tensor([
         [0, -1, 1, 1, 1, 1, 1],
         [1, -1, 1, 1, 1, 1, 2],

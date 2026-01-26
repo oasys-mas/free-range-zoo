@@ -1,3 +1,4 @@
+import warnings
 from typing import Union, Optional
 import os
 import time
@@ -17,14 +18,14 @@ def render_image(path: str, size: int):
     return pygame.transform.scale(image, (size, size))
 
 
-def draw_aaline_arrow(window, color, start, end, width=2):
+def draw_aaline_arrow(window, color, start, end, width=3):
     """
-    Draw a smoother (anti-aliased) arrow line from start -> end.
+    Draw a thicker arrow line from start -> end.
     """
-    pygame.draw.aaline(window, color, start, end, True)
+    pygame.draw.line(window, color, start, end, width)
 
     angle = math.atan2(end[1] - start[1], end[0] - start[0])
-    arrowhead_length = 10
+    arrowhead_length = 12
     arrowhead_angle = math.radians(30)
     p1 = (end[0] - arrowhead_length * math.cos(angle - arrowhead_angle),
           end[1] - arrowhead_length * math.sin(angle - arrowhead_angle))
@@ -57,6 +58,137 @@ def distribute_angles(n_agents, total_angle_degs=40):
     for i in range(n_agents):
         offsets.append(start + i * step)
     return offsets
+
+
+class AgentGridPlacer:
+    """
+    Hidden grid system for placing agents on the outer edges based on node position.
+    Nodes are classified as left/right/top/bottom based on their angle from center.
+    Agents are placed directly aligned with their target node's position on the edge,
+    with sub-slots for multiple agents targeting the same node.
+    Defenders and attackers share the same grid to avoid overlapping.
+    """
+
+    def __init__(self, node_positions, center_x, center_y, screen_size, margin=-20):
+        self.node_positions = node_positions
+        self.center_x = center_x
+        self.center_y = center_y
+        self.screen_size = screen_size
+        self.margin = margin
+
+        # Classify each node as left, right, top, or bottom and store its actual coordinate
+        self.node_sides = {}
+        self.node_edge_coord = {}  # The coordinate along the edge (y for left/right, x for top/bottom)
+
+        for idx, (nx, ny) in enumerate(node_positions):
+            angle = math.atan2(ny - center_y, nx - center_x)
+            deg = math.degrees(angle)
+
+            # Classify side and store the relevant coordinate
+            if -45 <= deg < 45:
+                side = 'right'
+                edge_coord = ny  # Use node's y position
+            elif 45 <= deg < 135:
+                side = 'bottom'
+                edge_coord = nx  # Use node's x position
+            elif deg >= 135 or deg < -135:
+                side = 'left'
+                edge_coord = ny  # Use node's y position
+            else:  # -135 <= deg < -45
+                side = 'top'
+                edge_coord = nx  # Use node's x position
+
+            self.node_sides[idx] = side
+            self.node_edge_coord[idx] = edge_coord
+
+        # Track occupied slots per node: {node_idx: set of sub_slot indices}
+        # SHARED grid for both defenders and attackers
+        self.occupied = {idx: set() for idx in range(len(node_positions))}
+
+        # Separate grid for inactive agents (??? mode) at the bottom center
+        self.inactive_slot = 0
+
+    def reset(self):
+        """Clear all occupied slots for a new frame."""
+        for key in self.occupied:
+            self.occupied[key].clear()
+        self.inactive_slot = 0
+
+    def get_inactive_position(self, agent_type):
+        """
+        Get a position for an inactive agent (??? mode) on a 2-row grid at the bottom.
+        Uses 2 rows with good padding between agents.
+        """
+        slot = self.inactive_slot
+        self.inactive_slot += 1
+
+        # Layout: 2 rows, spread horizontally with good padding
+        slot_spacing = 100  # Horizontal space between agents
+        row_spacing = 20  # Vertical space between rows (doubled)
+        agents_per_row = 6  # Max agents per row before wrapping
+
+        # Determine row (0 = bottom row, 1 = second row from bottom)
+        row = slot // agents_per_row
+        col = slot % agents_per_row
+
+        # Center the agents horizontally
+        center_x = self.screen_size // 2
+        row_width = (agents_per_row - 1) * slot_spacing
+        start_x = center_x - row_width // 2
+
+        x = start_x + col * slot_spacing
+
+        # Y position: bottom row first, then second row above it
+        bottom_margin = 35
+        y = self.screen_size - bottom_margin - row * row_spacing
+
+        return (x, y)
+
+    def get_node_side(self, node_idx):
+        """Get which side a node is on."""
+        return self.node_sides.get(node_idx, 'right')
+
+    def get_position(self, node_idx, agent_type):
+        """
+        Get a position for an agent directly aligned with the target node.
+        Agent is placed on the edge corresponding to the node's side,
+        at the same coordinate as the node (y for left/right, x for top/bottom).
+        """
+        side = self.node_sides.get(node_idx, 'right')
+        edge_coord = self.node_edge_coord.get(node_idx, self.screen_size // 2)
+
+        # Defenders are closer to center, attackers are at the edge
+        if agent_type == 'defender':
+            edge_offset = 55  # Distance from edge for defenders (inner)
+        else:
+            edge_offset = 55  # Distance from edge for attackers (outer) same for both for now,
+
+        # Find an available sub-slot for this node
+        occupied = self.occupied[node_idx]
+        sub_slot = 0
+        while sub_slot in occupied:
+            sub_slot += 1
+        occupied.add(sub_slot)
+
+        # Sub-slot offset with padding (spread multiple agents targeting same node)
+        slot_spacing = 100  # Padding between agents
+        sub_offset = sub_slot * slot_spacing
+
+        # Position agent on the edge, aligned with the node's coordinate
+        if side == 'left':
+            x = self.margin + edge_offset + 30
+            y = edge_coord + sub_offset
+        elif side == 'right':
+            x = self.screen_size - self.margin - edge_offset
+            y = edge_coord + sub_offset
+        elif side == 'top':
+            x = edge_coord + sub_offset + 30
+            y = self.margin + edge_offset + 10
+        else:  # bottom
+            x = edge_coord + sub_offset
+            y = self.screen_size - self.margin - edge_offset
+
+        return (x, y)
 
 
 def action_name(action_value):
@@ -116,6 +248,22 @@ def _point_on_node_edge(node_center, agent_pos, NODE_RADIUS=20):
     return (ax + ratio * dx, ay + ratio * dy)
 
 
+def _arrow_start_from_agent(agent_pos, target_pos, AGENT_RADIUS=25):
+    """
+    Helper that computes where an arrow should start from an agent's edge.
+    """
+    ax, ay = agent_pos
+    tx, ty = target_pos
+    dx = tx - ax
+    dy = ty - ay
+    dist = math.hypot(dx, dy)
+    if dist < 1e-9:
+        return (ax, ay)
+    # Move start point AGENT_RADIUS pixels toward the target
+    ratio = AGENT_RADIUS / dist
+    return (ax + ratio * dx, ay + ratio * dy)
+
+
 def render(path: str,
            render_mode: str = "human",
            frame_rate: Optional[int] = 15,
@@ -137,7 +285,8 @@ def render(path: str,
                (s.startswith("{") and s.endswith("}")):
                 try:
                     return literal_eval(s)
-                except:
+                except Exception as e:
+                    warnings.warn(f"Could not literal_eval column value: {s}. Error: {e}")
                     pass
         return val
 
@@ -176,15 +325,15 @@ def render(path: str,
                 node_idx = ns[1]
                 if isinstance(node_idx, int) and node_idx > max_node_index:
                     max_node_index = node_idx
-        total_nodes = max_node_index
+        total_nodes = max_node_index + 1
     # else:
     # fallback if no network_state column => you can define a default or skip
     # total_nodes = 5  # Just some fallback; or read from somewhere else
 
-    screen_size = 700
-    bottom_ui_height = 120
-    window_width = screen_size
-    window_height = screen_size + bottom_ui_height
+    screen_size = 800  # 700 * 1.3 = 910 (30% bigger)
+    bottom_ui_height = 150
+    window_width = 900
+    window_height = 900
 
     if render_mode == "human":
         window = pygame.display.set_mode((window_width, window_height))
@@ -198,21 +347,20 @@ def render(path: str,
         node_img_exploited = render_image(os.path.join(this_dir, "..", "assets", "node_exploited.png"), 40)
         node_img_patched = render_image(os.path.join(this_dir, "..", "assets", "node_patched.png"), 40)
         node_img_normal = render_image(os.path.join(this_dir, "..", "assets", "node_normal.png"), 40)
-    except:
-        node_img_exploited = None
-        node_img_patched = None
-        node_img_normal = None
+    except Exception as e:
+        warnings.warn(f"Could not load node images. Error: {e}")
+        raise e
 
     try:
         attacker_img = render_image(os.path.join(this_dir, this_dir, "..", "assets", "attacker.png"), 40)
         defender_img = render_image(os.path.join(this_dir, this_dir, "..", "assets", "defender.png"), 40)
-    except:
-        attacker_img = None
-        defender_img = None
+    except Exception as e:
+        warnings.warn(f"Could not load attacker/defender images. Error: {e}")
+        raise e
 
     center_x = screen_size // 2
     center_y = screen_size // 2
-    circle_radius = 200
+    circle_radius = 260  # 200 * 1.3 = 260 (30% bigger)
     node_positions = circular_layout(total_nodes, center_x, center_y, circle_radius)
 
     # Identify any attacker/defender columns dynamically
@@ -291,7 +439,8 @@ def render(path: str,
             else:
                 try:
                     def_reward = float(def_reward)
-                except:
+                except Exception as e:
+                    warnings.warn(f"Could not convert defender reward to float: {def_reward}. interpreting as: {e}")
                     def_reward = 0.0
 
             # location for this defender
@@ -321,7 +470,8 @@ def render(path: str,
             else:
                 try:
                     atk_reward = float(atk_reward)
-                except:
+                except Exception as e:
+                    warnings.warn(f"Could not convert attacker reward to float: {atk_reward}. interpreting as: {e}")
                     atk_reward = 0.0
 
             agents_info[atk_name] = {
@@ -346,7 +496,7 @@ def render(path: str,
     slider_width = 300
     slider_height = 10
     slider_x = (window_width - slider_width) // 2
-    slider_y = screen_size + 40
+    slider_y = screen_size + 70
     button_size = 40
     button_x = slider_x + slider_width + 20
     button_y = slider_y - 15
@@ -399,11 +549,12 @@ def render(path: str,
             t = draw_slider(window, slider_x, slider_y, slider_width, slider_height, slider_position, max_time, t)
             draw_button(window, is_playing, button_x, button_y, button_size)
 
-        draw_time(window, t, screen_size, font)
+        # draw_time(window, t, screen_size, font)
 
-        info_text = f"Episode: {episode_name_str} | Step: {t}/{max_time}"
+        info_text = f"Log: {episode_name_str} | Step: {t}/{max_time}"
         info_surf = small_font.render(info_text, True, (0, 0, 0))
-        window.blit(info_surf, (slider_x, screen_size + 10))
+        info_rect = info_surf.get_rect(center=(window_width // 2, slider_y - 30))
+        window.blit(info_surf, info_rect)
 
         # Retrieve the current data from the stored record
         current_data = state_record[t]
@@ -451,34 +602,51 @@ def render(path: str,
             label_rect = label_surf.get_rect(center=(nx, ny))
             window.blit(label_surf, label_rect)
 
-            # Show latency
+            # Show latency - position based on node's side
             lat_surf = small_font.render(f"latency={latency}", True, (0, 0, 0))
-            window.blit(lat_surf, (nx - 25, ny + 22))
+            # Determine node side based on angle from center
+            angle = math.atan2(ny - center_y, nx - center_x)
+            deg = math.degrees(angle)
+            lat_offset = 20  # Distance from node center
+
+            if -45 <= deg < 45:  # Right side -> latency on left
+                lat_rect = lat_surf.get_rect(midright=(nx - lat_offset, ny))
+            elif 45 <= deg < 135:  # Bottom side -> latency on top
+                lat_rect = lat_surf.get_rect(midbottom=(nx, ny - lat_offset))
+            elif deg >= 135 or deg < -135:  # Left side -> latency on right
+                lat_rect = lat_surf.get_rect(midleft=(nx + lat_offset, ny))
+            else:  # Top side (-135 to -45) -> latency on bottom
+                lat_rect = lat_surf.get_rect(midtop=(nx, ny + lat_offset))
+            window.blit(lat_surf, lat_rect)
 
         # Separate defenders/attackers by name
         all_agent_names = sorted(agent_data.keys())
         defenders = [n for n in all_agent_names if n.startswith("defender_")]
         attackers = [n for n in all_agent_names if n.startswith("attacker_")]
 
-        # Spread them around the circle
-        def_angles = distribute_angles(len(defenders), total_angle_degs=15)
-        atk_angles = distribute_angles(len(attackers), total_angle_degs=25)
+        # Use grid placer to position agents on outer edges based on node sides
+        grid_placer = AgentGridPlacer(node_positions, center_x, center_y, screen_size)
+        grid_placer.reset()
 
         # Draw defenders
         for i, def_name in enumerate(defenders):
             d_info = agent_data[def_name]
             if not d_info["present"]:
                 continue
-            node_idx = d_info["location"]
-            if not isinstance(node_idx, int) or node_idx < 0 or node_idx >= total_nodes:
-                node_idx = 0
-            node_x, node_y = node_positions[node_idx]
 
-            base_offset = 60
-            angle = def_angles[i]
-            angle_radians = math.atan2(node_y - center_y, node_x - center_x) + angle
-            dx = center_x + (circle_radius + base_offset) * math.cos(angle_radians)
-            dy = center_y + (circle_radius + base_offset) * math.sin(angle_radians)
+            # Check if this defender has a valid action
+            action_list = d_info["action"]
+            has_valid_action = len(action_list) >= 2
+
+            if has_valid_action:
+                node_idx = d_info["location"]
+                if not isinstance(node_idx, int) or node_idx < 0 or node_idx >= total_nodes:
+                    node_idx = 0
+                # Get position on the outer edge corresponding to the node's side
+                dx, dy = grid_placer.get_position(node_idx, 'defender')
+            else:
+                # Place inactive agents at the bottom
+                dx, dy = grid_placer.get_inactive_position('defender')
 
             if defender_img:
                 rect = defender_img.get_rect(center=(dx, dy))
@@ -496,13 +664,13 @@ def render(path: str,
             window.blit(rew_surf, rew_rect)
 
             # Action arrow
-            action_list = d_info["action"]
-            if len(action_list) >= 2:
+            if has_valid_action:
                 target_idx, code = action_list
                 if isinstance(target_idx, int) and 0 <= target_idx < total_nodes:
                     tx, ty = node_positions[target_idx]
+                    sx, sy = _arrow_start_from_agent((dx, dy), (tx, ty), AGENT_RADIUS=25)
                     ex, ey = _point_on_node_edge((tx, ty), (dx, dy), NODE_RADIUS=NODE_RADIUS)
-                    draw_aaline_arrow(window, (0, 255, 0), (dx, dy), (ex, ey), width=3)
+                    draw_aaline_arrow(window, (0, 255, 0), (sx, sy), (ex, ey), width=3)
 
                 a_str = action_name(code)
                 a_surf = small_font.render(a_str, True, (0, 255, 0))
@@ -520,20 +688,18 @@ def render(path: str,
                 continue
 
             action_list = a_info["action"]
-            if len(action_list) >= 2:
+            has_valid_action = len(action_list) >= 2
+
+            if has_valid_action:
                 target_idx, code = action_list
+                if not isinstance(target_idx, int) or target_idx < 0 or target_idx >= total_nodes:
+                    target_idx = 0
+                # Get position on the outer edge corresponding to the target node's side
+                ax, ay = grid_placer.get_position(target_idx, 'attacker')
             else:
                 target_idx, code = (0, None)
-
-            if not isinstance(target_idx, int) or target_idx < 0 or target_idx >= total_nodes:
-                target_idx = 0
-
-            node_x, node_y = node_positions[target_idx]
-            base_offset = 25
-            angle = atk_angles[i]
-            angle_radians = math.atan2(node_y - center_y, node_x - center_x) + angle
-            ax = center_x + (circle_radius + base_offset * 5) * math.cos(angle_radians)
-            ay = center_y + (circle_radius + base_offset * 6) * math.sin(angle_radians)
+                # Place inactive agents at the bottom
+                ax, ay = grid_placer.get_inactive_position('attacker')
 
             if attacker_img:
                 rect = attacker_img.get_rect(center=(ax, ay))
@@ -551,11 +717,12 @@ def render(path: str,
             window.blit(rew_surf, rew_rect)
 
             # Action arrow + label
-            if code is not None:
+            if has_valid_action:
                 a_str = action_name(code)
                 tx, ty = node_positions[target_idx]
+                sx, sy = _arrow_start_from_agent((ax, ay), (tx, ty), AGENT_RADIUS=25)
                 ex, ey = _point_on_node_edge((tx, ty), (ax, ay), NODE_RADIUS=NODE_RADIUS)
-                draw_aaline_arrow(window, (255, 0, 0), (ax, ay), (ex, ey), width=3)
+                draw_aaline_arrow(window, (255, 0, 0), (sx, sy), (ex, ey), width=3)
 
                 a_surf = small_font.render(a_str, True, (255, 0, 0))
                 a_rect = a_surf.get_rect(midbottom=(ax, ay - 25))

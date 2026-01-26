@@ -66,7 +66,7 @@ html_theme_options = {
 
 # -- copy source static content --
 html_static_path = ["_static"]
-html_extra_path = ["_static/header"]  #forced copy
+html_extra_path = ["_static/header"]  # forced copy
 html_css_files = []
 
 # -- Options for MyST parser -------------------------------------------------

@@ -473,7 +473,7 @@ class raw_env(BatchedAECEnv):
 
             fire_coords = fire_positions[global_task_indices]
 
-            #?in the case where you are having fires that are unreachable attacked check this
+            # ?in the case where you are having fires that are unreachable attacked check this
             # if (fire_coords[:, 1:].numel() > 0):
             #     if not torch.all((((fire_coords[:, 1:] - self._state.agents[agent_index, :])[:, 0] <= 1) & (
             #         (fire_coords[:, 1:] - self._state.agents[agent_index, :])[:, 1] <= 1))):
@@ -772,7 +772,7 @@ class raw_env(BatchedAECEnv):
     def action_space(self, agent: str) -> List[gymnasium.Space]:
         """
         Return the action space for the given agent.
-        
+
         Args:
             agent: str - the name of the agent to retrieve the action space for
         Returns:
