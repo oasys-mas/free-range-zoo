@@ -22,10 +22,10 @@ this_dir = os.path.dirname(__file__)
 def find_fire_position_by_global_id(intensity_2d, global_fire_id, max_intensity=3):
     """
     Find the (row, col) position of a fire given its global fire ID.
-    
+
     Global fire IDs are assigned in row-major order by scanning all cells
     with active fires (intensity in range 1 to max_intensity inclusive).
-    
+
     Args:
         intensity_2d : 2D list of fire intensities
         global_fire_id : the global fire ID to find
@@ -36,7 +36,7 @@ def find_fire_position_by_global_id(intensity_2d, global_fire_id, max_intensity=
     H = len(intensity_2d)
     W = len(intensity_2d[0]) if H > 0 else 0
     active_intensities = tuple(range(1, max_intensity + 1))
-    
+
     fire_count = 0
     for r in range(H):
         for c in range(W):
@@ -45,6 +45,7 @@ def find_fire_position_by_global_id(intensity_2d, global_fire_id, max_intensity=
                     return (r, c)
                 fire_count += 1
     return None
+
 
 def render_image(path, cell_size: int):
     """
@@ -145,7 +146,7 @@ def draw_time(window, t, screen_size, font):
     """
     Displays the current step/time near top-center of screen.
     """
-    time_text = font.render(f"Step: {t+1}", True, (0, 0, 0))
+    time_text = font.render(f"Step: {t + 1}", True, (0, 0, 0))
     text_rect = time_text.get_rect(center=(screen_size // 2, 20))
     window.blit(time_text, text_rect)
 
@@ -337,10 +338,10 @@ def render(path: str,
     # Use step field from CSV; create a mapping from step to dataframe index
     step_to_idx = {int(row['step']): i for i, row in df.iterrows()}
     all_steps = sorted(step_to_idx.keys())
-    
+
     # Render all steps; for the first step (no previous action_map), we skip drawing arrows
     steps = all_steps
-    
+
     min_step = min(steps)
     max_step = max(steps)
     num_steps = len(steps)
@@ -521,7 +522,7 @@ def render(path: str,
         # Compute current time-step from slider (t is index into steps list)
         t = int((slider_position / slider_width) * max_time)
         t = max(0, min(max_time, t))
-        
+
         # Get the actual step value and dataframe index
         current_step = steps[t]
         df_idx = step_to_idx[current_step]
@@ -545,7 +546,7 @@ def render(path: str,
         draw_time(window, t, screen_size, font)
 
         # Extra text: episode name, current step (show actual step number from CSV)
-        episode_info_text = f"Log: {episode_name_str}  Step: {t+1}/{num_steps}"
+        episode_info_text = f"Log: {episode_name_str}  Step: {t + 1}/{num_steps}"
         episode_info_surf = small_font.render(episode_info_text, True, (0, 0, 0))
         window.blit(episode_info_surf, (slider_x, screen_size + 5))
 
@@ -647,16 +648,16 @@ def render(path: str,
                     # supress
                     if power == 0:
                         # Get the action_map for this agent from the PREVIOUS step
-                        # Logs show <s', a> format: action_map at row n-1 is what was available 
+                        # Logs show <s', a> format: action_map at row n-1 is what was available
                         # when action at row n was taken
                         action_map_col = f'firefighter_{obj["id"] + 1}_action_map'
                         action_map = []
                         has_prev_step = False
-                        
+
                         # Current step value and find the previous step in all_steps
                         current_step_val = steps[t]
                         all_steps_idx = all_steps.index(current_step_val)
-                        
+
                         # Check if there's a previous step
                         if all_steps_idx > 0:
                             has_prev_step = True
@@ -664,7 +665,7 @@ def render(path: str,
                             prev_df_idx = step_to_idx[prev_step]
                             if action_map_col in df.columns:
                                 action_map = df[action_map_col].iloc[prev_df_idx]
-                        
+
                         # If no previous step, just show "" without arrow
                         if not has_prev_step:
                             z_surf = big_font.render("", True, (0, 0, 250))
@@ -707,7 +708,7 @@ def render(path: str,
                         else:
                             # fire_num is an index into action_map, giving us the global fire ID
                             global_fire_id = action_map[fire_num]
-                            
+
                             # Find the position of this global fire ID using the ORIGINAL (unshifted) intensity
                             # The action_map corresponds to fires visible in the original intensity at prev step
                             prev_orig_intensity = df['_original_intensity'].iloc[prev_df_idx]

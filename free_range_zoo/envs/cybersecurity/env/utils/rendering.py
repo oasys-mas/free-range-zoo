@@ -1,3 +1,4 @@
+import warnings
 from typing import Union, Optional
 import os
 import time
@@ -67,21 +68,22 @@ class AgentGridPlacer:
     with sub-slots for multiple agents targeting the same node.
     Defenders and attackers share the same grid to avoid overlapping.
     """
+
     def __init__(self, node_positions, center_x, center_y, screen_size, margin=-20):
         self.node_positions = node_positions
         self.center_x = center_x
         self.center_y = center_y
         self.screen_size = screen_size
         self.margin = margin
-        
+
         # Classify each node as left, right, top, or bottom and store its actual coordinate
         self.node_sides = {}
         self.node_edge_coord = {}  # The coordinate along the edge (y for left/right, x for top/bottom)
-        
+
         for idx, (nx, ny) in enumerate(node_positions):
             angle = math.atan2(ny - center_y, nx - center_x)
             deg = math.degrees(angle)
-            
+
             # Classify side and store the relevant coordinate
             if -45 <= deg < 45:
                 side = 'right'
@@ -95,23 +97,23 @@ class AgentGridPlacer:
             else:  # -135 <= deg < -45
                 side = 'top'
                 edge_coord = nx  # Use node's x position
-            
+
             self.node_sides[idx] = side
             self.node_edge_coord[idx] = edge_coord
-        
+
         # Track occupied slots per node: {node_idx: set of sub_slot indices}
         # SHARED grid for both defenders and attackers
         self.occupied = {idx: set() for idx in range(len(node_positions))}
-        
+
         # Separate grid for inactive agents (??? mode) at the bottom center
         self.inactive_slot = 0
-    
+
     def reset(self):
         """Clear all occupied slots for a new frame."""
         for key in self.occupied:
             self.occupied[key].clear()
         self.inactive_slot = 0
-    
+
     def get_inactive_position(self, agent_type):
         """
         Get a position for an inactive agent (??? mode) on a 2-row grid at the bottom.
@@ -119,33 +121,33 @@ class AgentGridPlacer:
         """
         slot = self.inactive_slot
         self.inactive_slot += 1
-        
+
         # Layout: 2 rows, spread horizontally with good padding
         slot_spacing = 100  # Horizontal space between agents
         row_spacing = 20   # Vertical space between rows (doubled)
         agents_per_row = 6  # Max agents per row before wrapping
-        
+
         # Determine row (0 = bottom row, 1 = second row from bottom)
         row = slot // agents_per_row
         col = slot % agents_per_row
-        
+
         # Center the agents horizontally
         center_x = self.screen_size // 2
         row_width = (agents_per_row - 1) * slot_spacing
         start_x = center_x - row_width // 2
-        
+
         x = start_x + col * slot_spacing
-        
+
         # Y position: bottom row first, then second row above it
         bottom_margin = 35
         y = self.screen_size - bottom_margin - row * row_spacing
-        
+
         return (x, y)
-    
+
     def get_node_side(self, node_idx):
         """Get which side a node is on."""
         return self.node_sides.get(node_idx, 'right')
-    
+
     def get_position(self, node_idx, agent_type):
         """
         Get a position for an agent directly aligned with the target node.
@@ -154,27 +156,27 @@ class AgentGridPlacer:
         """
         side = self.node_sides.get(node_idx, 'right')
         edge_coord = self.node_edge_coord.get(node_idx, self.screen_size // 2)
-        
+
         # Defenders are closer to center, attackers are at the edge
         if agent_type == 'defender':
             edge_offset = 55  # Distance from edge for defenders (inner)
         else:
             edge_offset = 55  # Distance from edge for attackers (outer) same for both for now,
-        
+
         # Find an available sub-slot for this node
         occupied = self.occupied[node_idx]
         sub_slot = 0
         while sub_slot in occupied:
             sub_slot += 1
         occupied.add(sub_slot)
-        
+
         # Sub-slot offset with padding (spread multiple agents targeting same node)
         slot_spacing = 100  # Padding between agents
         sub_offset = sub_slot * slot_spacing
-        
+
         # Position agent on the edge, aligned with the node's coordinate
         if side == 'left':
-            x = self.margin + edge_offset +30
+            x = self.margin + edge_offset + 30
             y = edge_coord + sub_offset
         elif side == 'right':
             x = self.screen_size - self.margin - edge_offset
@@ -185,7 +187,7 @@ class AgentGridPlacer:
         else:  # bottom
             x = edge_coord + sub_offset
             y = self.screen_size - self.margin - edge_offset
-        
+
         return (x, y)
 
 
@@ -283,7 +285,8 @@ def render(path: str,
                (s.startswith("{") and s.endswith("}")):
                 try:
                     return literal_eval(s)
-                except:
+                except Exception as e:
+                    warnings.warn(f"Could not literal_eval column value: {s}. Error: {e}")
                     pass
         return val
 
@@ -322,7 +325,7 @@ def render(path: str,
                 node_idx = ns[1]
                 if isinstance(node_idx, int) and node_idx > max_node_index:
                     max_node_index = node_idx
-        total_nodes = max_node_index +1
+        total_nodes = max_node_index + 1
     # else:
     # fallback if no network_state column => you can define a default or skip
     # total_nodes = 5  # Just some fallback; or read from somewhere else
@@ -344,17 +347,16 @@ def render(path: str,
         node_img_exploited = render_image(os.path.join(this_dir, "..", "assets", "node_exploited.png"), 40)
         node_img_patched = render_image(os.path.join(this_dir, "..", "assets", "node_patched.png"), 40)
         node_img_normal = render_image(os.path.join(this_dir, "..", "assets", "node_normal.png"), 40)
-    except:
-        node_img_exploited = None
-        node_img_patched = None
-        node_img_normal = None
+    except Exception as e:
+        warnings.warn(f"Could not load node images. Error: {e}")
+        raise e
 
     try:
         attacker_img = render_image(os.path.join(this_dir, this_dir, "..", "assets", "attacker.png"), 40)
         defender_img = render_image(os.path.join(this_dir, this_dir, "..", "assets", "defender.png"), 40)
-    except:
-        attacker_img = None
-        defender_img = None
+    except Exception as e:
+        warnings.warn(f"Could not load attacker/defender images. Error: {e}")
+        raise e
 
     center_x = screen_size // 2
     center_y = screen_size // 2
@@ -437,7 +439,8 @@ def render(path: str,
             else:
                 try:
                     def_reward = float(def_reward)
-                except:
+                except Exception as e:
+                    warnings.warn(f"Could not convert defender reward to float: {def_reward}. interpreting as: {e}")
                     def_reward = 0.0
 
             # location for this defender
@@ -467,7 +470,8 @@ def render(path: str,
             else:
                 try:
                     atk_reward = float(atk_reward)
-                except:
+                except Exception as e:
+                    warnings.warn(f"Could not convert attacker reward to float: {atk_reward}. interpreting as: {e}")
                     atk_reward = 0.0
 
             agents_info[atk_name] = {
@@ -604,7 +608,7 @@ def render(path: str,
             angle = math.atan2(ny - center_y, nx - center_x)
             deg = math.degrees(angle)
             lat_offset = 20  # Distance from node center
-            
+
             if -45 <= deg < 45:  # Right side -> latency on left
                 lat_rect = lat_surf.get_rect(midright=(nx - lat_offset, ny))
             elif 45 <= deg < 135:  # Bottom side -> latency on top
@@ -629,11 +633,11 @@ def render(path: str,
             d_info = agent_data[def_name]
             if not d_info["present"]:
                 continue
-            
+
             # Check if this defender has a valid action
             action_list = d_info["action"]
             has_valid_action = len(action_list) >= 2
-            
+
             if has_valid_action:
                 node_idx = d_info["location"]
                 if not isinstance(node_idx, int) or node_idx < 0 or node_idx >= total_nodes:
@@ -685,7 +689,7 @@ def render(path: str,
 
             action_list = a_info["action"]
             has_valid_action = len(action_list) >= 2
-            
+
             if has_valid_action:
                 target_idx, code = action_list
                 if not isinstance(target_idx, int) or target_idx < 0 or target_idx >= total_nodes:

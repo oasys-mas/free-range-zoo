@@ -1,5 +1,8 @@
+import warnings
 from typing import Union
-import os, time, math
+import os
+import time
+import math
 from copy import deepcopy
 from collections import defaultdict
 from ast import literal_eval
@@ -274,13 +277,14 @@ def extract_render_data(row, num_drivers):
     # Parse driver actions
     driver_actions = []
     for d_idx in range(num_drivers):
-        col = f'driver_{d_idx+1}_action'
+        col = f'driver_{d_idx + 1}_action'
         if col not in row or pd.isnull(row[col]):
             driver_actions.append([-1, -1])
         else:
             try:
                 driver_actions.append(literal_eval(row[col]))
-            except:
+            except Exception as e:
+                warnings.warn(f"Could not parse driver action for {col},{d_idx}: {e}")
                 driver_actions.append([-1, -1])
     row_data['driver_actions'] = driver_actions
 
@@ -548,7 +552,7 @@ def render(path: str,
 
             car_img = car_assets[d_idx] if d_idx < len(car_assets) else car_assets[-1]
             window.blit(car_img, (x_off + driver_col * cell_size, y_off + driver_row * cell_size))
-            label_txt = tinyfont.render(f"Driver_{d_idx+1}", True, (0, 0, 0))
+            label_txt = tinyfont.render(f"Driver_{d_idx + 1}", True, (0, 0, 0))
             window.blit(label_txt, (x_off + driver_col * cell_size, y_off + driver_row * cell_size))
 
             # Driver extra info
@@ -557,7 +561,7 @@ def render(path: str,
             window.blit(car_img, (icon_x, icon_y))
 
             # Extract reward safely from current row
-            reward_col = f'driver_{d_idx+1}_rewards'
+            reward_col = f'driver_{d_idx + 1}_rewards'
             raw_reward = raw_row.get(reward_col, 0)
             reward = 0 if pd.isnull(raw_reward) or raw_reward is None else raw_reward
 
@@ -571,7 +575,7 @@ def render(path: str,
             accepted_str = ", ".join([f"P{p}" for p in accepted_only]) if accepted_only else "None"
 
             # Full display label
-            info_text = f"Driver_{d_idx+1}: Reward {round(reward, 2)} | Riding: {riding_str} | Accepted: {accepted_str}"
+            info_text = f"Driver_{d_idx + 1}: Reward {round(reward, 2)} | Riding: {riding_str} | Accepted: {accepted_str}"
             info_label = tinyfont.render(info_text, True, (0, 0, 0))
             window.blit(info_label, (icon_x + cell_size + 5, icon_y + cell_size // 4))
 

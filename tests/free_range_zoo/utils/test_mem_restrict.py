@@ -1,4 +1,5 @@
-import unittest, os
+import unittest
+import os
 from unittest.mock import patch, MagicMock
 
 if os.name != 'nt':
@@ -14,7 +15,7 @@ class TestLimitMemory(unittest.TestCase):
     def test_memory_limit(self, mock_setrlimit, mock_virtual_memory):
         mock_virtual_memory.return_value = MagicMock(available=1000000)
 
-        #prevents import error even if the test is skipped
+        # prevents import error even if the test is skipped
         if os.name != 'nt':
             limit_memory(0.1)
             mock_setrlimit.assert_called_once_with(resource.RLIMIT_AS, (100000, 100000))
@@ -25,7 +26,7 @@ class TestLimitMemory(unittest.TestCase):
     def test_memory_within_limit(self, mock_setrlimit, mock_virtual_memory):
         mock_virtual_memory.return_value = MagicMock(available=1000000)
 
-        #prevents import error even if the test is skipped
+        # prevents import error even if the test is skipped
         if os.name != 'nt':
             limit_memory(0.5)
             mock_setrlimit.assert_called_once_with(resource.RLIMIT_AS, (500000, 500000))
