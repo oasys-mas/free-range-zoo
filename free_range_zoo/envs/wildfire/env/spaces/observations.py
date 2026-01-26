@@ -28,11 +28,11 @@ def build_observation_space(environment_task_counts, num_agents: int, agent_high
 
 @functools.lru_cache(maxsize=100)
 def build_single_observation_space(
-        agent_high: Tuple[int],
-        fire_high: Tuple[int],
-        num_tasks: int,
-        num_agents: int,
-        include_mask: Tuple[bool, bool, bool, bool, bool] = (True, True, False, False, False)) -> free_range_rust.Space:
+    agent_high: Tuple[int],
+    fire_high: Tuple[int],
+    num_tasks: int,
+    num_agents: int,
+    include_mask: Tuple[bool, bool, bool, bool, bool] = (True, True, False, False, False)) -> free_range_rust.Space:
     """
     Build the observation space for a single environment.
 

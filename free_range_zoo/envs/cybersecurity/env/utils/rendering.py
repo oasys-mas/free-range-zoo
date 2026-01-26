@@ -124,7 +124,7 @@ class AgentGridPlacer:
 
         # Layout: 2 rows, spread horizontally with good padding
         slot_spacing = 100  # Horizontal space between agents
-        row_spacing = 20   # Vertical space between rows (doubled)
+        row_spacing = 20  # Vertical space between rows (doubled)
         agents_per_row = 6  # Max agents per row before wrapping
 
         # Determine row (0 = bottom row, 1 = second row from bottom)
