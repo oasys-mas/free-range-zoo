@@ -27,5 +27,5 @@ class RandomBaseline(Agent):
         Returns:
             torch.IntTensor: Tensor of actions, one for each parallel environment.
         """
-        seed = torch.randint(0, 2**64, (1, ), generator=self.generator, dtype=torch.uint64).item()
+        seed = torch.randint(0, (2**63) - 2, (1, ), generator=self.generator, dtype=torch.uint64).item()
         return torch.tensor(action_space.sample_nested_with_seed(seed), dtype=torch.int32)
