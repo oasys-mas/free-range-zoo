@@ -220,6 +220,8 @@ class BatchedAECEnv(ABC, AECEnv):
 
         self.actions[agent] = actions
         if isinstance(actions, torch.Tensor):
+            self.actions[agent] = actions.to(device=self.device, dtype=self.metadata['action_dtype'])
+        else:
             self.actions[agent] = torch.tensor(actions, device=self.device, dtype=self.metadata['action_dtype'])
 
         # Step the environment after all agents have taken actions
