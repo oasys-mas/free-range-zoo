@@ -26,7 +26,8 @@ class RewardConfiguration(Configuration):
         termination_reward: float - Reward for terminating the environment
         termination_kappa: float - Reward for scaling sensitivity to burned-out fires
 
-        localize_putouts: bool - enable rewards are limited to contributing agents
+        localize_rewards: bool - enable rewards limited to agents with range to affect the fire when put out
+        localize_penalties: bool - enable penalties limited to agents with range to affect the fire when burned out
     """
 
     fire_rewards: torch.FloatTensor
@@ -38,7 +39,8 @@ class RewardConfiguration(Configuration):
     termination_reward: float = 0.0
     termination_kappa: float = 0.0
 
-    localize_putouts: bool = False
+    localize_rewards: bool = False
+    localize_penalties: bool = False
 
     def validate(self) -> bool:
         """

@@ -473,12 +473,6 @@ class raw_env(BatchedAECEnv):
 
             fire_coords = fire_positions[global_task_indices]
 
-            # ?in the case where you are having fires that are unreachable attacked check this
-            # if (fire_coords[:, 1:].numel() > 0):
-            #     if not torch.all((((fire_coords[:, 1:] - self._state.agents[agent_index, :])[:, 0] <= 1) & (
-            #         (fire_coords[:, 1:] - self._state.agents[agent_index, :])[:, 1] <= 1))):
-            #         raise ValueError
-
             reduction_powers = self.fire_reduction_power[agent_index].expand(self.parallel_envs)
             equipment_bonuses = self.agent_config.equipment_states[self._state.equipment[:, agent_index].unsqueeze(0)][:, :, 1]
             full_powers = (reduction_powers + equipment_bonuses).squeeze(0)
@@ -568,20 +562,56 @@ class raw_env(BatchedAECEnv):
             burnout_penalties[just_burned_out] = -1 * self.fire_rewards[just_burned_out]
         else:
             burnout_penalties[just_burned_out] = self.reward_config.burnout_penalty
-        burnout_penalty_total = burnout_penalties.sum(dim=(1, 2))
 
-        if self.reward_config.localize_putouts:
+        if self.reward_config.localize_rewards or self.reward_config.localize_penalties:
+            agent_in_range_mask = torch.zeros((B, A, H, W), device=self.device, dtype=torch.bool)
+
+            # Create coordinate grids for all fire positions
+            y_coords = torch.arange(H, device=self.device).view(1, 1, H, 1).expand(B, A, H, W)
+            x_coords = torch.arange(W, device=self.device).view(1, 1, 1, W).expand(B, A, H, W)
+
+            for agent_idx in range(A):
+                # Get agent position
+                agent_pos = self._state.agents[agent_idx]  # (y, x)
+
+                # Compute effective range: base range + equipment bonus
+                base_range = self.agent_config.attack_range[agent_idx]
+                equipment_states = self._state.equipment[:, agent_idx]
+                range_bonuses = self.agent_config.equipment_states[equipment_states, 2]
+                effective_range = base_range + range_bonuses
+
+                dy = torch.abs(y_coords[:, agent_idx] - agent_pos[0].float())
+                dx = torch.abs(x_coords[:, agent_idx] - agent_pos[1].float())
+                distance = torch.maximum(dy, dx)
+
+                agent_in_range_mask[:, agent_idx] = distance <= effective_range.view(B, 1, 1)
+
+        # Compute per-agent rewards based on localization settings
+        if self.reward_config.localize_rewards:
             localized_rewards = torch.zeros_like(fire_rewards)
             localized_rewards[just_put_out] = self.fire_rewards[just_put_out]
-            per_agent_rewards = (localized_rewards.unsqueeze(1) * agent_last_hit_mask).sum(dim=(2, 3))
-
-            burnout_penalty_total = burnout_penalties.sum(dim=(1, 2))
-            for i, agent in enumerate(self.agents):
-                rewards[agent] += per_agent_rewards[:, i] + burnout_penalty_total
+            per_agent_rewards = (localized_rewards.unsqueeze(1) * agent_in_range_mask).sum(dim=(2, 3))
         else:
             fire_rewards_per_batch = fire_rewards.sum(dim=(1, 2))
-            for agent in self.agents:
-                rewards[agent] += fire_rewards_per_batch + burnout_penalty_total
+
+        if self.reward_config.localize_penalties:
+            localized_penalties = torch.zeros_like(burnout_penalties)
+            localized_penalties[just_burned_out] = burnout_penalties[just_burned_out]
+            per_agent_penalties = (localized_penalties.unsqueeze(1) * agent_in_range_mask).sum(dim=(2, 3))
+        else:
+            burnout_penalty_total = burnout_penalties.sum(dim=(1, 2))
+
+        # Assign rewards to agents
+        for i, agent in enumerate(self.agents):
+            if self.reward_config.localize_rewards:
+                rewards[agent] += per_agent_rewards[:, i]
+            else:
+                rewards[agent] += fire_rewards_per_batch
+
+            if self.reward_config.localize_penalties:
+                rewards[agent] += per_agent_penalties[:, i]
+            else:
+                rewards[agent] += burnout_penalty_total
 
         # Determine environment terminations due to no more fires
         fires_are_out = self._state.fires.flatten(start_dim=1).max(dim=1)[0] <= 0
