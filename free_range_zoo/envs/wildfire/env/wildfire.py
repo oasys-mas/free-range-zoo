@@ -268,6 +268,7 @@ class raw_env(BatchedAECEnv):
             degrade_probability=self.agent_config.degrade_probability,
             critical_error=self.stochastic_config.critical_error,
             critical_error_probability=self.agent_config.critical_error_probability,
+            condition_on_actions=self.agent_config.equipment_condition_on_actions,
         ).to(self.device)
 
         self.fire_decrease_transition = transitions.FireDecreaseTransition(
@@ -517,6 +518,7 @@ class raw_env(BatchedAECEnv):
         self._state = self.equipment_transition(
             state=self._state,
             randomness_source=agent_randomness[1],
+            fought=users,
         )
 
         # Handle agent suppressant transitions

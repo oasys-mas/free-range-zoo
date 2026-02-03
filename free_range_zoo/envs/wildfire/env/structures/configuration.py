@@ -183,6 +183,7 @@ class AgentConfiguration(Configuration):
         tank_switch_probability: float - Probability that an agent will be supplied with a different tank on refill
         possible_capacities: torch.Tensor - Possible maximum suppressant values
         capacity_probabilities: torch.Tensor - Probability that each suppressant maximum is chosen
+        equipment_condition_on_actions: bool - Whether equipment transitions are conditioned on agent actions
     """
 
     agents: torch.IntTensor
@@ -204,6 +205,8 @@ class AgentConfiguration(Configuration):
     tank_switch_probability: float
     possible_capacities: torch.Tensor
     capacity_probabilities: torch.Tensor
+
+    equipment_condition_on_actions: bool = False
 
     @functools.cached_property
     def num_agents(self) -> int:
