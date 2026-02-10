@@ -20,11 +20,11 @@ class SubnetworkTransition(nn.Module):
         Initialize the transition function.
 
         Args:
-            patched_states: int - the number of states that have been patched
-            vulnerable_states: int - the number of states that are vulnerable
-            exploited_states: int - the number of states that are exploited
-            temperature: float - the temperature for the transition
-            stochastic_state: bool - whether to use stochastic state transitions
+            patched_states (int): the number of states that have been patched
+            vulnerable_states (int): the number of states that are vulnerable
+            exploited_states (int): the number of states that are exploited
+            temperature (float): the temperature for the transition
+            stochastic_state (bool): whether to use stochastic state transitions
         """
         super().__init__()
 
@@ -42,12 +42,13 @@ class SubnetworkTransition(nn.Module):
         Calculate the next subnetwork states for all subnetworks.
 
         Args:
-            state: CybersecurityState - the current state of the environment
-            attacks: torch.FloatTensor - the attacks on each subnetwork
-            patches: torch.FloatTensor - the patches on each subnetwork
-            randomness_source: torch.FloatTensor - the source of randomness for the transition
+            state (CybersecurityState): the current state of the environment
+            attacks (torch.FloatTensor): the attacks on each subnetwork
+            patches (torch.FloatTensor): the patches on each subnetwork
+            randomness_source (torch.FloatTensor): the source of randomness for the transition
+
         Returns:
-            CybersecurityState - the next state of the environment with the subnetwork states transformed
+            CybersecurityState: the next state of the environment with the subnetwork states transformed
         """
         attack_difference = patches - attacks
         danger_score = torch.tanh(attack_difference / self.temperature)

@@ -11,10 +11,10 @@ class FireDecreaseTransition(nn.Module):
     Transition function for the fire intensity decrease.
 
     Args:
-        fire_shape: Tuple - Shape of the fire tensor
-        stochastic_decrease: bool - Whether to use stochastic reduction
-        decrease_probability: float - The base probability that a fire decreases in intensity once suppressant needs are met
-        extra_power_decrease_bonus: float - The fire reduction per extra power applied to the fire
+        fire_shape (Tuple): Shape of the fire tensor
+        stochastic_decrease (bool): Whether to use stochastic reduction
+        decrease_probability (float): The base probability that a fire decreases in intensity once suppressant needs are met
+        extra_power_decrease_bonus (float): The fire reduction per extra power applied to the fire
     """
 
     def __init__(self, fire_shape: Tuple, stochastic_decrease: bool, decrease_probability: float,
@@ -43,14 +43,14 @@ class FireDecreaseTransition(nn.Module):
         Update the state of the fire intensity
 
         Args:
-            state: WildfireState - The current state of the environment
-            attack_counts: torch.Tensor - The number of suppressants used on each cell
-            randomness_source: torch.Tensor - Randomness source
-            return_put_out: bool - Whether to return the put out fires
+            state (WildfireState): The current state of the environment
+            attack_counts (torch.Tensor): The number of suppressants used on each cell
+            randomness_source (torch.Tensor): Randomness source
+            return_put_out (bool): Whether to return the put out fires
 
         Returns:
-            WildfireState - The updated state of the environment
-            torch.Tensor - A mask of the fires that were just put out
+            WildfireState: The updated state of the environment
+            torch.Tensor: A mask of the fires that were just put out
         """
         self._reset_buffers()
         required_suppressants = torch.where(state.fires >= 0, state.fires, torch.zeros_like(state.fires))

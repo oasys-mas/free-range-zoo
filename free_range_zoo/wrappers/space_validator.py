@@ -1,4 +1,8 @@
-"""Action space validator to verify actions are within the bounds of each action space."""
+"""Action Space Validator for Environment Actions.
+
+This module provides the ActionSpaceValidatorModifier class for validating
+that actions are within the bounds of each action space.
+"""
 from supersuit.generic_wrappers.utils.base_modifier import BaseModifier
 
 import torch
@@ -17,14 +21,16 @@ class ActionSpaceValidatorModifier(BaseModifier):
     subject_agent = True
 
     def __init__(self, env: BatchedAECEnv, subject_agent: str, allow_flexible_task_tags: bool = True):
-        """
-        Initialize the ActionSpaceValidatorModifier.
+        """Initialize the ActionSpaceValidatorModifier.
 
         Args:
-            env: BatchedAECEnv - The environment to wrap.
-            subject_agent: str - The subject agent of the graph wrapper.
-            allow_flexible_task_tags: bool - Whether to allow task-agnostic actions
+            env (BatchedAECEnv): The environment to wrap.
+            subject_agent (str): The subject agent of the graph wrapper.
+            allow_flexible_task_tags (bool): Whether to allow task-agnostic actions
                 to be used for any task instead of just the task-agnostic task.
+
+        Returns:
+            None: None
         """
         self.env = env
         self.allow_flexible_task_tags = allow_flexible_task_tags
@@ -38,12 +44,14 @@ class ActionSpaceValidatorModifier(BaseModifier):
 
         self.subject_agent = subject_agent
 
-    def modify_action(self, actions: torch.IntTensor):
-        """
-        Modify the action before it is passed to the environment.
+    def modify_action(self, actions: torch.IntTensor) -> torch.IntTensor:
+        """Modify the action before it is passed to the environment.
 
         Args:
-            actions: The action to modify.
+            actions (torch.IntTensor): The action to modify.
+
+        Returns:
+            torch.IntTensor: The modified action.
         """
         actions_iter = actions.split(1, dim=0)
         action_spaces = self.env.action_space(self.subject_agent).spaces
@@ -85,13 +93,13 @@ class ActionSpaceValidatorModifier(BaseModifier):
 
 
 def space_validator_wrapper_v0(env: BatchedAECEnv, allow_flexible_task_tags: bool = True) -> BatchedAECEnv:
-    """
-    Apply the ActionSpaceValidatorModifier to the environment.
+    """Apply the ActionSpaceValidatorModifier to the environment.
 
     Args:
-        env: BatchedAECEnv - The environment to wrap
-        allow_flexible_task_tags: bool - allow task-agnostic actions to have invalid task channels
+        env (BatchedAECEnv): The environment to wrap.
+        allow_flexible_task_tags (bool): Whether to allow task-agnostic actions to have invalid task channels.
+
     Returns:
-        BatchedAECEnv - The wrapped environment.
+        BatchedAECEnv: The wrapped environment.
     """
     return shared_wrapper(env, ActionSpaceValidatorModifier, allow_flexible_task_tags=allow_flexible_task_tags)

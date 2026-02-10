@@ -16,12 +16,13 @@ def build_observation_space(
     Build the observation space for all environments in a batched environment.
 
     Args:
-        environment_task_counts: torch.Tensor - The number of tasks in each environment
-        num_agents: int - The number of agents in the environment
-        agent_high: Tuple[int] - The high values for the agent observation space
-        passenger_high: Tuple[int] - The high values for the fire observation space
+        environment_task_counts (torch.IntTensor): The number of tasks in each environment
+        num_agents (int): The number of agents in the environment
+        agent_high (Tuple[int]): The high values for the agent observation space
+        passenger_high (Tuple[int]): The high values for the fire observation space
+
     Returns:
-        List[free_range_rust.Space] - The observation spaces for the environments
+        List[free_range_rust.Space]: The observation spaces for the environments
     """
     environment_task_counts = environment_task_counts.tolist()
     return [
@@ -41,12 +42,13 @@ def build_single_observation_space(
     Build the observation space for a single environment.
 
     Args:
-        agent_high: Tuple[int] - The high values for the agent observation space
-        passenger_high: Tuple[int] - The high values for the fire observation space
-        num_tasks: int - The number of tasks in the environment
-        num_agents: int - The number of agents in the environment
+        agent_high (Tuple[int]): The high values for the agent observation space
+        passenger_high (Tuple[int]): The high values for the fire observation space
+        num_tasks (int): The number of tasks in the environment
+        num_agents (int): The number of agents in the environment
+
     Returns:
-        gymnasium.Space - The observation space for the environment
+        free_range_rust.Space: The observation space for the environment
     """
     return Space.Dict({
         'self': build_single_agent_observation_space(agent_high),
@@ -64,9 +66,10 @@ def build_single_agent_observation_space(high: Tuple[int]):
         - (y, x, num_accepted, num_riding)
 
     Args:
-        high: Tuple[int] - The high values for the agent observation space (y, x, num_accepted, num_riding) if unfiltered
+        high (Tuple[int]): The high values for the agent observation space (y, x, num_accepted, num_riding) if unfiltered
+
     Returns:
-        gymnasium.Space - The observation space for the agent
+        free_range_rust.Space: The observation space for the agent
     """
     return Space.Box(low=[0] * len(high), high=high)
 
@@ -74,15 +77,16 @@ def build_single_agent_observation_space(high: Tuple[int]):
 @functools.lru_cache(maxsize=100)
 def build_single_passenger_observation_space(high: Tuple[int], num_tasks: int):
     """
-    Build the observation space for the fire.
+    Build the observation space for passengers.
 
     The passenger observation space is defined as follows:
         - If the task observation space includes the (y, x, y_dest, x_dest, accepted_by, riding_by, fare, entered_step)
 
     Args:
-        high: Tuple[int] - The high values for the passenger observation space (follows defined structure above)
-        num_tasks: int - The number of tasks in the environment
+        high (Tuple[int]): The high values for the passenger observation space (follows defined structure above)
+        num_tasks (int): The number of tasks in the environment
+
     Returns:
-        gymnasium.Space - The observation space for the fire
+        free_range_rust.Space: The observation space for the passengers
     """
     return Space.Tuple([Space.Box([0] * len(high), high=high) for _ in range(num_tasks)])

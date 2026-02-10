@@ -11,9 +11,9 @@ class SuppressantDecreaseTransition(nn.Module):
     Transition function for suppressant decrease
 
     Args:
-        agent_shape: Tuple - Shape of the agent tensor
-        stochastic_decrease: bool - Whether to use stochastic decrease
-        decrease_probability: float - Decrease probability
+        agent_shape (Tuple): Shape of the agent tensor
+        stochastic_decrease (bool): Whether to use stochastic decrease
+        decrease_probability (float): Decrease probability
     """
 
     def __init__(self, agent_shape: Tuple, stochastic_decrease: bool, decrease_probability: float):
@@ -40,13 +40,14 @@ class SuppressantDecreaseTransition(nn.Module):
         Update the suppressants tensor
 
         Args:
-            state: WildfireState - The current state of the environment
-            used_suppressants: torch.Tensor - Locations of agents that used suppressants
-            randomness_source: torch.Tensor - Randomness source
-            return_decreased: bool - Whether to return a mask of the agents that decreased suppressants
+            state (WildfireState): The current state of the environment
+            used_suppressants (torch.Tensor): Locations of agents that used suppressants
+            randomness_source (torch.Tensor): Randomness source
+            return_decreased (bool): Whether to return a mask of the agents that decreased suppressants
+
         Returns:
-            WildfireState - The updated state of the environment with suppressants decreased
-            torch.Tensor - A mask of the agents that decreased in suppresants
+            WildfireState: The updated state of the environment with suppressants decreased
+            torch.Tensor: A mask of the agents that decreased in suppresants
         """
         self._reset_buffers()
 

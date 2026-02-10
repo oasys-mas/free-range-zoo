@@ -3,6 +3,8 @@
 This module provides transition functions for managing passenger entry
 according to the environment's passenger generation schedule.
 """
+
+import torch
 from torch import nn
 import torch
 
@@ -10,15 +12,19 @@ from free_range_zoo.envs.rideshare.env.v0.structures.state import RideshareState
 
 
 class PassengerEntryTransition(nn.Module):
-    """Transition for adding tasks to the environment according to schedule."""
+    """Transition for adding passengers to the environment.
+
+    This class handles the transition logic for generating new passengers
+    according to the configured schedule and placing them in the environment.
+    """
 
     def __init__(self, schedule: torch.IntTensor, parallel_envs: int) -> None:
         """
         Initialize the transition function.
 
         Args:
-            parallel_envs: int - the number of parallel environments to vectorize operations over
-            schedule: torch.IntTensor - schedule from the environment configuration to determine task entry
+            schedule (torch.IntTensor): schedule from the environment configuration to determine task entry
+            parallel_envs (int): the number of parallel environments to vectorize operations over
         """
         super().__init__()
 
@@ -31,10 +37,11 @@ class PassengerEntryTransition(nn.Module):
         Calculate the next passengers to enter each environment using the schedule.
 
         Args:
-            state: RideshareState - the current state of the environment
-            timesteps: torch.IntTensor - the timestep of each of the parallel environments
+            state (RideshareState): the current state of the environment
+            timesteps (torch.IntTensor): the timestep of each of the parallel environments
+
         Returns:
-            RideshareState - the next state of the environment with new passengers added
+            RideshareState: the next state of the environment with new passengers added
         """
         # Determine which tasks within the environment enter this step
         task_start_times = self.schedule[:, 0]

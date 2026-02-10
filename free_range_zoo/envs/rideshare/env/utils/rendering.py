@@ -1,3 +1,9 @@
+"""Rendering Utilities for Rideshare Environment.
+
+This module provides utility functions for rendering rideshare environment
+visualizations including vehicle rendering and passenger visualization.
+"""
+
 import warnings
 from typing import Union
 import os

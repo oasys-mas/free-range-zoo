@@ -1,4 +1,21 @@
-"""Hashing functions for caching and memoization."""
+"""Hashing and Caching Utilities for FreeRangeZoo.
+
+This module provides functions for hashing observations and other data
+structures for caching and memoization purposes. It uses xxhash for
+fast, high-quality hashing of tensor data.
+
+Functions:
+    hash_observation: Hash an observation dictionary by hashing its elements.
+    optimized_convert_hashable: Convert a tensor to a hashable value.
+    positional_encoding_hash: Hash using positional encoding.
+    convert_using_xxhash: Hash using xxhash algorithm.
+    convert_using_tuple: Hash by converting to tuple.
+
+Example Usage:
+    >>> from free_range_zoo.utils.caching import hash_observation
+    >>> hash_val = hash_observation(observation_tensor_dict)
+"""
+
 from typing import Union
 from tensordict import TensorDict
 import torch
@@ -22,9 +39,9 @@ def optimized_convert_hashable(data: torch.Tensor) -> Union[int, float]:
     - Uses a xxhash to encode a tensor into a hashable uint64.
 
     Args:
-        data: torch.Tensor - The data to convert
+        data (torch.Tensor): The data to convert
     Returns:
-        int | float - The hashable value
+        Union[int, float]: The hashable value
     """
     # if torch.cuda.is_available() and data.is_cuda:
     #     return positional_encoding_hash(data)
@@ -37,10 +54,10 @@ def positional_encoding_hash(data: torch.Tensor, batched: bool = False) -> int:
     Convert a tensor to a hashable using a positional encoding hash function.
 
     Args:
-        data: torch.Tensor - The data to convert
-        batched:torch.Tensor - The data to convert
+        data (torch.Tensor): The data to convert
+        batched (torch.Tensor): Whether the data is batched
     Returns:
-        int - The hash of the data
+        int: The hash of the data
     """
     data = data.flatten()
 
@@ -62,9 +79,9 @@ def convert_using_xxhash(data: torch.Tensor) -> int:
     Convert a tensor to a hash using xxhash.
 
     Args:
-        data: torch.Tensor - The data to convert
+        data (torch.Tensor): The data to convert
     Returns:
-        int - The hash of the data
+        int: The hash of the data
     """
     data = data.flatten().cpu()
     data_bytes = data.numpy().tobytes()
@@ -77,9 +94,9 @@ def convert_using_tuple(data: torch.Tensor) -> int:
     Convert a tensor to a tuple.
 
     Args:
-        data: torch.Tensor - The data to convert
+        data (torch.Tensor): The data to convert
     Returns:
-        int - The hash of the data
+        int: The hash of the data
     """
     data = data.flatten().cpu().numpy()
 

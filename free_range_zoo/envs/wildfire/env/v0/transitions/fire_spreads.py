@@ -14,10 +14,10 @@ class FireSpreadTransition(nn.Module):
         Transition function for the fire spread model from Eck et al. 2020.
 
         Args:
-            fire_spread_weights: torch.Tensor - The fire spread filter weights for each cell and neighbour
-            fire_random_spread_weight: float - probability bias for random ignition
-            ignition_temperatures: torch.Tensor - The ignition temperature for each cell
-            use_fire_fuel: bool - Whether to use fire fuel
+            fire_spread_weights (torch.Tensor): The fire spread filter weights for each cell and neighbour
+            fire_random_spread_weight (float): probability bias for random ignition
+            ignition_temperatures (torch.Tensor): The ignition temperature for each cell
+            use_fire_fuel (bool): Whether to use fire fuel
         """
         super().__init__()
 
@@ -35,10 +35,11 @@ class FireSpreadTransition(nn.Module):
         Update the state of the fire intensity.
 
         Args:
-            state: WildfireState - The current state of the environment
-            randomness_source: torch.Tensor - Randomness source
+            state (WildfireState): The current state of the environment
+            randomness_source (torch.Tensor): Randomness source
+
         Returns:
-            WildfireState - The updated state of the environment
+            WildfireState: The updated state of the environment
         """
         lit = torch.logical_and(state.fires > 0, state.intensity > 0)
         lit = lit.to(torch.float32).unsqueeze(1)

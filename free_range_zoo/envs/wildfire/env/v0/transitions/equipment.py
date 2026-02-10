@@ -33,14 +33,13 @@ class EquipmentTransition(nn.Module):
         Initialize the transition object.
 
         Args:
-            equipment_states: torch.Tensor - The definitions of different equipment conditions from the configuration
-            stochastic_repair: bool - Whether to have a stochastic repair
-            repair_probability: float - The probability of repair
-            stochastic_degrade: bool - Whether to have a stochastic degrade
-            degrade_probability: float - The probability of degradation
-            critical_error: bool - Whether to have a critical error
-            critical_error_probability: float - The probability of a critical error
-            condition_on_actions: bool - Whether equipment transitions are conditioned on agent actions
+            equipment_states (torch.Tensor): The definitions of different equipment conditions from the configuration
+            stochastic_repair (bool): Whether to have a stochastic repair
+            repair_probability (float): The probability of repair
+            stochastic_degrade (bool): Whether to have a stochastic degrade
+            degrade_probability (float): The probability of degradation
+            critical_error (bool): Whether to have a critical error
+            critical_error_probability (float): The probability of a critical error
         """
         super().__init__()
 
@@ -62,11 +61,11 @@ class EquipmentTransition(nn.Module):
         Update the state of the equipment conditions.
 
         Args:
-            state: WildfireState - The current state of the environment
-            randomness_source: torch.FloatTensor - Randomness source
-            fought: torch.BoolTensor - tensor indicating which agents fought this step
+            state (WildfireState): The current state of the environment
+            randomness_source (torch.Tensor): Randomness source
+
         Returns:
-            WildfireState - The updated state of the environment
+            WildfireState: The updated state of the environment
         """
         pristine = state.equipment == (self.equipment_states.shape[0] - 1)
         damaged = state.equipment == 0

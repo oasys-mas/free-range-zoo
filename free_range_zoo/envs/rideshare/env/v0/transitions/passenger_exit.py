@@ -3,6 +3,8 @@
 This module provides transition functions for managing passenger exit
 when they reach their destination and leave the vehicle.
 """
+
+import torch
 from torch import nn
 import torch
 
@@ -10,14 +12,18 @@ from free_range_zoo.envs.rideshare.env.v0.structures.state import RideshareState
 
 
 class PassengerExitTransition(nn.Module):
-    """Transition for passenger exit and movement."""
+    """Transition for passenger exit and drop-off.
+
+    This class handles the transition logic when passengers are dropped
+    off at their destinations and exit the vehicle.
+    """
 
     def __init__(self, parallel_envs: int) -> None:
         """
         Initialize the transition function.
 
         Args:
-            parallel_envs: int - Number of parallel environments in the simulation.
+            parallel_envs (int): Number of parallel environments in the simulation.
         """
         super().__init__()
 
@@ -30,13 +36,14 @@ class PassengerExitTransition(nn.Module):
         Calculate the next presence states for all agents.
 
         Args:
-            state: RideshareState - the current state of the environment
-            drops: torch.BoolTensor - a mask over agents which dictates which agents have taken the drop action
-            targets: torch.IntTensor - the task targets of all agents for all environments
-            vectors: torch.IntTensor - the point vectors for each agent movement in the form of (y, x, y_dest, x_dest)
-            timesteps: torch.IntTensor - the timestep of each of the parallel environments
+            state (RideshareState): the current state of the environment
+            drops (torch.BoolTensor): a mask over agents which dictates which agents have taken the drop action
+            targets (torch.IntTensor): the task targets of all agents for all environments
+            vectors (torch.IntTensor): the point vectors for each agent movement in the form of (y, x, y_dest, x_dest)
+            timesteps (torch.IntTensor): the timestep of each of the parallel environments
+
         Returns:
-            RideshareState - the next state of the environment with the presence states transformed
+            RideshareState: the next state of the environment with the presence states transformed
         """
         # Update targets to only include tasks which are being dropped
         targets = torch.where(drops, targets, -100)

@@ -1,4 +1,29 @@
-"""Abstract state class for storing environmental state."""
+"""Abstract State Class for FreeRangeZoo Environment States.
+
+This module provides the State abstract base class that all environment
+state representations must inherit from. States encapsulate the complete
+observable information about an environment at a given time.
+
+Classes:
+    State: Abstract base class for environment state representations.
+
+Features:
+    - Device movement (CPU/GPU)
+    - Cloning and checkpointing
+    - State loading/saving
+    - Conversion to/from dataframes
+
+Example Usage:
+    >>> from free_range_zoo.envs._base.state import State
+    >>> class MyState(State):
+    ...     def __getitem__(self, indices):
+    ...         # Implement indexing
+    ...         pass
+    ...     def __hash__(self):
+    ...         # Implement hashing
+    ...         pass
+"""
+
 from __future__ import annotations
 from typing import Self, Optional, Tuple, List
 from abc import ABC, abstractmethod
@@ -10,7 +35,18 @@ import pandas as pd
 
 @dataclass
 class State(ABC):
-    """Abstract state class for storing environmental state."""
+    """Abstract state class for storing environmental state.
+
+    Provides common functionality for:
+    - Device movement (CPU/GPU)
+    - Cloning and checkpointing
+    - State loading/saving
+    - Conversion to/from dataframes
+
+    Subclasses must implement:
+    - __getitem__: Index into the state
+    - __hash__: Hash the state for caching
+    """
 
     def __post_init__(self):
         """Run after initialization actions."""
@@ -23,9 +59,10 @@ class State(ABC):
         Move all tensors to the specified device.
 
         Args:
-            device: torch.DeviceObjType - Device to move tensors to
+            device (torch.DeviceObjType): Device to move tensors to
+
         Returns:
-            Self - The modified configuration
+            Self: The modified configuration
         """
         for attribute, value in self.__dict__.items():
             if hasattr(value, 'to'):
@@ -42,7 +79,7 @@ class State(ABC):
         Restore the initial state of the environment.
 
         Args:
-            batch_indices: Optional[torch.Tensor] - The indices of the batch to restore
+            batch_indices (Optional[torch.Tensor]): The indices of the batch to restore
         """
         if self.initial is None:
             raise ValueError("Initial state is not saved")
@@ -67,7 +104,7 @@ class State(ABC):
         Restore the state from the checkpoint.
 
         Args:
-            batch_indices: Optional[torch.Tensor] - The indices of the batch to restore
+            batch_indices (Optional[torch.Tensor]): The indices of the batch to restore
         """
         if self.checkpoint is None:
             raise ValueError("Checkpoint is not saved")
@@ -88,8 +125,8 @@ class State(ABC):
         Load a custom state.
 
         Args:
-            state: Self - The state to load
-            batch_indices: Optional[torch.Tensor] - The indices of the batch to load
+            state (Self): The state to load
+            batch_indices (Optional[torch.Tensor]): The indices of the batch to load
         """
         if batch_indices is None:
             self.__dict__ = state.__dict__
@@ -108,7 +145,7 @@ class State(ABC):
         Clone the state.
 
         Returns:
-            Self - The cloned state
+            Self: The cloned state
         """
         cloned_attributes = {}
         for attribute, value in self.__dict__.items():
@@ -133,11 +170,12 @@ class State(ABC):
         Stack a list of states.
 
         Args:
-            states: List[State] - The states to stack
-            args: Any - Additional arguments for torch.stack
-            kwargs: Any - Additional keyword arguments for torch.stack
+            states (List[State]): The states to stack
+            args (Any): Additional arguments for torch.stack
+            kwargs (Any): Additional keyword arguments for torch.stack
+
         Returns:
-            Self - The stacked states
+            Self: The stacked states
         """
         stacked_attributes = {}
         for attribute in states[0].__dict__.keys():
@@ -158,11 +196,12 @@ class State(ABC):
         Concatenate a list of batched state tensors.
 
         Args:
-            states: List[State] - The states to stack
-            args: Any - Additional arguments for torch.stack
-            kwargs: Any - Additional keyword arguments for torch.stack
+            states (List[State]): The states to stack
+            args (Any): Additional arguments for torch.stack
+            kwargs (Any): Additional keyword arguments for torch.stack
+
         Returns:
-            Self - The stacked states
+            Self: The stacked states
         """
         concatenated = {}
         for attribute in states[0].__dict__.keys():
@@ -195,7 +234,7 @@ class State(ABC):
         Unwrap a set of batched states.
 
         Returns:
-            List[Self] - The unwrapped states
+            List[Self]: The unwrapped states
         """
         unwrapped_states = []
 
@@ -210,7 +249,7 @@ class State(ABC):
         Get the length of the state.
 
         Returns:
-            int - The length of the state
+            int: The length of the state
         """
         for attribute in self.__dict__.values():
             if hasattr(attribute, '__len__'):
@@ -222,9 +261,9 @@ class State(ABC):
         Get the state at the specified indices.
 
         Args:
-            indices: torch.Tensor - The indices to get
+            indices (torch.Tensor): The indices to get
         Returns:
-            Self - The state at the specified indices
+            Self: The state at the specified indices
         """
         raise NotImplementedError("State must implement __getitem__ method.")
 
@@ -234,6 +273,6 @@ class State(ABC):
         Hash the state.
 
         Returns:
-            Tuple[int] | int - The hash of the state
+            Tuple[int] | int: The hash of the state
         """
         raise NotImplementedError("State must implement __hash__ method.")

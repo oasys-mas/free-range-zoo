@@ -1,13 +1,17 @@
-"""Converts SQL logged experiments to csv format padding openness with nulls."""
+"""Converts SQL logged experiments to CSV format with openness padding.
+
+This utility reads simulation logs stored in a SQL database and exports
+them to CSV format. Openness-related fields are padded with null values
+where agent populations change during episodes.
+"""
+from typing import Optional, Union
+from collections import defaultdict
+from sqlalchemy import event, select, MetaData
+from sqlalchemy.engine import Engine
+import logging
 import os
 import pandas as pd
 import warnings
-from typing import Optional, Union
-from sqlalchemy import event
-from sqlalchemy import select, MetaData
-from sqlalchemy.engine import Engine
-from collections import defaultdict
-import logging
 
 from free_range_zoo.envs._base.v0.env import AECEnv
 from free_range_zoo.envs._base.sql_logging import get_engine_and_session
@@ -18,7 +22,7 @@ logger = logging.getLogger('free_range_zoo')
 @event.listens_for(Engine, "before_cursor_execute")
 def intercept_read_only_writes(conn, cursor, statement, parameters, context, executemany):
     """
-    Catch function to prevent writes on read-only connections
+    Catch function to prevent writes on read-only connections.
 
     Args:
         conn: SQLAlchemy Connection
@@ -30,9 +34,7 @@ def intercept_read_only_writes(conn, cursor, statement, parameters, context, exe
     Raises:
         RuntimeError: If a write operation is attempted on a read-only connection
     """
-
     if conn.get_execution_options().get("is_readonly"):
-        # find writes
         forbidden_keywords = ['INSERT', 'UPDATE', 'DELETE', 'DROP', 'ALTER', 'TRUNCATE']
         clean_statement = statement.strip().upper()
 
@@ -41,14 +43,21 @@ def intercept_read_only_writes(conn, cursor, statement, parameters, context, exe
 
 
 class SQLLogConverter:
+    """Converts SQL logged experiments to CSV format with openness padded with nulls."""
 
     def __init__(self, connection_string: str, env: Union[str, 'AECEnv'], agent_name: Optional[str] = None):
-        """
+        """Initialize the SQL log converter.
+
         Args:
-            connection_string (str): Connection string to the SQL database
-            env (Union[str, AECEnv]): The environment name (e.g., 'wildfire_v0') or environment instance
-            agent_name (Optional[str], optional): The name of the agent type in the environment.
-                If None, it will be inferred from the environment metadata. Defaults to None.
+            connection_string (str): SQLAlchemy connection string to the database
+            env (Union[str, AECEnv]): Either the environment name (e.g., 'wildfire_v0') or an environment instance
+            agent_name (Optional[str]): Optional name of the agent type in the environment.
+                If None and env is an instance, it will be inferred from environment metadata.
+                Required if env is a string
+
+        Raises:
+            ValueError: If agent_name is None and env is not an environment instance
+            AssertionError: If the environment domain is not recognized
         """
         self.connection_string = connection_string
         self.engine, self.Session = get_engine_and_session(connection_string)
@@ -85,15 +94,24 @@ class SQLLogConverter:
                  override_initialization_check: bool = False,
                  *args,
                  **kwargs):
-        """
-        Args:
-            name (Optional[str], optional): Partial Name of the episode to retrieve. Defaults to None.
-            desc (Optional[str], optional): Partial Description of the episode to retrieve. Defaults to None.
-            simulation_index (Optional[int], optional): Simulation index of the episode to retrieve. Defaults to None.
+        """Export simulation data to CSV files.
 
-        Writes:
-            simulationindex_name \forall matching simulations
-                - environment_id.csv \forall matching episodes
+        Queries the database for matching simulations and exports each episode
+        to a CSV file in the output directory.
+
+        Args:
+            output_directory (str): Directory to write CSV files to
+            name (Optional[str]): Partial name of the simulation to retrieve. Defaults to None
+            desc (Optional[str]): Partial description of the simulation to retrieve. Defaults to None
+            simulation_index (Optional[int]): Specific simulation index to retrieve. Defaults to None
+            verbose (bool): Whether to log fetch progress. Defaults to False
+            override_initialization_check (bool): Whether to overwrite existing output directories
+            *args: Additional arguments passed to get_episode
+            **kwargs: Additional keyword arguments passed to get_episode
+
+        Raises:
+            AssertionError: If at least one of name, desc, or simulation_index is not provided
+            RuntimeError: If output directory exists and override_initialization_check is False
         """
         assert any([name is not None, desc is not None, simulation_index is not None]), \
             "At least one of 'name', 'desc', or 'simulation_index' must be provided."
@@ -157,9 +175,8 @@ class SQLLogConverter:
 
         Args:
             environment_id (int): The environment_id of the episode to retrieve
-            simulation_index (Optional[int], optional): The simulation_index of the episode to retrieve.
-                If None, it will be queried from the database. Defaults to None.
-            reindex (bool, optional): If True, agent IDs will be reindexed [0, ...]
+            simulation_index (Optional[int]): The simulation_index of the episode to retrieve.
+                If None, it will be queried from the database. Defaults to None
         Returns:
             pd.DataFrame: A DataFrame containing merged agent and environment logs per timesteps
         """

@@ -25,11 +25,11 @@ class NoopBaseline(Agent):
         self.actions[:, 1] = -1
 
     def act(self, action_space: free_range_rust.Space) -> torch.IntTensor:
-        """
-        Return a list of no-op actions for each parallel environment.
+        """Return a list of no-op actions for each parallel environment.
 
         Args:
-            action_space: free_range_rust.Space - The current action space available to the agent.
+            action_space (free_range_rust.Space): The current action space available to the agent.
+
         Returns:
             torch.IntTensor: Tensor of actions, one for each parallel environment.
         """

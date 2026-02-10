@@ -1,4 +1,25 @@
-"""Random generators for free-range-zoo stochastic generation."""
+"""Random Number Generation for FreeRangeZoo Environments.
+
+This module provides the RandomGenerator class for managing deterministic
+random number generation across parallel environments. It supports
+seeding, buffered generation, and device-aware operations.
+
+Classes:
+    RandomGenerator: Deterministic random number generator for environments.
+
+Features:
+    - Per-environment seeding
+    - Buffered random generation for performance
+    - GPU/CPU device support
+    - State saving and restoration
+
+Example Usage:
+    >>> from free_range_zoo.envs._base.random_generator import RandomGenerator
+    >>> gen = RandomGenerator(parallel_envs=8, buffer_size=1000)
+    >>> gen.seed([1, 2, 3, 4, 5, 6, 7, 8])
+    >>> rand_tensor = gen.generate(parallel_envs=8, events=3, shape=(64, 64))
+"""
+
 from typing import Tuple
 import torch
 
@@ -15,9 +36,10 @@ class RandomGenerator:
         Initialize the random generator.
 
         Args:
-            buffer_size: int - the size of the buffer for random number generation
-            single_seeding: bool - whether to seed the generator once for all environments
-            device: torch.DeviceObjType - the device to use for random number generation
+            parallel_envs (int): The number of parallel environments
+            buffer_size (int): The size of the buffer for random number generation
+            single_seeding (bool): Whether to seed the generator once for all environments
+            device (torch.DeviceObjType): The device to use for random number generation
         """
         self.parallel_envs = parallel_envs
         self.buffer_size = buffer_size
@@ -52,8 +74,8 @@ class RandomGenerator:
         Seeds the environment, or randomly generates a seed if none is provided.
 
         Args:
-            seed: torch.Tensor - the seed to use for the environment
-            partial_seeding: torch.Tensor - the environment indices to seed
+            seed (torch.Tensor): The seed to use for the environment
+            partial_seeding (torch.Tensor): The environment indices to seed
         """
         if seed is None:
             seed_shape = self.seeds.shape if partial_seeding is None else partial_seeding.shape
@@ -89,10 +111,10 @@ class RandomGenerator:
         Generate random tensors for the environment.
 
         Args:
-            parallel_envs: int - the number of parallel environments
-            events: int - the number of events that require randomness
-            shape: Tuple[int] - the shape of the random tensors
-            key: str - the key to use for the buffer
+            parallel_envs (int): The number of parallel environments
+            events (int): The number of events that require randomness
+            shape (Tuple[int]): The shape of the random tensors
+            key (str): The key to use for the buffer
         """
         if not self.has_been_seeded:
             raise ValueError("The environment must be seeded before generating randomness")

@@ -20,9 +20,9 @@ class PresenceTransition(nn.Module):
         Initialize the transition function.
 
         Args:
-            persist_probs: torch.FloatTensor - the probability for each agent to leave the environment
-            return_probs: torch.FloatTensor - the probability for each agent to return to the environment
-            num_attackers: int - the number of attackers in the environment
+            persist_probs (torch.FloatTensor): the probability for each agent to leave the environment
+            return_probs (torch.FloatTensor): the probability for each agent to return to the environment
+            num_attackers (int): the number of attackers in the environment
         """
         super().__init__()
 
@@ -37,10 +37,11 @@ class PresenceTransition(nn.Module):
         Calculate the next presence states for all agents.
 
         Args:
-            state: CybersecurityState - the current state of the environment
-            randomness_source: torch.FloatTensor - the source of randomness for the transition
+            state (CybersecurityState): the current state of the environment
+            randomness_source (torch.FloatTensor): the source of randomness for the transition
+
         Returns:
-            CybersecurityState - the next state of the environment with the presence states transformed
+            CybersecurityState: the next state of the environment with the presence states transformed
         """
         # Calculate which agents return to the environment
         return_mask = randomness_source < self.return_probs

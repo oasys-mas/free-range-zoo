@@ -18,12 +18,13 @@ def build_action_space(
     Build the action space for all environments in a batched environment.
 
     Args:
-        agent_type: Literal['attacker', 'defender'] - The type of agent for which to build the action
-        show_bad_actions: bool - Whether to include bad actions in the action space
-        environment_task_counts: torch.IntTensor - The number of tasks in each environment
-        current_location: torch.IntTensor - The current location of the subject agent in each environment
+        agent_type (Literal['attacker', 'defender']): The type of agent for which to build the action
+        show_bad_actions (bool): Whether to include bad actions in the action space
+        environment_task_counts (torch.IntTensor): The number of tasks in each environment
+        current_location (torch.IntTensor): The current location of the subject agent in each environment
+
     Returns:
-        List[free_range_rust.Space] - The action spaces for the environments
+        List[free_range_rust.Space]: The action spaces for the environments
     """
     environment_task_counts = environment_task_counts.tolist()
 
@@ -46,11 +47,12 @@ def build_single_defender_action_space(num_tasks_in_environment: int, current_lo
     Build the action space for a single defender agent in the environment.
 
     Args:
-        num_tasks_in_environment: int - The number of tasks in the environment (number of accessible subnetworks + 1)
-        current_location: int - The current location of the subject agent, -1 indicates the home node
-        show_bad_actions: bool - Whether to include bad actions in the action space
+        num_tasks_in_environment (int): The number of tasks in the environment (number of accessible subnetworks + 1)
+        current_location (int): The current location of the subject agent, -1 indicates the home node
+        show_bad_actions (bool): Whether to include bad actions in the action space
+
     Returns:
-        free_range_rust.Space - The action space for the environment
+        free_range_rust.Space: The action space for the environment
     """
     # The agent is not present in the environment so the only action available is to noop
     if num_tasks_in_environment == 0:
@@ -85,9 +87,10 @@ def build_single_attacker_action_space(num_tasks_in_environment: int) -> free_ra
     Build the action space for a single attacker agent in the environment.
 
     Args:
-        num_tasks_in_environment: int - The number of tasks in the environment (number of subnetworks)
+        num_tasks_in_environment (int): The number of tasks in the environment (number of subnetworks)
+
     Returns:
-        free_range_rust.Space - The action space for the environment
+        free_range_rust.Space: The action space for the environment
     """
     # The agent is not present in the environment so the only action available is to noop
     if num_tasks_in_environment == 0:

@@ -22,13 +22,21 @@ class FirstInFirstOutTglobalBaseline(Agent):
     """
 
     def act(self, action_space: free_range_rust.Space) -> torch.IntTensor:
-        """
-        Return a list of actions, one for each parallel environment.
+        """Return a list of actions, one for each parallel environment.
 
         Args:
-            action_space: free_range_rust.Space - Current action space available to the agent.
+            action_space (free_range_rust.Space): Current action space available to the agent.
+
         Returns:
             torch.IntTensor: Tensor of actions, one for each parallel environment.
+        """
+        return self.actions
+
+    def observe(self, observation: torch.Tensor) -> None:
+        """Observe the current state of the environment.
+
+        Args:
+            observation (torch.Tensor): The observation from the environment.
         """
         return self.actions
 

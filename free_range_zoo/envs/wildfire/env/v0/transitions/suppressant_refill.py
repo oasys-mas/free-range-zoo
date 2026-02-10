@@ -11,10 +11,10 @@ class SuppressantRefillTransition(nn.Module):
     Transition function for suppressant refills.
 
     Args:
-        agent_shape: Tuple - Shape of the agent tensor
-        stochastic_refill: bool - Whether to use stochastic refill
-        refill_probability: float - Refill probability
-        equipment_bonuses: torch.Tensor - Bonuses from equipment
+        agent_shape (Tuple): Shape of the agent tensor
+        stochastic_refill (bool): Whether to use stochastic refill
+        refill_probability (float): Refill probability
+        equipment_bonuses (torch.Tensor): Bonuses from equipment
     """
 
     def __init__(self, agent_shape: Tuple, stochastic_refill: bool, refill_probability: float, equipment_bonuses: torch.Tensor):
@@ -22,10 +22,10 @@ class SuppressantRefillTransition(nn.Module):
         Initialize the transition object.
 
         Args:
-            agent_shape: Tuple - Shape of the agent tensor (batches, agents)
-            stochastic_refill: bool - Whether to have stochastic refills
-            refill_probability: float - The probability of refill
-            equipment_bonuses: torch.Tensor - The bonuses from equipment states
+            agent_shape (Tuple): Shape of the agent tensor (batches, agents)
+            stochastic_refill (bool): Whether to have stochastic refills
+            refill_probability (float): The probability of refill
+            equipment_bonuses (torch.Tensor): The bonuses from equipment states
         """
         super().__init__()
 
@@ -51,10 +51,10 @@ class SuppressantRefillTransition(nn.Module):
         Update the state of the suppressants.
 
         Args:
-            state: WildfireState - Current state of the environment
-            refilled_suppressants: torch.Tensor - Mask of agents which have successfully refilled their suppressants
-            randomness_source: torch.Tensor - Randomness source
-            return_increased: bool - Whether to return the increased suppressants
+            state (WildfireState): Current state of the environment
+            refilled_suppressants (torch.Tensor): Mask of agents which have successfully refilled their suppressants
+            randomness_source (torch.Tensor): Randomness source
+            return_increased (bool): Whether to return the increased suppressants
         """
         self._reset_buffers()
 

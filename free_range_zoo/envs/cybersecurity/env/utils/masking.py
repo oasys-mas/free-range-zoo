@@ -9,10 +9,10 @@ def mask_observation(agent_name: str, observe_other_power: bool, observe_other_p
     Mask the observation for the agent.
 
     Args:
-        agent_name: str - Name of the agent
-        observe_other_power: bool - Whether to observe the power of other agents
-        observe_other_presence: bool - Whether to observe the presence of other agents
-        observe_other_location: bool - Whether to observe the location of other agents
+        agent_name (str): Name of the agent
+        observe_other_power (bool): Whether to observe the power of other agents
+        observe_other_presence (bool): Whether to observe the presence of other agents
+        observe_other_location (bool): Whether to observe the location of other agents
     """
     match agent_name.split('_')[0]:
         case 'defender':

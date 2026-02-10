@@ -2,6 +2,16 @@
 
 This module provides logging handler classes for recording simulation data
 to various backends including CSV files and SQL databases.
+
+Classes:
+    Logger: Abstract base logger interface
+    CSVLogger: CSV file logging implementation
+    SQLLogger: SQL database logging implementation
+
+Example Usage:
+    >>> from free_range_zoo.envs._base.logging_handlers import CSVLogger
+    >>> logger = CSVLogger(log_directory='logs', parallel_envs=8)
+    >>> logger.log_environment(state, actions, rewards, ...)
 """
 import datetime
 import os
@@ -24,21 +34,37 @@ class Logger:
     """Abstract base logger interface for simulation environments."""
 
     def log_environment(self, *args, **kwargs):
+        """Log environment state.
+
+        Raises:
+            NotImplementedError: Subclasses must implement this method.
+        """
         raise NotImplementedError
 
     def log_agent(self, *args, **kwargs):
+        """Log agent state.
+
+        Raises:
+            NotImplementedError: Subclasses must implement this method.
+        """
         raise NotImplementedError
 
     def reset(self, *args, **kwargs):
+        """Reset the logger state."""
         pass
 
 
 class CSVLogger(Logger):
-    """
-    CSV logger that matches the current output format exactly.
-    """
+    """CSV logger that matches the current output format exactly."""
 
     def __init__(self, log_directory: str, parallel_envs: int, override_initialization_check: bool = False):
+        """Initialize the CSV logger.
+
+        Args:
+            log_directory (str): Directory to save log files.
+            parallel_envs (int): Number of parallel environments.
+            override_initialization_check (bool): Whether to override the check for existing logs.
+        """
         self.log_directory = log_directory
         self.parallel_envs = parallel_envs
         self._are_logs_initialized = False
@@ -111,15 +137,21 @@ class CSVLogger(Logger):
         self._are_logs_initialized = True
 
     def reset(self, *args, **kwargs):
+        """Reset the logger state for a new simulation."""
         self._are_logs_initialized = False
 
 
 class SQLLogger(Logger):
-    """
-    SQL logger for simulation environments. Uses domain-specific tables.
-    """
+    """SQL logger for simulation environments. Uses domain-specific tables."""
 
     def __init__(self, connection_string: str, domain: str, parallel_envs: int):
+        """Initialize the SQL logger.
+
+        Args:
+            connection_string (str): SQLAlchemy connection string (e.g., sqlite:///path/to/db)
+            domain (str): Environment domain name (e.g., 'wildfire', 'rideshare', 'cybersecurity')
+            parallel_envs (int): Number of parallel environments
+        """
         self.connection_string = connection_string
         self.domain = domain
         self.parallel_envs = parallel_envs
@@ -130,6 +162,13 @@ class SQLLogger(Logger):
         self._agent_ids = None
 
     def reset(self, log_label=None, log_description=None, agents=None):
+        """Reset the logger and create a new simulation record.
+
+        Args:
+            log_label (str): Optional name for the simulation
+            log_description (str): Optional description of the simulation
+            agents (list): Optional list of agent names
+        """
         session = self.Session()
         with session.begin():
             sim = Simulation(

@@ -26,19 +26,20 @@ def build_observation_space(
     Build the observation space for all environments in a batched environment.
 
     Args:
-        agent_type: Literal['attacker', 'defender'] - The type of agent for which to build the observation
-        num_nodes: int - The number of nodes in the environment
-        parallel_envs: int - The number of parallel environments
-        num_attackers: int - The number of attackers in the environment
-        num_defenders: int - The number of defenders in the environment
-        attacker_high: Tuple[int] - The high values for the attacker observation space (power, presence, location)
-        defender_high: Tuple[int] - The high values for the defender observation space (mitigation, presence, location)
-        network_high: Tuple[int] - The high values for the network observation space (state)
-        include_power: bool - Whether to include the power in the observation space
-        include_presence: bool - Whether to include the presence in the observation space
-        include_location: bool - Whether to include the location in the observation space
+        agent_type (Literal['attacker', 'defender']): The type of agent for which to build the observation
+        num_nodes (int): The number of nodes in the environment
+        parallel_envs (int): The number of parallel environments
+        num_attackers (int): The number of attackers in the environment
+        num_defenders (int): The number of defenders in the environment
+        attacker_high (Tuple[int]): The high values for the attacker observation space (power, presence, location)
+        defender_high (Tuple[int]): The high values for the defender observation space (mitigation, presence, location)
+        network_high (Tuple[int]): The high values for the network observation space (state)
+        include_power (bool): Whether to include the power in the observation space
+        include_presence (bool): Whether to include the presence in the observation space
+        include_location (bool): Whether to include the location in the observation space
+
     Returns:
-        List[gymnasium.Space] - The observation spaces for the environments
+        List[free_range_rust.Space]: The observation spaces for the environments
     """
     match agent_type:
         case 'defender':
@@ -77,14 +78,15 @@ def build_single_attacker_observation_space(attacker_high: Tuple[int],
     Build the observation space for a single environment.
 
     Args:
-        attacker_high: Tuple[int] - The high values for the agent observation space (power, presence, location)
-        network_high: Tuple[int] - The high values for the network observation space (state)
-        num_tasks: int - The number of tasks (subnetworks) in the environment
-        num_agents: int - The number of agents in the environment
-        include_power: bool - Whether to include the threat in the observation space
-        include_presence: bool - Whether to include the presence in the observation space
+        attacker_high (Tuple[int]): The high values for the agent observation space (power, presence, location)
+        network_high (Tuple[int]): The high values for the network observation space (state)
+        num_tasks (int): The number of tasks (subnetworks) in the environment
+        num_agents (int): The number of agents in the environment
+        include_power (bool): Whether to include the threat in the observation space
+        include_presence (bool): Whether to include the presence in the observation space
+
     Returns:
-        free_range_rust.Space - The observation space for the environment
+        free_range_rust.Space: The observation space for the environment
     """
     other_high = ()
     if include_power:
@@ -111,15 +113,16 @@ def build_single_defender_observation_space(defender_high: Tuple[int],
     Build the observation space for a single environment.
 
     Args:
-        defender_high: Tuple[int] - The high values for the agent observation space (power, presence, location)
-        network_high: Tuple[int] - The high values for the network observation space (state)
-        num_tasks: int - The number of tasks (subnetworks) in the environment
-        num_agents: int - The number of agents in the environment
-        include_power: bool - Whether to include the mitigation in the observation space
-        include_presence: bool - Whether to include the presence in the observation space
-        include_location: bool - Whether to include the location in the observation space
+        defender_high (Tuple[int]): The high values for the agent observation space (power, presence, location)
+        network_high (Tuple[int]): The high values for the network observation space (state)
+        num_tasks (int): The number of tasks (subnetworks) in the environment
+        num_agents (int): The number of agents in the environment
+        include_power (bool): Whether to include the mitigation in the observation space
+        include_presence (bool): Whether to include the presence in the observation space
+        include_location (bool): Whether to include the location in the observation space
+
     Returns:
-        free_range_rust.Space - The observation space for the environment
+        free_range_rust.Space: The observation space for the environment
     """
     other_high = ()
     if include_power:
@@ -142,9 +145,10 @@ def build_single_agent_observation_space(high: Tuple[int]):
     Build the observation space for a single agent.
 
     Args:
-        high: Tuple[int] - The high values for the agent observation space (power, presence, location) if unfiltered
+        high (Tuple[int]): The high values for the agent observation space (power, presence, location) if unfiltered
+
     Returns:
-        free_range_rust.Space - The observation space for the agent
+        free_range_rust.Space: The observation space for the agent
     """
     if len(high) == 0:
         return Space.Discrete(0, start=0)
@@ -157,9 +161,10 @@ def build_single_subnetwork_observation_space(high: Tuple[int], num_tasks: int):
     Build the observation space for the subnetworks in an environment.
 
     Args:
-        high: Tuple[int] - The high values for the subnetwork observation space (state) if unfiltered
-        num_tasks: int - The number of tasks in the environment
+        high (Tuple[int]): The high values for the subnetwork observation space (state) if unfiltered
+        num_tasks (int): The number of tasks in the environment
+
     Returns:
-        free_range_rust.Space - The observation space for the fire
+        free_range_rust.Space: The observation space for the fire
     """
     return Space.Tuple([Space.Box(low=[0] * len(high), high=high) for _ in range(num_tasks)])

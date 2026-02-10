@@ -11,11 +11,11 @@ class CapacityTransition(nn.Module):
     Transition function for the suppressant capacity
 
     Parameters:
-        agent_shape: Tuple - Shape of the agent tensor
-        stochastic_switch: bool - Whether to stochastically switch the maximum suppressant value
-        tank_switch_probability: float - Probability of switching the maximum suppressant value
-        possible_suppressant_maximums: torch.Tensor - Possible maximum suppressant values
-        suppressant_maximum_probabilities: torch.Tensor - Probabilities of each maximum suppressant value
+        agent_shape (Tuple): Shape of the agent tensor
+        stochastic_switch (bool): Whether to stochastically switch the maximum suppressant value
+        tank_switch_probability (float): Probability of switching the maximum suppressant value
+        possible_suppressant_maximums (torch.Tensor): Possible maximum suppressant values
+        suppressant_maximum_probabilities (torch.Tensor): Probabilities of each maximum suppressant value
     """
 
     def __init__(self, agent_shape: Tuple, stochastic_switch: bool, tank_switch_probability: float,
@@ -41,11 +41,12 @@ class CapacityTransition(nn.Module):
         Update the state of the maximum suppressant capacity
 
         Args:
-            state: WildfireState - Current state of the environment
-            targets: torch.Tensor - Mask of agents which have successfully refilled their suppressants
-            randomness_source: torch.Tensor - Randomness source
+            state (WildfireState): Current state of the environment
+            targets (torch.Tensor): Mask of agents which have successfully refilled their suppressants
+            randomness_source (torch.Tensor): Randomness source
+
         Returns:
-            WildfireState - Updated state of the environment
+            WildfireState: Updated state of the environment
         """
         self._reset_buffers()
 

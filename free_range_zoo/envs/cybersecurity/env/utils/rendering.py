@@ -1,4 +1,8 @@
-import warnings
+"""Rendering Utilities for Cybersecurity Environment.
+
+This module provides utility functions for rendering cybersecurity environment
+visualizations including network diagrams and agent visualizations.
+"""
 from typing import Union, Optional
 import os
 import time

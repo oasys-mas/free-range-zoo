@@ -26,22 +26,21 @@ class PatchedAttackerBaseline(Agent):
         self.actions = torch.zeros((self.parallel_envs, 2), dtype=torch.int32)
 
     def act(self, action_space: free_range_rust.Space) -> torch.IntTensor:
-        """
-        Return a list of actions, one for each parallel environment.
+        """Return a list of actions, one for each parallel environment.
 
         Args:
-            action_space: free_range_rust.Space - Current action space available to the agent.
+            action_space (free_range_rust.Space): Current action space available to the agent.
+
         Returns:
             torch.IntTensor: Tensor of actions, one for each parallel environment.
         """
         return self.actions
 
     def observe(self, observation: Dict[str, Any]) -> None:
-        """
-        Observe the environment.
+        """Observe the environment.
 
         Args:
-            observation: Dict[str, Any] - Current observation from the environment.
+            observation (Dict[str, Any]): Current observation from the environment.
         """
         self.observation, self.t_mapping = observation
         self.t_mapping = self.t_mapping['agent_action_mapping']
@@ -93,22 +92,21 @@ class PatchedDefenderBaseline(Agent):
         self.actions = torch.zeros((self.parallel_envs, 2), dtype=torch.int32)
 
     def act(self, action_space: free_range_rust.Space) -> torch.IntTensor:
-        """
-        Return a list of actions, one for each parallel environment.
+        """Return a list of actions, one for each parallel environment.
 
         Args:
-            action_space: free_range_rust.Space - Current action space available to the agent.
+            action_space (free_range_rust.Space): Current action space available to the agent.
+
         Returns:
             torch.IntTensor: Tensor of actions, one for each parallel environment.
         """
         return self.actions
 
     def observe(self, observation: Dict[str, Any]) -> None:
-        """
-        Observe the environment.
+        """Observe the environment.
 
         Args:
-            observation: Dict[str, Any] - Current observation from the environment.
+            observation (Dict[str, Any]): Current observation from the environment.
         """
         self.observation, self.t_mapping = observation
         self.t_mapping = self.t_mapping['agent_action_mapping']

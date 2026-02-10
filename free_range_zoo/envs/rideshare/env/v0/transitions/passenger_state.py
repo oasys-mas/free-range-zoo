@@ -3,6 +3,8 @@
 This module provides transition functions for managing passenger state
 changes in the rideshare environment (unaccepted → accepted → riding).
 """
+
+import torch
 from torch import nn
 import torch
 
@@ -10,14 +12,20 @@ from free_range_zoo.envs.rideshare.env.v0.structures.state import RideshareState
 
 
 class PassengerStateTransition(nn.Module):
-    """
+    """Transition class for managing passenger state changes.
+
+    This class handles the state transitions for passengers as they move
+    through the lifecycle: from being unaccepted to accepted by a driver,
+    to riding in the vehicle, to being dropped off at their destination.
     """
 
     def __init__(self, num_agents: int, parallel_envs: int) -> None:
         """
-        Initialize the transition function.
+        Initialize the passenger state transition function.
 
         Args:
+            num_agents (int): Number of agents in the environment.
+            parallel_envs (int): Number of parallel environments.
         """
         super().__init__()
 
@@ -38,14 +46,15 @@ class PassengerStateTransition(nn.Module):
         Calculate the next presence states for all agents.
 
         Args:
-            state: RideshareState - the current state of the environment
-            accepts: torch.BoolTensor - a mask over agents which dictates which agents have taken the accept action
-            picks: torch.BoolTensor - a mask over agents which dictates which agents have taken the pick action
-            targets: torch.IntTensor - the task targets of all agents for all environments
-            vectors: torch.IntTensor - the point vectors for each agent movement in the form of (y, x, y_dest, x_dest)
-            timesteps: torch.IntTensor - the timestep of each of the parallel environments
+            state (RideshareState): the current state of the environment
+            accepts (torch.BoolTensor): a mask over agents which dictates which agents have taken the accept action
+            picks (torch.BoolTensor): a mask over agents which dictates which agents have taken the pick action
+            targets (torch.IntTensor): the task targets of all agents for all environments
+            vectors (torch.FloatTensor): the point vectors for each agent movement in the form of (y, x, y_dest, x_dest)
+            timesteps (torch.IntTensor): the timestep of each of the parallel environments
+
         Returns:
-            RideshareState - the next state of the environment with the presence states transformed
+            RideshareState: the next state of the environment with the presence states transformed
         """
         # Aggregate vectors to determine distance between the subject and target
         distances = ((vectors[:, :, [0, 1]] - vectors[:, :, [2, 3]])**2).sum(dim=-1).sqrt()

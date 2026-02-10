@@ -3,6 +3,7 @@
 This module provides transition functions for managing agent and passenger
 movement within the rideshare environment.
 """
+
 from typing import Tuple
 
 from torch import nn
@@ -12,17 +13,21 @@ from free_range_zoo.envs.rideshare.env.v0.structures.state import RideshareState
 
 
 class MovementTransition(nn.Module):
-    """Movement transition for agents and tasks within the rideshare environment."""
+    """Movement transition for agents and passengers.
+
+    This class handles the transition logic for vehicle movement toward
+    passenger pickup locations and destinations.
+    """
 
     def __init__(self, parallel_envs: int, num_agents: int, fast_travel: bool, diagonal_travel: bool) -> None:
         """
         Initialize the transition function.
 
         Args:
-            parallel_envs: int - the number of parallel environments to vectorize operations over
-            num_agents: int - the number of agents to expect in each environment
-            fast_travel: bool - whether to enable fast travel for agents
-            diagonal_travel: bool - whether to enable diagonal 8 direction movement for agents
+            parallel_envs (int): the number of parallel environments to vectorize operations over
+            num_agents (int): the number of agents to expect in each environment
+            fast_travel (bool): whether to enable fast travel for agents
+            diagonal_travel (bool): whether to enable diagonal 8 direction movement for agents
         """
         super().__init__()
 
@@ -64,11 +69,12 @@ class MovementTransition(nn.Module):
         Calculate the distance between two sets of positions.
 
         Args:
-            starts: torch.IntTensor - The starting positions of the agents
-            goals: torch.IntTensor - The goal positions of the agents
+            starts (torch.IntTensor): The starting positions of the agents
+            goals (torch.IntTensor): The goal positions of the agents
+
         Returns:
-            best_moves: torch.IntTensor - The best moves for each agent
-            distances: torch.IntTensor - The distance traveled for each agent
+            torch.IntTensor: The best moves for each agent
+            torch.FloatTensor: The distance traveled for each agent
         """
         candidate_positions = starts.unsqueeze(2) + self.directions.view(1, 1, -1, 2)
         distances = torch.norm((candidate_positions - goals.unsqueeze(2)).float(), dim=3)
@@ -96,10 +102,11 @@ class MovementTransition(nn.Module):
         Calculate the next presence states for all agents.
 
         Args:
-            state: RideshareState - the current state of the environment
-            vectors: torch.IntTensor - the point vectors for each agent in the form of (y, x, y_dest, x_dest)
+            state (RideshareState): the current state of the environment
+            vectors (torch.IntTensor): the point vectors for each agent in the form of (y, x, y_dest, x_dest)
+
         Returns:
-            RideshareState - the next state of the environment with the modified movement positions
+            RideshareState: the next state of the environment with the modified movement positions
         """
         current_positions = vectors[:, :, :2]
         target_positions = vectors[:, :, 2:]

@@ -1,11 +1,28 @@
-"""Utility for converting between different environment types."""
+"""Environment Conversion Utilities for FreeRangeZoo.
+
+This module provides utilities for converting between different environment
+types, primarily between AEC (Agent-Environment-Cycle) and Parallel
+environment formats. These conversions enable interoperability between
+different multi-agent learning frameworks.
+
+Functions:
+    batched_aec_to_batched_parallel: Convert a batched AEC environment to parallel format.
+
+Classes:
+    batched_aec_to_batched_parallel_wrapper: Wrapper that performs AEC to parallel conversion.
+
+Example Usage:
+    >>> from free_range_zoo.utils.conversions import batched_aec_to_batched_parallel
+    >>> parallel_env = batched_aec_to_batched_parallel(aec_env)
+"""
+
 from typing import Dict, Tuple, Any, List, Union
 
 from pettingzoo.utils.conversions import aec_to_parallel_wrapper
 from pettingzoo.utils.env import ParallelEnv, AgentID, ObsType, ActionType
 from pettingzoo.utils.wrappers import OrderEnforcingWrapper
-import torch
 from tensordict import TensorDict
+import torch
 
 from free_range_zoo.envs._base.v0.env import BatchedAECEnv
 
@@ -16,12 +33,13 @@ def batched_aec_to_batched_parallel(aec_env: BatchedAECEnv) -> ParallelEnv[Agent
 
     In the case of an existing batched parallel environment wrapped using a `parallel_to_aec_wrapper`,
     this function will return the original environment Otherwise, it will apply the `aec_to_paralel_wrapper`
-    to convert the environment
+    to convert the environment.
 
     Args:
-        aec_env: AECEnv - The environment to convert
+        aec_env (BatchedAECEnv): The environment to convert.
+
     Returns:
-        ParallelEnv: The parallel environment
+        ParallelEnv: The parallel environment.
     """
     if isinstance(aec_env, OrderEnforcingWrapper) and isinstance(aec_env.env, batched_aec_to_batched_parallel_wrapper):
         return aec_env.env.env
@@ -43,10 +61,11 @@ class batched_aec_to_batched_parallel_wrapper(aec_to_parallel_wrapper):
         Reset the environment and returns the initial observations.
 
         Args:
-            seed: Union[int, List[int]] -  The seed for the environment
-            options: Dict[str, Any] - The options for the environment
+            seed (Union[int, List[int]]): The seed for the environment
+            options (Dict[str, Any]): The options for the environment
+
         Returns:
-            Tuple[Dict[str, torch.Tensor], Dict[str, Any]] - The initial observations and infos
+            Tuple[Dict[str, torch.Tensor], Dict[str, Any]]: The initial observations and infos
         """
         self.aec_env.reset(seed=seed, options=options)
         self.agents = self.aec_env.agents
@@ -64,10 +83,10 @@ class batched_aec_to_batched_parallel_wrapper(aec_to_parallel_wrapper):
         Modify step function to handle parallel environments.
 
         Args:
-            actions: dict - The actions for each agent
+            actions (Dict[str, ActionType]): The actions for each agent
+
         Returns:
-            Tuple[Dict[str, torch.Tensor], Dict[str, torch.Tensor], Dict[str, torch.Tensor], Dict[str, torch.Tensor],
-                  Dict[str, Dict]] - The observations, rewards, terminations, truncations, and infos
+            Tuple[Dict[str, torch.Tensor], Dict[str, torch.Tensor], Dict[str, torch.Tensor], Dict[str, torch.Tensor], Dict[str, Dict]]: The observations, rewards, terminations, truncations, and infos
         """
         terminations = {
             agent: torch.zeros(self.aec_env.parallel_envs, dtype=torch.bool, device=self.aec_env.device)
@@ -103,7 +122,7 @@ class batched_aec_to_batched_parallel_wrapper(aec_to_parallel_wrapper):
         Observe the environment.
 
         Returns:
-            Dict[str, TensorDict] - The observations for each agent
+            Dict[str, TensorDict]: The observations for each agent
         """
         return {agent: self.aec_env.observe(agent) for agent in self.aec_env.agents}
 
@@ -113,6 +132,6 @@ class batched_aec_to_batched_parallel_wrapper(aec_to_parallel_wrapper):
         Return a boolean tensor indicating which environments have finished.
 
         Returns:
-            torch.Tensor - The tensor indicating which environments have finished
+            torch.Tensor: The tensor indicating which environments have finished
         """
         return self.aec_env.finished

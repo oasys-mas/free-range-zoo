@@ -1,4 +1,25 @@
-"""Dataset class for generating environment configurations and splitting configs into training, validation, and test sets."""
+"""Configuration Dataset Management for FreeRangeZoo.
+
+This module provides the ConfigurationDataset class for managing and
+splitting environment configurations into training, validation, and
+test sets. It supports transform functions and reproducible data splits.
+
+Classes:
+    ConfigurationDataset: Splits configurations into train/val/test splits.
+
+Example Usage:
+    >>> from free_range_zoo.utils.dataset import ConfigurationDataset
+    >>> dataset = ConfigurationDataset(
+    ...     data=config_list,
+    ...     transforms=[transform_fn],
+    ...     seed=42,
+    ...     train_split=0.7,
+    ...     val_split=0.15,
+    ...     test_split=0.15,
+    ... )
+    >>> train_config = dataset.train()
+"""
+
 from typing import List, Callable, Dict, Any, Optional
 import torch
 import itertools
@@ -7,6 +28,16 @@ import math
 
 
 def _deep_clone(data):
+    """Recursively deep clone data structures.
+
+    Handles torch.Tensors, lists, dicts, and other objects.
+
+        Args:
+            data: Data to clone
+
+        Returns:
+            Any: Deep clone of the data
+    """
     if isinstance(data, torch.Tensor):
         return data.clone()
     elif isinstance(data, list):
@@ -18,7 +49,16 @@ def _deep_clone(data):
 
 
 class ConfigurationDataset:
-    """A dataset that splits data into training, validation, and test sets."""
+    """A dataset that splits data into training, validation, and test sets.
+
+    Provides iterators over each split for training machine learning models.
+
+    Attributes:
+        train_data: List of training configurations.
+        val_data: List of validation configurations.
+        test_data: List of test configurations.
+        transforms: List of transform functions applied to each configuration.
+    """
 
     def __init__(
         self,
@@ -31,16 +71,23 @@ class ConfigurationDataset:
         val_seed: Optional[int] = 10,
         test_seed: Optional[int] = 20,
     ):
-        """
-        Create a new ConfigurationDataset.
+        """Create a new ConfigurationDataset.
 
         Args:
-            data: The data to split.
-            transforms: A list of transforms to apply to the data.
-            seed: The seed to use for the random number generator.
-            train_split: The proportion of the data to use for training.
-            val_split: The proportion of the data to use for validation.
-            test_split: The proportion of the data to use for testing.
+            data (List[Dict[str, Any]]): List of configuration dictionaries to split
+            transforms (List[Callable[[Dict[str, Any], Optional[torch.Generator]], int]]): List of callable transforms. Each takes (data_item, generator)
+                and returns a modified configuration
+            seed (Optional[int]): Random seed for the training set iterator. If None, generates randomly
+            train_split (Optional[float]): Proportion of data for training (default 0.66)
+            val_split (Optional[float]): Proportion of data for validation (default 0.17)
+            test_split (Optional[float]): Proportion of data for testing (default 0.17)
+            val_seed (Optional[int]): Random seed for the validation set iterator
+            test_seed (Optional[int]): Random seed for the test set iterator
+
+        Raises:
+            AssertionError: If all transforms are not callable
+            AssertionError: If splits do not sum to 1.0
+            AssertionError: If not all data items are dictionaries
         """
         for transform in transforms:
             assert callable(transform), "All transforms must be callable"

@@ -20,11 +20,11 @@ class RandomBaseline(Agent):
     """
 
     def act(self, action_space: free_range_rust.Space) -> torch.IntTensor:
-        """
-        Sample and return a list of random actions for each parallel environment.
+        """Sample and return a list of random actions for each parallel environment.
 
         Args:
-            action_space: free_range_rust.Space - The current action space available to the agent.
+            action_space (free_range_rust.Space): The current action space available to the agent.
+
         Returns:
             torch.IntTensor: Tensor of actions, one for each parallel environment.
         """

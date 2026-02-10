@@ -1,4 +1,20 @@
-"""Abstract class for environment configurations."""
+"""Abstract Configuration Base Class for FreeRangeZoo Environments.
+
+This module provides the Configuration abstract base class that all
+environment configuration classes must inherit from. Configurations
+define the parameters and constraints for environment initialization.
+
+Classes:
+    Configuration: Abstract base class for environment configurations.
+
+Example Usage:
+    >>> from free_range_zoo.envs._base.configuration import Configuration
+    >>> class MyConfig(Configuration):
+    ...     def validate(self) -> bool:
+    ...         # Validate configuration parameters
+    ...         pass
+"""
+
 from typing import Self
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
@@ -16,7 +32,7 @@ class Configuration(ABC):
         Validate the configuration.
 
         Returns:
-            bool - True if the configuration is valid
+            bool: Whether the configuration is valid
         """
         for attribute, value in self.__dict__.items():
             if hasattr(value, 'validate'):
@@ -29,9 +45,10 @@ class Configuration(ABC):
         Move all tensors to the specified device.
 
         Args:
-            device: torch.DeviceObjType - Device to move tensors to
+            device (torch.DeviceObjType): Device to move tensors to.
+
         Returns:
-            Self - The modified configuration
+            Self: The modified configuration.
         """
         for attribute, value in self.__dict__.items():
             if hasattr(value, 'to'):

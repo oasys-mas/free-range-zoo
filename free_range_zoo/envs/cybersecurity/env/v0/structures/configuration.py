@@ -18,11 +18,11 @@ class CybersecurityConfiguration(Configuration):
     Configuration for the cybersecurity environment.
 
     Attributes:
-        attacker_config: AttackerConfiguration - Configuration for the attacker agent properties
-        defender_config: DefenderConfiguration - Configuration for the defender agent properties
-        network_config: NetworkConfiguration - Configuration for the network nodes
-        reward_config: RewardConfiguration - Configuration for the environment rewards
-        stochastic_config: StochasticConfiguration - Configuration for the stochastic components of the environment
+        attacker_config (AttackerConfiguration): Configuration for the attacker agent properties
+        defender_config (DefenderConfiguration): Configuration for the defender agent properties
+        network_config (NetworkConfiguration): Configuration for the network nodes
+        reward_config (RewardConfiguration): Configuration for the environment rewards
+        stochastic_config (StochasticConfiguration): Configuration for the stochastic components of the environment
     """
 
     attacker_config: AttackerConfiguration
@@ -102,11 +102,11 @@ class AttackerConfiguration(Configuration):
     Configuration for the attacker in the cybersecurity environment.
 
     Attributes:
-        initial_presence: torch.BoolTensor - Initial presence of each attacking agent
+        initial_presence (torch.BoolTensor): Initial presence of each attacking agent
 
-        threat: torch.FloatTensor - Threat values for each attacking agent
-        persist_probs: torch.FloatTensor - Probability for each attacking agent to leave the environment
-        return_probs: torch.FloatTensor - Probability for each attacking agent to return to the environment
+        threat (torch.FloatTensor): Threat values for each attacking agent
+        persist_probs (torch.FloatTensor): Probability for each attacking agent to leave the environment
+        return_probs (torch.FloatTensor): Probability for each attacking agent to return to the environment
     """
 
     initial_presence: torch.BoolTensor
@@ -145,12 +145,12 @@ class DefenderConfiguration(Configuration):
     Configuration for the defender in the cybersecurity environment.
 
     Attributes:
-        initial_location: torch.IntTensor - Initial location of each defending agent
-        initial_presence: torch.BoolTensor - Initial presence of each defending agent
+        initial_location (torch.IntTensor): Initial location of each defending agent
+        initial_presence (torch.BoolTensor): Initial presence of each defending agent
 
-        mitigation: torch.FloatTensor - mitigation values for each defending agent
-        persist_probs: torch.FloatTensor - Probability for each defending agent to leave the environment
-        return_probs: torch.FloatTensor - Probability for each defending agent to return to the environment
+        mitigation (torch.FloatTensor): mitigation values for each defending agent
+        persist_probs (torch.FloatTensor): Probability for each defending agent to leave the environment
+        return_probs (torch.FloatTensor): Probability for each defending agent to return to the environment
     """
 
     initial_location: torch.IntTensor
@@ -192,14 +192,14 @@ class NetworkConfiguration(Configuration):
     The home node for the simulation is automatically defined as node -1.
 
     Attributes:
-        patched_states: int - Number of patched states in the network
-        vulnerable_states: int - Number of vulnerable states in the network
-        exploited_states: int - Number of exploited states in the network
+        patched_states (int): Number of patched states in the network
+        vulnerable_states (int): Number of vulnerable states in the network
+        exploited_states (int): Number of exploited states in the network
 
-        temperature: float - Temperature for the softmax function for the danger score
+        temperature (float): Temperature for the softmax function for the danger score
 
-        initial_state: torch.IntTensor - Subnetwork-parallel array representing the exploitment state of each subnetwork
-        adj_matrix: torch.BoolTensor - 2D array representing adjacency matrix for all subnetwork connections
+        initial_state (torch.IntTensor): Subnetwork-parallel array representing the exploitment state of each subnetwork
+        adj_matrix (torch.BoolTensor): 2D array representing adjacency matrix for all subnetwork connections
     """
 
     patched_states: int
@@ -242,7 +242,7 @@ class StochasticConfiguration(Configuration):
     Configuration for the stochastic components of the cybersecurity simulation.
 
     Attributes:
-        network_state: bool - Whether the subnetwork states degrade / repair stochastically
+        network_state (bool): Whether the subnetwork states degrade / repair stochastically
     """
 
     network_state: bool
@@ -258,9 +258,9 @@ class RewardConfiguration(Configuration):
     Configuration for the rewards in the cybersecurity environment.
 
     Attributes:
-        bad_action_penalty: float - Penalty for committing a bad action (patching while at the home node)
-        patch_reward: float - Reward (or penalty) for patching a node
-        network_state_rewards: torch.FloatTensor - Subnetwork-parallel array representing the rewards for each
+        bad_action_penalty (float): Penalty for committing a bad action (patching while at the home node)
+        patch_reward (float): Reward (or penalty) for patching a node
+        network_state_rewards (torch.FloatTensor): Subnetwork-parallel array representing the rewards for each
     """
 
     bad_action_penalty: float

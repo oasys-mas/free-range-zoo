@@ -1,4 +1,8 @@
-"""Action task mapping wrapper for mapping actions to individual tasks in multi-task environments."""
+"""Action Task Mapping Wrapper for Multi-Task Environments.
+
+This module provides the ActionTaskMappingWrapperModifier class for mapping
+actions to individual tasks in multi-task environments.
+"""
 from typing import Dict, Any, Tuple
 from supersuit.generic_wrappers.utils.base_modifier import BaseModifier
 import torch
@@ -13,12 +17,14 @@ class ActionTaskMappingWrapperModifier(BaseModifier):
     subject_agent = True
 
     def __init__(self, env: BatchedAECEnv, subject_agent: str):
-        """
-        Initialize the ActionTaskMappingWrapperModifier.
+        """Initialize the ActionTaskMappingWrapperModifier.
 
         Args:
-            env: BatchedAECEnv - The environment to wrap.
-            subject_agent: str - The subject agent of the graph wrapper.
+            env (BatchedAECEnv): The environment to wrap.
+            subject_agent (str): The subject agent of the graph wrapper.
+
+        Returns:
+            None: None
         """
         self.env = env
 
@@ -34,11 +40,11 @@ class ActionTaskMappingWrapperModifier(BaseModifier):
         self.cur_obs = None
 
     def modify_obs(self, observation: torch.Tensor) -> Tuple[Any, Dict[str, torch.IntTensor]]:
-        """
-        Modify the observation before it is passed to the agent.
+        """Modify the observation before it is passed to the agent.
 
         Args:
-            observation: The observation to modify.
+            observation (torch.Tensor): The observation to modify.
+
         Returns:
             Tuple[Any, Dict[str, torch.IntTensor]]: The original observation space followed by the mapping of actions to tasks.
         """
@@ -46,13 +52,14 @@ class ActionTaskMappingWrapperModifier(BaseModifier):
         return self.cur_obs
 
 
-def action_mapping_wrapper_v0(env: BatchedAECEnv, **kwargs) -> BatchedAECEnv:
-    """
-    Apply the ActionTaskMappingWrapperModifier to the environment.
+def action_mapping_wrapper_v0(env: BatchedAECEnv, **kwargs: Dict[str, Any]) -> BatchedAECEnv:
+    """Apply the ActionTaskMappingWrapperModifier to the environment.
 
     Args:
-        env: BatchedAECEnv - The environment to wrap.
+        env (BatchedAECEnv): The environment to wrap.
+        **kwargs (Dict[str, Any]): Additional keyword arguments passed to the modifier.
+
     Returns:
-        BatchedAECEnv - The wrapped environment.
+        BatchedAECEnv: The wrapped environment.
     """
     return shared_wrapper(env, ActionTaskMappingWrapperModifier, **kwargs)

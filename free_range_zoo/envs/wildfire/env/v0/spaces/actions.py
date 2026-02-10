@@ -12,9 +12,10 @@ def build_action_space(environment_task_counts: torch.Tensor) -> List[free_range
     Build the action space for all environments in a batched environment.
 
     Args:
-        environment_task_counts: torch.Tensor - The number of tasks in each environment
+        environment_task_counts (torch.Tensor): The number of tasks in each environment
+
     Returns:
-        List[free_range_rust.Space] - The action spaces for the environments
+        List[free_range_rust.Space]: The action spaces for the environments
     """
     environment_task_counts = environment_task_counts.tolist()
     return Space.Vector([build_single_action_space(task_count) for task_count in environment_task_counts])
@@ -31,9 +32,10 @@ def build_single_action_space(num_tasks_in_environment: int) -> free_range_rust.
           action for noop
 
     Args:
-        num_tasks_in_environment: int - The number of tasks in the environment
+        num_tasks_in_environment (int): The number of tasks in the environment
+
     Returns:
-        free_range_rust.Space - The action space for the environment
+        free_range_rust.Space: The action space for the environment
     """
     if num_tasks_in_environment == 0:
         return Space.OneOf([Space.Discrete(1, start=-1)])
