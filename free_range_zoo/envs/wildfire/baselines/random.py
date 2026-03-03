@@ -8,7 +8,7 @@ sophisticated wildfire suppression strategies.
 import free_range_rust
 import torch
 
-from free_range_zoo.utils.agent import Agent
+from free_range_zoo.envs._base.agent import Agent
 
 
 class RandomBaseline(Agent):

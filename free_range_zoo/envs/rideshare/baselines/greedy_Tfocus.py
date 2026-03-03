@@ -6,9 +6,9 @@ This module provides a baseline agent that always selects the passenger with the
 import free_range_rust
 import torch
 
-from free_range_zoo.utils.agent import Agent
-from free_range_zoo.envs.rideshare.env.transitions.movement import MovementTransition
-from free_range_zoo.envs.rideshare.env.structures.configuration import AgentConfiguration
+from free_range_zoo.envs._base.agent import Agent
+from free_range_zoo.envs.rideshare.env.v0.transitions.movement import MovementTransition
+from free_range_zoo.envs.rideshare.env.v0.structures.configuration import AgentConfiguration
 
 
 class GreedyTaskFocus(Agent):

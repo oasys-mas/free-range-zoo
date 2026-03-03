@@ -1,19 +1,16 @@
-"""
-Converts SQL logged experiments to csv format padding openness with nulls
-"""
+"""Converts SQL logged experiments to csv format padding openness with nulls."""
 import os
 import pandas as pd
-import numpy as np
 import warnings
-from typing import Any, Dict, Optional, Union
-from sqlalchemy import create_engine, text, event
-from sqlalchemy import select, MetaData, Table
+from typing import Optional, Union
+from sqlalchemy import event
+from sqlalchemy import select, MetaData
 from sqlalchemy.engine import Engine
 from collections import defaultdict
 import logging
 
-from free_range_zoo.utils.sql_logging import get_engine_and_session
-from free_range_zoo.utils.env import AECEnv
+from free_range_zoo.envs._base.v0.env import AECEnv
+from free_range_zoo.envs._base.sql_logging import get_engine_and_session
 
 logger = logging.getLogger('free_range_zoo')
 

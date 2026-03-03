@@ -1,3 +1,20 @@
+"""Wrapper Utility Functions for FreeRangeZoo.
+
+This module provides helper functions for working with wrapped
+FreeRangeZoo environments, including utilities to inspect the
+wrapper chain applied to an environment.
+
+Functions:
+    list_wrappers: Returns an ordered list of all wrappers applied to an environment.
+
+Example Usage:
+    >>> from free_range_zoo.wrappers.utils import list_wrappers
+    >>> wrappers = list_wrappers(wrapped_env)
+    >>> print(wrappers)
+    ['OrderEnforcingWrapper', 'ActionSpaceValidatorModifier']
+"""
+from typing import List
+from free_range_zoo.envs._base.v0.env import BatchedAECEnv
 from free_range_zoo.wrappers.wrapper_util import shared_wrapper_aec, shared_wrapper_gym, shared_wrapper_parr
 
 

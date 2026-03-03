@@ -1,7 +1,11 @@
 import torch
 
-from free_range_zoo.envs.rideshare.env.structures.configuration import RewardConfiguration, \
-    PassengerConfiguration, AgentConfiguration, RideshareConfiguration
+from free_range_zoo.envs.rideshare.env.v0.structures.configuration import (
+    RewardConfiguration,
+    PassengerConfiguration,
+    AgentConfiguration,
+    RideshareConfiguration,
+)
 
 
 def non_stochastic():

@@ -6,11 +6,10 @@ or patching it for a fixed number of steps before selecting a new target. These 
 state-driven strategies for benchmarking purposes.
 """
 from typing import Any, Dict
-
-import free_range_rust
 import torch
 
-from free_range_zoo.utils.agent import Agent
+import free_range_rust
+from free_range_zoo.envs._base.agent import Agent
 
 
 class PatchedAttackerBaseline(Agent):

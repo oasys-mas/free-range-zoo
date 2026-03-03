@@ -10,7 +10,7 @@ from typing import Any, Dict
 import free_range_rust
 import torch
 
-from free_range_zoo.utils.agent import Agent
+from free_range_zoo.envs._base.agent import Agent
 
 
 class WeakestBaseline(Agent):

@@ -7,7 +7,7 @@ for each agent in every parallel environment. Useful for benchmarking or as a st
 import free_range_rust
 import torch
 
-from free_range_zoo.utils.agent import Agent
+from free_range_zoo.envs._base.agent import Agent
 
 
 class RandomBaseline(Agent):

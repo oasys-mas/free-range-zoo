@@ -4,8 +4,8 @@ from supersuit.generic_wrappers.utils.base_modifier import BaseModifier
 import torch
 import logging
 
+from free_range_zoo.envs._base.v0.env import BatchedAECEnv
 from free_range_zoo.wrappers.wrapper_util import shared_wrapper
-from free_range_zoo.utils.env import BatchedAECEnv
 
 logger = logging.getLogger('free_range_zoo')
 

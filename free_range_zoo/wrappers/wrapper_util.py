@@ -7,8 +7,8 @@ from pettingzoo.utils.wrappers import OrderEnforcingWrapper as BaseWrapper
 from pettingzoo.utils.env import ActionType
 from supersuit.utils.wrapper_chooser import WrapperChooser
 
+from free_range_zoo.envs._base.v0.env import BatchedAECEnv
 from free_range_zoo.wrappers.passthrough import PassthroughWrapperModifier
-from free_range_zoo.utils.env import BatchedAECEnv
 
 import torch
 

@@ -8,7 +8,7 @@ or as a control policy to compare against more sophisticated wildfire suppressio
 import free_range_rust
 import torch
 
-from free_range_zoo.utils.agent import Agent
+from free_range_zoo.envs._base.agent import Agent
 
 
 class NoopBaseline(Agent):

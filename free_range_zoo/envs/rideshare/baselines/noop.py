@@ -7,7 +7,7 @@ environment, regardless of state or available actions. Useful for benchmarking o
 import free_range_rust
 import torch
 
-from free_range_zoo.utils.agent import Agent
+from free_range_zoo.envs._base.agent import Agent
 
 
 class NoopBaseline(Agent):

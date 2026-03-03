@@ -4,10 +4,11 @@ Random action baseline agent for cybersecurity environments.
 This module provides a baseline agent that samples actions uniformly at random from the available action space,
 serving as a stochastic benchmark for agent performance in cybersecurity tasks.
 """
-import free_range_rust
 import torch
 
-from free_range_zoo.utils.agent import Agent
+import free_range_rust
+
+from free_range_zoo.envs._base.agent import Agent
 
 
 class RandomBaseline(Agent):

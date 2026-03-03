@@ -3,10 +3,11 @@
 This module provides a baseline agent that always performs a no-op action, serving as a control or lower-bound
 benchmark for agent performance in cybersecurity tasks.
 """
-import free_range_rust
 import torch
 
-from free_range_zoo.utils.agent import Agent
+import free_range_rust
+
+from free_range_zoo.envs._base.agent import Agent
 
 
 class NoopBaseline(Agent):

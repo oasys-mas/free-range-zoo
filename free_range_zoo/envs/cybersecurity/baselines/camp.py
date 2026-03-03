@@ -5,10 +5,11 @@ index modulo the number of nodes) and continually patch that node. These agents 
 defense strategy for benchmarking and comparison purposes.
 """
 from typing import Any, Dict
-import free_range_rust
 import torch
 
-from free_range_zoo.utils.agent import Agent
+import free_range_rust
+
+from free_range_zoo.envs._base.agent import Agent
 
 
 class CampDefenderBaseline(Agent):

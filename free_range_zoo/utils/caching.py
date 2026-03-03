@@ -1,8 +1,8 @@
 """Hashing functions for caching and memoization."""
 from typing import Union
-import xxhash
-import torch
 from tensordict import TensorDict
+import torch
+import xxhash
 
 
 def hash_observation(observation: TensorDict) -> int:

@@ -1,9 +1,13 @@
 import torch
 import numpy as np
 
-from free_range_zoo.envs.wildfire.env.structures.configuration import (WildfireConfiguration, FireConfiguration,
-                                                                       AgentConfiguration, StochasticConfiguration,
-                                                                       RewardConfiguration)
+from free_range_zoo.envs.wildfire.env.v0.structures.configuration import (
+    WildfireConfiguration,
+    FireConfiguration,
+    AgentConfiguration,
+    StochasticConfiguration,
+    RewardConfiguration,
+)
 
 
 def non_stochastic() -> WildfireConfiguration:

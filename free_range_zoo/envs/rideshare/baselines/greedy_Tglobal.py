@@ -7,9 +7,9 @@ import torch
 
 import free_range_rust
 
-from free_range_zoo.utils.agent import Agent
-from free_range_zoo.envs.rideshare.env.transitions.movement import MovementTransition
-from free_range_zoo.envs.rideshare.env.structures.configuration import AgentConfiguration
+from free_range_zoo.envs._base.agent import Agent
+from free_range_zoo.envs.rideshare.env.v0.transitions.movement import MovementTransition
+from free_range_zoo.envs.rideshare.env.v0.structures.configuration import AgentConfiguration
 
 
 class GreedyTaskGlobal(Agent):
