@@ -26,6 +26,8 @@ dependencies = [
     "torchvision (>=0.21.0,<0.22.0)",
     "xxhash (>=3.5.0,<4.0.0)",
     "imageio (>=2.37.2,<3.0.0)",
+    "pyyaml (>=6.0.3)",
+    "ruamel.yaml (>=0.19.1)",
 ]
 
 [tool.poetry.group.docs]
