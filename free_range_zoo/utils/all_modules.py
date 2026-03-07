@@ -18,6 +18,11 @@ Example Usage:
 
 from free_range_zoo.envs import wildfire_v0, rideshare_v0, cybersecurity_v0
 
+#used in yaml_configs to find all configuration classes in frz
+from free_range_zoo.envs.wildfire.env.v0.structures import configuration as w0conf
+from free_range_zoo.envs.rideshare.env.v0.structures import configuration as r0conf
+from free_range_zoo.envs.cybersecurity.env.v0.structures import configuration as c0conf
+
 all_prefixes = ["oasys_mas"]
 
 # environments which have manual policy scripts, allowing interactive play

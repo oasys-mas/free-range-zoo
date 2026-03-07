@@ -251,3 +251,7 @@ pip-selfcheck.json
 
 my_secrets.py
 unittest_logs
+.vscode/settings.json
+*.yml
+*.yaml
+test_*.ipynb

@@ -25,6 +25,7 @@ import torch
 @dataclass
 class Configuration(ABC):
     """Abstract class for environment configurations."""
+    _subclass_registry = {}
 
     @abstractmethod
     def validate(self) -> bool:
@@ -39,6 +40,30 @@ class Configuration(ABC):
                 value.validate()
 
         return True
+
+    @classmethod
+    def type_caster(cls):
+        """
+        Default type caster for use in yaml config reading. 
+        Subclasses can override this to provide custom type casting.
+
+        Returns:
+            dict - A dictionary of callables by input (config_name, field_name)
+        """
+        return {} if not hasattr(cls, '_type_caster') else cls._type_caster
+
+    def __init_subclass__(cls) -> None:
+        Configuration._subclass_registry[f'{cls.__module__}:{cls.__name__}'] = cls
+        return super().__init_subclass__()
+
+    @classmethod
+    def get_subclasses(cls):
+        """
+        Return all environment instances of configurations
+        Returns:
+            dict - A dictionary of environment names to their configuration classes
+        """
+        return Configuration._subclass_registry
 
     def to(self, device: torch.DeviceObjType = torch.device('cpu')) -> Self:
         """
