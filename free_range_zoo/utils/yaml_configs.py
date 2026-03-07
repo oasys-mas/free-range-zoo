@@ -549,7 +549,7 @@ default_typecast = {
 }
 default_typecast.update({
     c.__name__ if 'Tensor' not in c.__name__ else 'torch.' + c.__name__: v
-    for c,v in default_typecast.items()
+    for c, v in default_typecast.items()
 })
 
 #parse to find all configuration classes in frz
@@ -729,9 +729,9 @@ def write_environment(env: BatchedAECEnv, foutput: str | Path):
     wrappers = list_wrappers(env, return_modifiers=True)
 
     #?Extract wrapper parameters for shared wrappers
-    ignore = set(['subject_agent', 'cur_obs', 'cur_observation', 'env', 'observe', 'observation_space', 'action_space','return'])
+    ignore = set(['subject_agent', 'cur_obs', 'cur_observation', 'env', 'observe', 'observation_space', 'action_space', 'return'])
     pruned_params = [{k: {_k: _v for _k, _v in v.__dict__.items() if _k not in ignore} for k, v in e.items()} for e in wrappers]
-    wrapper_names = [{k: f'{type(v).__module__}:{type(v).__name__}' for k,v in e.items()} for e in wrappers]
+    wrapper_names = [{k: f'{type(v).__module__}:{type(v).__name__}' for k, v in e.items()} for e in wrappers]
 
     for wrap_params, wrap in zip(pruned_params, wrapper_names):
         n0 = list(wrap.values())[0]
@@ -743,21 +743,21 @@ def write_environment(env: BatchedAECEnv, foutput: str | Path):
             "To make reconstructable wrappers, all agents must share wrapper hyperparameters for now."
 
     #?assemble wrapper parameters
-    wrapper_kwargs = [
-        {
-            'name': list(wrapper_name.values())[0],
-            'params': list(wrapper_param.values())[0]
-        }
-        for wrapper_name, wrapper_param in zip(reversed(wrapper_names), reversed(pruned_params))
-    ]
+    wrapper_kwargs = [{
+        'name': list(wrapper_name.values())[0],
+        'params': list(wrapper_param.values())[0]
+    } for wrapper_name, wrapper_param in zip(reversed(wrapper_names), reversed(pruned_params))]
 
     #?get env hyperparameters
     unwrapped_env = unwrap(env)
-    env_spec_kwargs = unwrapped_env.__init__.__annotations__ 
+    env_spec_kwargs = unwrapped_env.__init__.__annotations__
     init_kwargs = {
         'max_steps': unwrapped_env.max_steps,
         'parallel_envs': unwrapped_env.parallel_envs,
-        **{k: getattr(unwrapped_env, k) for k in env_spec_kwargs if hasattr(unwrapped_env, k) and k not in ignore}
+        **{
+            k: getattr(unwrapped_env, k)
+            for k in env_spec_kwargs if hasattr(unwrapped_env, k) and k not in ignore
+        }
     }
 
     #?get config hyperparameters
@@ -772,4 +772,3 @@ def write_environment(env: BatchedAECEnv, foutput: str | Path):
     }
 
     write_yaml(env_dict, foutput)
-

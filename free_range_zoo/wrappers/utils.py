@@ -38,9 +38,9 @@ def unwrap(env):
     Returns:
         rawenv: a raw frz environment
     """
-    while hasattr(env, 'env') or hasattr(env,'aec_env'):
+    while hasattr(env, 'env') or hasattr(env, 'aec_env'):
         if hasattr(env, 'env'):
-            env=env.env
+            env = env.env
         elif hasattr(env, 'aec_env'):
-            env=env.aec_env
+            env = env.aec_env
     return env
