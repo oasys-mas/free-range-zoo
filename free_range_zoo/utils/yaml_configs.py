@@ -679,12 +679,13 @@ def load_config(config: dict, config_class: Type[Configuration], _config_path: s
     return config_class(**config_params)
 
 
-def load_environment(finput: str | Path, **kwargs) -> BatchedAECEnv:
+def load_environment(finput: str | Path, wrap_parallel: bool = True, **kwargs) -> BatchedAECEnv:
     """
     Loads a free-range-zoo environment from a YAML file.
 
     Args:
         finput (str | Path): The path to the input YAML file.
+        wrap_parallel (bool): Whether to wrap the environment in a parallel wrapper. Defaults to True.
         **kwargs: Additional keyword arguments to overwrite environment initialization parameters.
     Returns:
         BatchedAECEnv: The loaded free-range-zoo environment.
@@ -703,8 +704,12 @@ def load_environment(finput: str | Path, **kwargs) -> BatchedAECEnv:
     #?Load environment
     env_module_name, env_class_name = env_class.rsplit(":", 1)
     env_module = importlib.import_module(env_module_name)
-    env_cls = getattr(env_module, env_class_name)
-    env = env_cls(configuration=config, **(env_init_kwargs | kwargs))
+    if wrap_parallel:
+        env_cls = getattr(env_module, "parallel_env")
+        env = env_cls(configuration=config, **(env_init_kwargs | kwargs))
+    else:
+        env_cls = getattr(env_module, env_class_name)
+        env = env_cls(configuration=config, **(env_init_kwargs | kwargs))
     env.reset()
 
     #?Load wrappers
@@ -715,6 +720,28 @@ def load_environment(finput: str | Path, **kwargs) -> BatchedAECEnv:
         wrapper_cls = getattr(wrapper_module, wrapper_class_name)
         env = shared_wrapper(env, wrapper_cls, **wrapper_kwargs)
     return env
+
+
+def check_dicts(d1, d2, ignore, path=''):
+    """
+    Recursively check that all wrapper parameters match across wrappers, ignoring those designated as dynamic/derived
+
+    Args:
+        d1 (dict): The first dictionary to compare.
+        d2 (dict): The second dictionary to compare.
+        ignore (set): A set of keys to ignore during the comparison.
+        path (str): The current path in the nested dictionaries for error reporting. Defaults to ''.
+    """
+    for k in d1.keys():
+        if k in ignore:
+            continue
+        if k not in d2:
+            raise ValueError(f"Key {k} not found in all wrapper parameters at path {path}.")
+        v1, v2 = d1[k], d2[k]
+        if isinstance(v1, dict) and isinstance(v2, dict):
+            check_dicts(v1, v2, path + f'->{k}')
+        elif v1 != v2:
+            raise ValueError(f"Value {v1} does not match {v2} for key {k} at path {path}.")
 
 
 def write_environment(env: BatchedAECEnv, foutput: str | Path):
@@ -739,14 +766,22 @@ def write_environment(env: BatchedAECEnv, foutput: str | Path):
             "All agents must share the same wrappers."
 
         v0 = list(wrap_params.values())[0]
-        assert all([v==v0 for v in wrap_params.values()]),\
-            "To make reconstructable wrappers, all agents must share wrapper hyperparameters for now."
+
+        #ignore_params should be defined as a class property set for a wrapper which identifies properties derived or used dynamically during execution
+        ignore = getattr(list(wrap.values())[0], 'ignore_params', set())
+
+        for v in wrap_params.values():
+            check_dicts(v0, v, ignore, path=f"Wrapper {n0}")
 
     #?assemble wrapper parameters
     wrapper_kwargs = [{
         'name': list(wrapper_name.values())[0],
-        'params': list(wrapper_param.values())[0]
-    } for wrapper_name, wrapper_param in zip(reversed(wrapper_names), reversed(pruned_params))]
+        'params': {
+            k: str(v)
+            for k, v in list(wrapper_param.values())[0].items()
+            if k not in getattr(list(wrapper.values())[0], 'ignore_params', set())
+        }
+    } for wrapper_name, wrapper_param, wrapper in zip(reversed(wrapper_names), reversed(pruned_params), reversed(wrappers))]
 
     #?get env hyperparameters
     unwrapped_env = unwrap(env)
