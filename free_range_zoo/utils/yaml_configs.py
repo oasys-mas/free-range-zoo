@@ -1,7 +1,8 @@
 import copy
 import operator
 import importlib
-from typing import Any, Type
+import inspect
+from typing import Any, Type, Dict
 from pathlib import Path
 from functools import reduce
 from dataclasses import asdict, fields, MISSING
@@ -545,12 +546,23 @@ default_typecast = {
     torch.Tensor: lambda x: torch.tensor(x),
     int: int,
     float: float,
-    bool: bool
+    bool: lambda x: {
+        '1': True,
+        '0': False,
+        'False': False,
+        'True': True,
+        '': False,
+        'true': True,
+        'false': False,
+        False: False,
+        True: True
+    }[x],
 }
 default_typecast.update({
     c.__name__ if 'Tensor' not in c.__name__ else 'torch.' + c.__name__: v
     for c, v in default_typecast.items()
 })
+default_typecast.update({str(k): v for k, v in default_typecast.items() if inspect.isclass(k)})
 
 #parse to find all configuration classes in frz
 
@@ -718,6 +730,7 @@ def load_environment(finput: str | Path, wrap_parallel: bool = True, **kwargs) -
         wrapper_module_name, wrapper_class_name = wrapper_name.rsplit(":", 1)
         wrapper_module = importlib.import_module(wrapper_module_name)
         wrapper_cls = getattr(wrapper_module, wrapper_class_name)
+        wrapper_kwargs = recursive_param_casting(wrapper_kwargs)
         env = shared_wrapper(env, wrapper_cls, **wrapper_kwargs)
     return env
 
@@ -742,6 +755,42 @@ def check_dicts(d1, d2, ignore, path=''):
             check_dicts(v1, v2, path + f'->{k}')
         elif v1 != v2:
             raise ValueError(f"Value {v1} does not match {v2} for key {k} at path {path}.")
+
+
+def recursive_param_casting(d) -> Dict[str, Any]:
+    """
+    Recursively cast parameter values based on their type annotations.
+
+    Args:
+        d (dict): The dictionary containing parameter values to be cast.
+    """
+    if isinstance(d, dict):
+        return {k: recursive_param_casting(v) for k, v in d.items()}
+    if isinstance(d, str):
+        type_string, value_string = d.split(":;", 1)
+        type_string = type_string.strip()
+
+        assert type_string in default_typecast, f"Type {type_string} not recognized for parameter casting."
+        convert_function = default_typecast[type_string]
+        converted_value = convert_function(value_string)
+
+        return converted_value
+    return d
+
+
+def recursive_param_stringify(d) -> Dict[str, Any]:
+    """
+    Recursively convert parameter values to strings with type annotations for YAML config.
+
+    Args:
+        d (dict): The dictionary containing parameter values to be converted.
+    """
+    if isinstance(d, dict):
+        return {k: recursive_param_stringify(v) for k, v in d.items()}
+    elif isinstance(d, list):
+        return [recursive_param_stringify(v) for v in d]
+    else:
+        return f"{type(d)}:;{d}"
 
 
 def write_environment(env: BatchedAECEnv, foutput: str | Path):
@@ -777,7 +826,7 @@ def write_environment(env: BatchedAECEnv, foutput: str | Path):
     wrapper_kwargs = [{
         'name': list(wrapper_name.values())[0],
         'params': {
-            k: str(v)
+            k: recursive_param_stringify(v)
             for k, v in list(wrapper_param.values())[0].items()
             if k not in getattr(list(wrapper.values())[0], 'ignore_params', set())
         }
