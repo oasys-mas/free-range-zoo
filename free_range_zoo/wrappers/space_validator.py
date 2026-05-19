@@ -20,7 +20,13 @@ class ActionSpaceValidatorModifier(BaseModifier):
     env = True
     subject_agent = True
 
-    def __init__(self, env: BatchedAECEnv, subject_agent: str, allow_flexible_task_tags: bool = True):
+    def __init__(
+        self,
+        env: BatchedAECEnv,
+        subject_agent: str,
+        allow_flexible_task_tags: bool = True,
+        cast_invalid_to_noop: bool = True,
+    ):
         """Initialize the ActionSpaceValidatorModifier.
 
         Args:
@@ -28,12 +34,13 @@ class ActionSpaceValidatorModifier(BaseModifier):
             subject_agent (str): The subject agent of the graph wrapper.
             allow_flexible_task_tags (bool): Whether to allow task-agnostic actions
                 to be used for any task instead of just the task-agnostic task.
-
+            cast_invalid_to_noop (bool): Cast invalid actions to noop instead of throwing
         Returns:
             None: None
         """
         self.env = env
         self.allow_flexible_task_tags = allow_flexible_task_tags
+        self.cast_invalid_to_noop = cast_invalid_to_noop
 
         # Unpack the the parallel environment if it is wrapped in one.
         if hasattr(self.env, 'aec_env'):
@@ -53,53 +60,57 @@ class ActionSpaceValidatorModifier(BaseModifier):
         Returns:
             torch.IntTensor: The modified action.
         """
-        actions_iter = actions.split(1, dim=0)
         action_spaces = self.env.action_space(self.subject_agent).spaces
+        actions_list = actions.split(1, dim=0)
 
-        for index, (action, space) in enumerate(zip(actions_iter, action_spaces)):
+        for index, (action, space) in enumerate(zip(actions_list, action_spaces)):
             task_channel, action_channel = action.squeeze(0)
+            if not self._is_valid_action(space, task_channel, action_channel):
+                if self.cast_invalid_to_noop:
+                    actions_list[index] = torch.tensor([[0, -1]], dtype=torch.int32)
+                else:
+                    self._raise_invalid_action(index, action, space)
 
-            # If the action is a task-agnostic action, we need to check if it is within the bounds of the action space.
-            if action_channel < 0 and self.allow_flexible_task_tags:
-                is_bad_space = True
-                for subspace in reversed(space.spaces):
-                    if action_channel == subspace.start:
-                        is_bad_space = False
-                        break
+        return torch.cat(actions_list, dim=0)
 
-                if is_bad_space:
-                    logger.critical(f'''{self.subject_agent} in batch {index} attempted to take an action on a undefined task.
-                        \rAction: {action}
-                        \rSpace: {space}''')
-                    raise IndexError
-            else:
-                try:
-                    discrete = space.spaces[task_channel]
-                except IndexError as e:
-                    logger.critical(f'''{self.subject_agent} in batch {index} attempted to take an action on a undefined task.
-                        \rAction: {action}
-                        \rSpace: {space}''')
-                    raise e
-                try:
-                    if action_channel < discrete.start or action_channel > discrete.start + discrete.n:
-                        raise IndexError
-                except IndexError as e:
-                    logger.critical(f'''{self.subject_agent} in batch {index} attempted to take an action on a undefined task.
-                        \rAction: {action}
-                        \rSpace: {space}''')
-                    raise e
+    def _is_valid_action(self, space, task_channel: int, action_channel: int) -> bool:
+        """Check if an action is within the bounds of the action space."""
+        if action_channel < 0 and self.allow_flexible_task_tags:
+            return any(action_channel == subspace.start for subspace in reversed(space.spaces))
 
-        return actions
+        try:
+            discrete = space.spaces[task_channel]
+        except IndexError:
+            return False
+
+        return discrete.start <= action_channel <= discrete.start + discrete.n
+
+    def _raise_invalid_action(self, index: int, action: torch.IntTensor, space) -> None:
+        logger.critical(f"{self.subject_agent} in batch {index} attempted to take an action on a undefined task."
+                        f"\rAction: {action}"
+                        f"\rSpace: {space}")
+        raise IndexError
 
 
-def space_validator_wrapper_v0(env: BatchedAECEnv, allow_flexible_task_tags: bool = True) -> BatchedAECEnv:
+def space_validator_wrapper_v0(
+    env: BatchedAECEnv,
+    allow_flexible_task_tags: bool = True,
+    cast_invalid_to_noop: bool = False,
+) -> BatchedAECEnv:
     """Apply the ActionSpaceValidatorModifier to the environment.
 
     Args:
         env (BatchedAECEnv): The environment to wrap.
-        allow_flexible_task_tags (bool): Whether to allow task-agnostic actions to have invalid task channels.
+        allow_flexible_task_tags (bool): Whether to allow task-agnostic actions
+            to be used for any task instead of just the task-agnostic task.
+        cast_invalid_to_noop (bool): Cast invalid actions to noop instead of throwing
 
     Returns:
         BatchedAECEnv: The wrapped environment.
     """
-    return shared_wrapper(env, ActionSpaceValidatorModifier, allow_flexible_task_tags=allow_flexible_task_tags)
+    return shared_wrapper(
+        env,
+        ActionSpaceValidatorModifier,
+        allow_flexible_task_tags=allow_flexible_task_tags,
+        cast_invalid_to_noop=cast_invalid_to_noop,
+    )
