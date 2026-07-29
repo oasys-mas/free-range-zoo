@@ -44,16 +44,13 @@
               pkg-config
               cargo
               rustc
-
               python312
             ];
 
             packages = with pkgs; [
               alejandra
               yapf
-
               poetry
-
               python312Packages.virtualenv
             ];
 
@@ -64,7 +61,20 @@
             inherit inputs pkgs;
 
             modules = [
-              ({pkgs, ...}: {
+              ({
+                pkgs,
+                lib,
+                ...
+              }: {
+                env = {
+                  NIX_LD_LIBRARY_PATH = lib.makeLibraryPath [
+                    pkgs.glibc
+                    pkgs.stdenv.cc.cc.lib
+                    pkgs.zlib
+                  ];
+                  CUDA_ROOT = "${pkgs.cudaPackages.cudatoolkit}";
+                };
+
                 languages = {
                   nix.enable = true;
                   python = {
@@ -101,10 +111,7 @@
                 };
 
                 enterShell = ''
-                  export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$NIX_LD_LIBRARY_PATH
-                  export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/run/opengl-driver/lib
-
-                  export CUDA_ROOT="${pkgs.cudaPackages.cudatoolkit}"
+                  export LD_LIBRARY_PATH="$NIX_LD_LIBRARY_PATH:$LD_LIBRARY_PATH"
                 '';
               })
             ];
