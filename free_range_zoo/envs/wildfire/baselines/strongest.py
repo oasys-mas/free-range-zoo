@@ -48,7 +48,12 @@ class StrongestBaseline(Agent):
             return
 
         has_suppressant = self.observation['self'][:, 3] != 0
-        fires = self.observation['tasks'].to_padded_tensor(-100)[:, :, 3]
+
+        if self.observation['tasks'].is_nested:
+            fires = self.observation['tasks'].to_padded_tensor(-100)[..., 3]
+        else:
+            fires = self.observation['tasks'][..., 3]
+
         argmax_store = torch.empty_like(self.t_mapping)
 
         for batch in range(self.parallel_envs):

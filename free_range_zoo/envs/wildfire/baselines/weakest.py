@@ -49,7 +49,10 @@ class WeakestBaseline(Agent):
             self.actions.fill_(-1)
             return
 
-        fires = self.observation['tasks'].to_padded_tensor(-100)[:, :, 3]
+        if self.observation['tasks'].is_nested:
+            fires = self.observation['tasks'].to_padded_tensor(-100)[..., 3]
+        else:
+            fires = self.observation['tasks'][..., 3]
 
         argmax_store = torch.empty_like(self.t_mapping)
 
