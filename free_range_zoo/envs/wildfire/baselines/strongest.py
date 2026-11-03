@@ -48,12 +48,17 @@ class StrongestBaseline(Agent):
             return
 
         has_suppressant = self.observation['self'][:, 3] != 0
-        fires = self.observation['tasks'].to_padded_tensor(-100)[:, :, 3]
+
+        if self.observation['tasks'].is_nested:
+            fires = self.observation['tasks'].to_padded_tensor(-100)[..., 3]
+        else:
+            fires = self.observation['tasks'][..., 3]
+
         argmax_store = torch.empty_like(self.t_mapping)
 
         for batch in range(self.parallel_envs):
             for element in range(self.t_mapping[batch].size(0)):
-                argmax_store[batch][element] = fires[batch][element]
+                argmax_store[batch][element] = fires[batch][self.t_mapping[batch][element]]
 
             if len(argmax_store[batch]) == 0:
                 self.actions[batch].fill_(-1)  # There are no fires in the environment, so agents have to noop

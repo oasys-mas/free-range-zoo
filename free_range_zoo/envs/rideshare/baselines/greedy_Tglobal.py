@@ -57,12 +57,17 @@ class GreedyTaskGlobal(Agent):
             self.actions.fill_(-1)
             return
 
-        accepted = self.observation['tasks'].to_padded_tensor(-100)[:, :, 4] >= 0
-        riding = self.observation['tasks'].to_padded_tensor(-100)[:, :, 5] >= 0
+        if self.observation['tasks'].is_nested:
+            tasks = self.observation['tasks'].to_padded_tensor(-100)
+        else:
+            tasks = self.observation['tasks']
+
+        accepted = tasks[..., 4] >= 0
+        riding = tasks[..., 5] >= 0
         unaccepted = ~accepted & ~riding
 
-        passenger_current = self.observation['tasks'].to_padded_tensor(-100)[:, :, [0, 1]]
-        passenger_destination = self.observation['tasks'].to_padded_tensor(-100)[:, :, [2, 3]]
+        passenger_current = tasks[..., [0, 1]]
+        passenger_destination = tasks[..., [2, 3]]
         my_location = self.observation['self'][:, [0, 1]].unsqueeze(1).repeat(1, passenger_current.size(1), 1)
 
         _, passenger_distance = self.movement_transition.distance(starts=passenger_current, goals=passenger_destination)
@@ -74,7 +79,7 @@ class GreedyTaskGlobal(Agent):
         for batch in range(self.parallel_envs):
 
             for element in range(self.t_mapping[batch].size(0)):
-                argmin_store[batch][element] = passengers[batch][element]
+                argmin_store[batch][element] = passengers[batch][self.t_mapping[batch][element]]
 
             if len(argmin_store[batch]) == 0:
                 self.actions[batch].fill_(-1)  # There are no passengers seen in the environment so this agent (batch) must noop

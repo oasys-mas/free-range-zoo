@@ -54,16 +54,21 @@ class FirstInFirstOutTglobalBaseline(Agent):
             self.actions.fill_(-1)
             return
 
-        passengers = self.observation['tasks'].to_padded_tensor(-100)[:, :, -1]
-        accepted = self.observation['tasks'].to_padded_tensor(-100)[:, :, 4] >= 0
-        riding = self.observation['tasks'].to_padded_tensor(-100)[:, :, 5] >= 0
+        if self.observation['tasks'].is_nested:
+            tasks = self.observation['tasks'].to_padded_tensor(-100)
+        else:
+            tasks = self.observation['tasks']
+
+        passengers = tasks[..., -1]
+        accepted = tasks[..., 4] >= 0
+        riding = tasks[..., 5] >= 0
         unaccepted = ~accepted & ~riding
 
         argmin_store = torch.ones_like(self.t_mapping) * float('inf')
 
         for batch in range(self.parallel_envs):
             for element in range(self.t_mapping[batch].size(0)):
-                argmin_store[batch][element] = passengers[batch][element]
+                argmin_store[batch][element] = passengers[batch][self.t_mapping[batch][element]]
 
             if len(argmin_store[batch]) == 0:
                 self.actions[batch].fill_(-1)
